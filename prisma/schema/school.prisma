@@ -1,0 +1,41 @@
+model School {
+  id                String   @id @default(uuid()) @db.Uuid
+  name              String
+  motto             String?
+  slug              String   @unique // e.g., "kings-college-lagos" for URL routing
+  
+  // Contact & Branding
+  email             String   @unique
+  phoneNumber       String?
+  address           String
+  logoUrl           String?  // S3 link for result sheet headers
+  website           String?
+  
+  // Multitenancy & Access Control
+  isActive          Boolean  @default(true)
+  plan              Plan     @default(FREE) // For your SaaS billing logic
+  
+  // School Configuration (JSON)
+  // Store things like: { "gradingScale": "WAEC", "timeZone": "Africa/Lagos" }
+  settings          Json?    @default("{}")
+
+  // Academic Relations
+  sessions          Session[]
+  classes           Class[]
+  students          Student[]
+  staff             Staff[]
+  subjects          Subject[]
+  assessments       Assessment[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([slug]) // Fast lookup when a school logs into their subdomain
+}
+
+enum Plan {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}

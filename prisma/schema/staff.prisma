@@ -1,0 +1,40 @@
+model Staff {
+  id              String    @id @default(uuid()) @db.Uuid
+  schoolId        String    @db.Uuid
+  school          School    @relation(fields: [schoolId], references: [id])
+  
+  // Credentials & Identity
+  firstName       String
+  lastName        String
+  middleName      String?
+  email           String    @unique // Unique for login across the platform
+  password        String    // Hashed
+  phoneNumber     String?
+  staffId         String?   // Custom School Employee ID (e.g., KCL/2024/042)
+  
+  // Authorization
+  role            StaffRole @default(TEACHER)
+  isActive        Boolean   @default(true)
+
+  // Academic Responsibilities
+  // Many-to-Many: A teacher can teach many subjects, and a subject can have many teachers
+  subjects        Subject[] 
+  
+  // One-to-Many: A teacher might be a "Form Teacher" or "Class Teacher" for a specific class
+  managedClass    Class?    @relation("ClassTeacher")
+
+  // Audit Trails
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([schoolId, staffId]) // Ensure Staff ID is unique within the school
+  @@index([schoolId, role])     // Performance for filtering by role (e.g., "Get all teachers")
+}
+
+enum StaffRole {
+  SUPER_ADMIN // You (Brillianda owner)
+  ADMIN       // School Principal / ICT Head
+  TEACHER     // Can manage CBT and Grades
+  REGISTRAR   // Manages student enrollments
+  BURSAR      // Manages school fees/billing
+}
