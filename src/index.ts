@@ -2,9 +2,7 @@ import express, { type Application, type Request, type Response } from "express"
 import { Server } from "http";
 import { config } from "dotenv";
 import { connectDB, disconnectDB } from "./config/db.js";
-import customerRoutes from "./4_customer/routes/customerRoutes.js";
-import adminRoutes from "./1_admin/routes/adminRoutes.js";
-import restaurantRoutes from "./2_restaurant/routes/restaurantRoutes.js";
+
 
 // Import Routes
 
@@ -20,9 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // API Routes
-app.use("/customer", customerRoutes);
-app.use("/admin", adminRoutes);
-app.use("/restaurant", restaurantRoutes);
+app.use("/students", studentRoutes);
 
 // Basic Health Check (Optional but recommended in TS/Production)
 app.get("/health", (req: Request, res: Response) => {
