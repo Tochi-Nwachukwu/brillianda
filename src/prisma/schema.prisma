@@ -17,7 +17,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
-  name      String   
+  name      String
   role      Role     @default(STUDENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -48,6 +48,7 @@ model School {
   address   String?
   phone     String?
   name      String
+  slug      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
@@ -65,18 +66,23 @@ model School {
 model Student {
   id           String          @id @default(cuid())
   enrollmentNo String          @unique
+  firstName    String
+  lastName     String
   dateOfBirth  DateTime
   phone        String?
   address      String?
+  email        String          @unique
+  password     String
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   parentLinks  ParentStudent[]
   quizAttempts QuizAttempt[]
   subjects     Subject[]       @relation("StudentSubjects")
-  school       School?         @relation(fields: [schoolId], references: [id])
-  schoolId     String?
+  school       School          @relation(fields: [schoolId], references: [id])
+  schoolId     String
 
   @@index([enrollmentNo])
+  @@index([schoolId])
 }
 
 model Parent {
@@ -87,10 +93,12 @@ model Parent {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  school   School? @relation(fields: [schoolId], references: [id])
-  schoolId String?
+  school   School @relation(fields: [parentId], references: [id])
+  parentId String
 
   studentLinks ParentStudent[]
+
+  @@index([parentId])
 }
 
 model ParentStudent {
@@ -116,14 +124,15 @@ model Teacher {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  school   School? @relation(fields: [schoolId], references: [id])
-  schoolId String?
+  school    School @relation(fields: [teacherId], references: [id])
+  teacherId String
 
   questions Question[]
   quizzes   Quiz[]
   subjects  Subject[]  @relation("SubjectToTeacher")
 
   @@index([employeeNo])
+  @@index([teacherId])
 }
 
 model Subject {

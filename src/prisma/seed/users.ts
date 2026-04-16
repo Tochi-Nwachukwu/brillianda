@@ -17,6 +17,7 @@ export async function userData(prisma: any ) {
       create: {
         address: "White House Alcon Road",
         name: "Sure Bloom Int School",
+        slug: "sure-bloom-school",
         phone: "+234-801-123-4567",
       },
     },
@@ -38,6 +39,7 @@ export async function userData(prisma: any ) {
         create: {
           address: 'Obalende Road, Lagos',
           name: 'Kings College Lagos',
+          slug: 'kings-college-lagos',
           phone: '+234-801-123-4567'
         }
       }
@@ -117,4 +119,8 @@ export async function userData(prisma: any ) {
     },
     include: { school: true }
   });
+
+  return {
+    school: [school1.school, school2.school]
+  }
 }

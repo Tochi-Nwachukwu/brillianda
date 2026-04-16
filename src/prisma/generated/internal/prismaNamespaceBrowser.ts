@@ -113,6 +113,7 @@ export const SchoolScalarFieldEnum = {
   address: 'address',
   phone: 'phone',
   name: 'name',
+  slug: 'slug',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -123,9 +124,13 @@ export type SchoolScalarFieldEnum = (typeof SchoolScalarFieldEnum)[keyof typeof 
 export const StudentScalarFieldEnum = {
   id: 'id',
   enrollmentNo: 'enrollmentNo',
+  firstName: 'firstName',
+  lastName: 'lastName',
   dateOfBirth: 'dateOfBirth',
   phone: 'phone',
   address: 'address',
+  email: 'email',
+  password: 'password',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   schoolId: 'schoolId'
@@ -141,7 +146,7 @@ export const ParentScalarFieldEnum = {
   occupation: 'occupation',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  schoolId: 'schoolId'
+  parentId: 'parentId'
 } as const
 
 export type ParentScalarFieldEnum = (typeof ParentScalarFieldEnum)[keyof typeof ParentScalarFieldEnum]
@@ -166,7 +171,7 @@ export const TeacherScalarFieldEnum = {
   phone: 'phone',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  schoolId: 'schoolId'
+  teacherId: 'teacherId'
 } as const
 
 export type TeacherScalarFieldEnum = (typeof TeacherScalarFieldEnum)[keyof typeof TeacherScalarFieldEnum]
