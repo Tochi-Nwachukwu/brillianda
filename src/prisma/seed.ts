@@ -4,6 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./generated/client.js";
 import { userData } from "./seed/users.js";
 import { studentData } from "./seed/student.js";
+import { parentsData } from "./seed/parents.js";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const pool = new Pool({ connectionString });
@@ -16,6 +17,7 @@ async function main() {
   await userData(prisma)
   const { school } = await userData(prisma)
   await studentData(prisma, school )
+  await parentsData(prisma, school )
 
 
  

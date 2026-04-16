@@ -87,18 +87,23 @@ model Student {
 
 model Parent {
   id         String   @id @default(cuid())
+  firstName  String
+  lastName   String
   phone      String?
   address    String?
   occupation String?
+  relation   String
+  email      String   @unique
+  password   String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  school   School @relation(fields: [parentId], references: [id])
-  parentId String
+  school   School @relation(fields: [schoolId], references: [id])
+  schoolId String
 
   studentLinks ParentStudent[]
 
-  @@index([parentId])
+  @@index([schoolId])
 }
 
 model ParentStudent {
