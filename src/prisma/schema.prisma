@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/**
+ * So basically we will have
+ * User{including types of user[enums]} User types will include Admin, Teacher, Parent, Student, School,
+ * School{This will be in a one to one relations with {parent, student and parent student,} because one school can have many users which is primary iden.}
+ */
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String   
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /**
+   * Users are split into Schools and Admins
+   */
+  school School?
+  admin  Admin?
+
+  @@index([email])
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  adminId String @unique
+  user    User   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model School {
+  id        String   @id @default(cuid())
+  schoolId  String   @unique
+  address   String?
+  phone     String?
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  /**
+   * 1-n relation roles must exist in relation to school before they can be cretaed
+   */
+  students Student[]
+  parents  Parent[]
+  teachers Teacher[]
+
+  @@index([schoolId])
+}
+
+model Student {
+  id           String          @id @default(cuid())
+  enrollmentNo String          @unique
+  dateOfBirth  DateTime
+  phone        String?
+  address      String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  parentLinks  ParentStudent[]
+  quizAttempts QuizAttempt[]
+  subjects     Subject[]       @relation("StudentSubjects")
+  school       School?         @relation(fields: [schoolId], references: [id])
+  schoolId     String?
+
+  @@index([enrollmentNo])
+}
+
+model Parent {
+  id         String   @id @default(cuid())
+  phone      String?
+  address    String?
+  occupation String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  school   School? @relation(fields: [schoolId], references: [id])
+  schoolId String?
+
+  studentLinks ParentStudent[]
+}
+
+model ParentStudent {
+  id        String   @id @default(cuid())
+  parentId  String
+  studentId String
+  relation  String
+  createdAt DateTime @default(now())
+  parent    Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@index([parentId])
+  @@index([studentId])
+}
+
+model Teacher {
+  id             String   @id @default(cuid())
+  employeeNo     String   @unique
+  qualification  String?
+  specialization String?
+  phone          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  school   School? @relation(fields: [schoolId], references: [id])
+  schoolId String?
+
+  questions Question[]
+  quizzes   Quiz[]
+  subjects  Subject[]  @relation("SubjectToTeacher")
+
+  @@index([employeeNo])
+}
+
+model Subject {
+  id          String    @id @default(cuid())
+  name        String
+  code        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  quizzes     Quiz[]
+  students    Student[] @relation("StudentSubjects")
+  teachers    Teacher[] @relation("SubjectToTeacher")
+
+  @@index([code])
+}
+
+model Quiz {
+  id              String        @id @default(cuid())
+  title           String
+  description     String?
+  subjectId       String
+  teacherId       String
+  totalQuestions  Int
+  totalMarks      Int
+  passingMarks    Int
+  duration        Int
+  difficultyLevel String
+  isPublished     Boolean       @default(false)
+  scheduledDate   DateTime?
+  deadline        DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  questions       Question[]
+  subject         Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher         Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  attempts        QuizAttempt[]
+
+  @@index([subjectId])
+  @@index([teacherId])
+  @@index([isPublished])
+}
+
+model Question {
+  id           String           @id @default(cuid())
+  quizId       String
+  teacherId    String
+  questionText String
+  questionType QuestionType
+  marks        Int
+  order        Int
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  quiz         Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  teacher      Teacher          @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  options      QuestionOption[]
+  answers      StudentAnswer[]
+
+  @@index([quizId])
+  @@index([teacherId])
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  optionText String
+  isCorrect  Boolean  @default(false)
+  order      Int
+  createdAt  DateTime @default(now())
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model QuizAttempt {
+  id            String          @id @default(cuid())
+  quizId        String
+  studentId     String
+  startTime     DateTime
+  endTime       DateTime?
+  obtainedMarks Int?
+  percentage    Float?
+  status        AttemptStatus   @default(IN_PROGRESS)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  quiz          Quiz            @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  student       Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers       StudentAnswer[]
+
+  @@unique([quizId, studentId])
+  @@index([quizId])
+  @@index([studentId])
+  @@index([status])
+}
+
+model StudentAnswer {
+  id               String      @id @default(cuid())
+  attemptId        String
+  questionId       String
+  selectedOptionId String?
+  userAnswer       String?
+  isCorrect        Boolean?
+  marksObtained    Int         @default(0)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  attempt          QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  PARENT
+  ADMIN
+  SCHOOL
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+  TRUE_FALSE
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
