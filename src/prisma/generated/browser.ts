@@ -33,6 +33,11 @@ export type Admin = Prisma.AdminModel
  */
 export type School = Prisma.SchoolModel
 /**
+ * Model Class
+ * 
+ */
+export type Class = Prisma.ClassModel
+/**
  * Model Student
  * 
  */

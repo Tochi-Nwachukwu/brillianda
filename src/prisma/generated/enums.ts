@@ -20,6 +20,23 @@ export const Role = {
 export type Role = (typeof Role)[keyof typeof Role]
 
 
+export const Classes = {
+  SS3: 'SS3',
+  SS2: 'SS2',
+  SS1: 'SS1',
+  JSS3: 'JSS3',
+  JSS2: 'JSS2',
+  JSS1: 'JSS1',
+  PRIMARY_5: 'PRIMARY_5',
+  PRIMARY_4: 'PRIMARY_4',
+  PRIMARY_3: 'PRIMARY_3',
+  PRIMARY_2: 'PRIMARY_2',
+  PRIMARY_1: 'PRIMARY_1'
+} as const
+
+export type Classes = (typeof Classes)[keyof typeof Classes]
+
+
 export const QuestionType = {
   MULTIPLE_CHOICE: 'MULTIPLE_CHOICE',
   SHORT_ANSWER: 'SHORT_ANSWER',

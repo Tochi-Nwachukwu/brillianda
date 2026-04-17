@@ -11,6 +11,7 @@
 export type * from './models/User.js'
 export type * from './models/Admin.js'
 export type * from './models/School.js'
+export type * from './models/Class.js'
 export type * from './models/Student.js'
 export type * from './models/Parent.js'
 export type * from './models/ParentStudent.js'

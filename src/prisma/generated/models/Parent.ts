@@ -31,7 +31,6 @@ export type ParentMinAggregateOutputType = {
   phone: string | null
   address: string | null
   occupation: string | null
-  relation: string | null
   email: string | null
   password: string | null
   createdAt: Date | null
@@ -46,7 +45,6 @@ export type ParentMaxAggregateOutputType = {
   phone: string | null
   address: string | null
   occupation: string | null
-  relation: string | null
   email: string | null
   password: string | null
   createdAt: Date | null
@@ -61,7 +59,6 @@ export type ParentCountAggregateOutputType = {
   phone: number
   address: number
   occupation: number
-  relation: number
   email: number
   password: number
   createdAt: number
@@ -78,7 +75,6 @@ export type ParentMinAggregateInputType = {
   phone?: true
   address?: true
   occupation?: true
-  relation?: true
   email?: true
   password?: true
   createdAt?: true
@@ -93,7 +89,6 @@ export type ParentMaxAggregateInputType = {
   phone?: true
   address?: true
   occupation?: true
-  relation?: true
   email?: true
   password?: true
   createdAt?: true
@@ -108,7 +103,6 @@ export type ParentCountAggregateInputType = {
   phone?: true
   address?: true
   occupation?: true
-  relation?: true
   email?: true
   password?: true
   createdAt?: true
@@ -196,7 +190,6 @@ export type ParentGroupByOutputType = {
   phone: string | null
   address: string | null
   occupation: string | null
-  relation: string
   email: string
   password: string
   createdAt: Date
@@ -232,7 +225,6 @@ export type ParentWhereInput = {
   phone?: Prisma.StringNullableFilter<"Parent"> | string | null
   address?: Prisma.StringNullableFilter<"Parent"> | string | null
   occupation?: Prisma.StringNullableFilter<"Parent"> | string | null
-  relation?: Prisma.StringFilter<"Parent"> | string
   email?: Prisma.StringFilter<"Parent"> | string
   password?: Prisma.StringFilter<"Parent"> | string
   createdAt?: Prisma.DateTimeFilter<"Parent"> | Date | string
@@ -249,7 +241,6 @@ export type ParentOrderByWithRelationInput = {
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
   occupation?: Prisma.SortOrderInput | Prisma.SortOrder
-  relation?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -270,7 +261,6 @@ export type ParentWhereUniqueInput = Prisma.AtLeast<{
   phone?: Prisma.StringNullableFilter<"Parent"> | string | null
   address?: Prisma.StringNullableFilter<"Parent"> | string | null
   occupation?: Prisma.StringNullableFilter<"Parent"> | string | null
-  relation?: Prisma.StringFilter<"Parent"> | string
   password?: Prisma.StringFilter<"Parent"> | string
   createdAt?: Prisma.DateTimeFilter<"Parent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Parent"> | Date | string
@@ -286,7 +276,6 @@ export type ParentOrderByWithAggregationInput = {
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
   occupation?: Prisma.SortOrderInput | Prisma.SortOrder
-  relation?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -307,7 +296,6 @@ export type ParentScalarWhereWithAggregatesInput = {
   phone?: Prisma.StringNullableWithAggregatesFilter<"Parent"> | string | null
   address?: Prisma.StringNullableWithAggregatesFilter<"Parent"> | string | null
   occupation?: Prisma.StringNullableWithAggregatesFilter<"Parent"> | string | null
-  relation?: Prisma.StringWithAggregatesFilter<"Parent"> | string
   email?: Prisma.StringWithAggregatesFilter<"Parent"> | string
   password?: Prisma.StringWithAggregatesFilter<"Parent"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Parent"> | Date | string
@@ -322,7 +310,6 @@ export type ParentCreateInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -338,7 +325,6 @@ export type ParentUncheckedCreateInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -354,7 +340,6 @@ export type ParentUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -370,7 +355,6 @@ export type ParentUncheckedUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -386,7 +370,6 @@ export type ParentCreateManyInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -401,7 +384,6 @@ export type ParentUpdateManyMutationInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -415,7 +397,6 @@ export type ParentUncheckedUpdateManyInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -440,7 +421,6 @@ export type ParentCountOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   address?: Prisma.SortOrder
   occupation?: Prisma.SortOrder
-  relation?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -455,7 +435,6 @@ export type ParentMaxOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   address?: Prisma.SortOrder
   occupation?: Prisma.SortOrder
-  relation?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -470,7 +449,6 @@ export type ParentMinOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   address?: Prisma.SortOrder
   occupation?: Prisma.SortOrder
-  relation?: Prisma.SortOrder
   email?: Prisma.SortOrder
   password?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -546,7 +524,6 @@ export type ParentCreateWithoutSchoolInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -561,7 +538,6 @@ export type ParentUncheckedCreateWithoutSchoolInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -605,7 +581,6 @@ export type ParentScalarWhereInput = {
   phone?: Prisma.StringNullableFilter<"Parent"> | string | null
   address?: Prisma.StringNullableFilter<"Parent"> | string | null
   occupation?: Prisma.StringNullableFilter<"Parent"> | string | null
-  relation?: Prisma.StringFilter<"Parent"> | string
   email?: Prisma.StringFilter<"Parent"> | string
   password?: Prisma.StringFilter<"Parent"> | string
   createdAt?: Prisma.DateTimeFilter<"Parent"> | Date | string
@@ -620,7 +595,6 @@ export type ParentCreateWithoutStudentLinksInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -635,7 +609,6 @@ export type ParentUncheckedCreateWithoutStudentLinksInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -666,7 +639,6 @@ export type ParentUpdateWithoutStudentLinksInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -681,7 +653,6 @@ export type ParentUncheckedUpdateWithoutStudentLinksInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -696,7 +667,6 @@ export type ParentCreateManySchoolInput = {
   phone?: string | null
   address?: string | null
   occupation?: string | null
-  relation: string
   email: string
   password: string
   createdAt?: Date | string
@@ -710,7 +680,6 @@ export type ParentUpdateWithoutSchoolInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -725,7 +694,6 @@ export type ParentUncheckedUpdateWithoutSchoolInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -740,7 +708,6 @@ export type ParentUncheckedUpdateManyWithoutSchoolInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   occupation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  relation?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   password?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -785,7 +752,6 @@ export type ParentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   phone?: boolean
   address?: boolean
   occupation?: boolean
-  relation?: boolean
   email?: boolean
   password?: boolean
   createdAt?: boolean
@@ -803,7 +769,6 @@ export type ParentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   phone?: boolean
   address?: boolean
   occupation?: boolean
-  relation?: boolean
   email?: boolean
   password?: boolean
   createdAt?: boolean
@@ -819,7 +784,6 @@ export type ParentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   phone?: boolean
   address?: boolean
   occupation?: boolean
-  relation?: boolean
   email?: boolean
   password?: boolean
   createdAt?: boolean
@@ -835,7 +799,6 @@ export type ParentSelectScalar = {
   phone?: boolean
   address?: boolean
   occupation?: boolean
-  relation?: boolean
   email?: boolean
   password?: boolean
   createdAt?: boolean
@@ -843,7 +806,7 @@ export type ParentSelectScalar = {
   schoolId?: boolean
 }
 
-export type ParentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "firstName" | "lastName" | "phone" | "address" | "occupation" | "relation" | "email" | "password" | "createdAt" | "updatedAt" | "schoolId", ExtArgs["result"]["parent"]>
+export type ParentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "firstName" | "lastName" | "phone" | "address" | "occupation" | "email" | "password" | "createdAt" | "updatedAt" | "schoolId", ExtArgs["result"]["parent"]>
 export type ParentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   studentLinks?: boolean | Prisma.Parent$studentLinksArgs<ExtArgs>
@@ -869,7 +832,6 @@ export type $ParentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     phone: string | null
     address: string | null
     occupation: string | null
-    relation: string
     email: string
     password: string
     createdAt: Date
@@ -1306,7 +1268,6 @@ export interface ParentFieldRefs {
   readonly phone: Prisma.FieldRef<"Parent", 'String'>
   readonly address: Prisma.FieldRef<"Parent", 'String'>
   readonly occupation: Prisma.FieldRef<"Parent", 'String'>
-  readonly relation: Prisma.FieldRef<"Parent", 'String'>
   readonly email: Prisma.FieldRef<"Parent", 'String'>
   readonly password: Prisma.FieldRef<"Parent", 'String'>
   readonly createdAt: Prisma.FieldRef<"Parent", 'DateTime'>

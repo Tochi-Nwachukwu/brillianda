@@ -59,8 +59,22 @@ model School {
   students Student[]
   parents  Parent[]
   teachers Teacher[]
+  class    Class[]
 
   @@index([schoolId])
+}
+
+/* Little bug i am running into for the main time backend must query school id and class id before assigning a student to a class so students of different schools wont be in the same class of diff schools */
+model Class {
+  id       String  @id @default(cuid())
+  schoolId String
+  level    Classes
+  arm      String?
+  school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students Student[] 
+
+  @@index([schoolId])
+  @@unique([id, schoolId, arm])
 }
 
 model Student {
@@ -78,11 +92,19 @@ model Student {
   parentLinks  ParentStudent[]
   quizAttempts QuizAttempt[]
   subjects     Subject[]       @relation("StudentSubjects")
+
+  /* School */
   school       School          @relation(fields: [schoolId], references: [id])
   schoolId     String
 
+  /* Class */
+  classId String?
+  class   Class?  @relation(fields: [classId], references: [id])
+  
+
   @@index([enrollmentNo])
   @@index([schoolId])
+  @@index([classId])
 }
 
 model Parent {
@@ -92,7 +114,6 @@ model Parent {
   phone      String?
   address    String?
   occupation String?
-  relation   String
   email      String   @unique
   password   String
   createdAt  DateTime @default(now())
@@ -121,23 +142,27 @@ model ParentStudent {
 }
 
 model Teacher {
-  id             String   @id @default(cuid())
-  employeeNo     String   @unique
-  qualification  String?
-  specialization String?
-  phone          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  employeeNo    String   @unique
+  firstName     String
+  lastName      String
+  email         String   @unique
+  password      String
+  address       String
+  qualification String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  school    School @relation(fields: [teacherId], references: [id])
-  teacherId String
+  school   School @relation(fields: [schoolId], references: [id])
+  schoolId String
 
   questions Question[]
   quizzes   Quiz[]
   subjects  Subject[]  @relation("SubjectToTeacher")
 
   @@index([employeeNo])
-  @@index([teacherId])
+  @@index([schoolId])
 }
 
 model Subject {
@@ -256,6 +281,20 @@ enum Role {
   PARENT
   ADMIN
   SCHOOL
+}
+
+enum Classes {
+  SS3
+  SS2
+  SS1
+  JSS3
+  JSS2
+  JSS1
+  PRIMARY_5
+  PRIMARY_4
+  PRIMARY_3
+  PRIMARY_2
+  PRIMARY_1
 }
 
 enum QuestionType {

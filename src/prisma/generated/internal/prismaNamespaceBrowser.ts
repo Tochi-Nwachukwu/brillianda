@@ -54,6 +54,7 @@ export const ModelName = {
   User: 'User',
   Admin: 'Admin',
   School: 'School',
+  Class: 'Class',
   Student: 'Student',
   Parent: 'Parent',
   ParentStudent: 'ParentStudent',
@@ -121,6 +122,16 @@ export const SchoolScalarFieldEnum = {
 export type SchoolScalarFieldEnum = (typeof SchoolScalarFieldEnum)[keyof typeof SchoolScalarFieldEnum]
 
 
+export const ClassScalarFieldEnum = {
+  id: 'id',
+  schoolId: 'schoolId',
+  level: 'level',
+  arm: 'arm'
+} as const
+
+export type ClassScalarFieldEnum = (typeof ClassScalarFieldEnum)[keyof typeof ClassScalarFieldEnum]
+
+
 export const StudentScalarFieldEnum = {
   id: 'id',
   enrollmentNo: 'enrollmentNo',
@@ -133,7 +144,8 @@ export const StudentScalarFieldEnum = {
   password: 'password',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  schoolId: 'schoolId'
+  schoolId: 'schoolId',
+  classId: 'classId'
 } as const
 
 export type StudentScalarFieldEnum = (typeof StudentScalarFieldEnum)[keyof typeof StudentScalarFieldEnum]
@@ -146,7 +158,6 @@ export const ParentScalarFieldEnum = {
   phone: 'phone',
   address: 'address',
   occupation: 'occupation',
-  relation: 'relation',
   email: 'email',
   password: 'password',
   createdAt: 'createdAt',
@@ -171,12 +182,16 @@ export type ParentStudentScalarFieldEnum = (typeof ParentStudentScalarFieldEnum)
 export const TeacherScalarFieldEnum = {
   id: 'id',
   employeeNo: 'employeeNo',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  email: 'email',
+  password: 'password',
+  address: 'address',
   qualification: 'qualification',
-  specialization: 'specialization',
   phone: 'phone',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  teacherId: 'teacherId'
+  schoolId: 'schoolId'
 } as const
 
 export type TeacherScalarFieldEnum = (typeof TeacherScalarFieldEnum)[keyof typeof TeacherScalarFieldEnum]

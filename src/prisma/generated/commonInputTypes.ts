@@ -127,6 +127,23 @@ export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedStringNullableFilter<$PrismaModel>
 }
 
+export type EnumClassesFilter<$PrismaModel = never> = {
+  equals?: $Enums.Classes | Prisma.EnumClassesFieldRefInput<$PrismaModel>
+  in?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClassesFilter<$PrismaModel> | $Enums.Classes
+}
+
+export type EnumClassesWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.Classes | Prisma.EnumClassesFieldRefInput<$PrismaModel>
+  in?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClassesWithAggregatesFilter<$PrismaModel> | $Enums.Classes
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumClassesFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumClassesFilter<$PrismaModel>
+}
+
 export type IntFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
   in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
@@ -417,6 +434,23 @@ export type NestedIntNullableFilter<$PrismaModel = never> = {
   gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
   gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
   not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null
+}
+
+export type NestedEnumClassesFilter<$PrismaModel = never> = {
+  equals?: $Enums.Classes | Prisma.EnumClassesFieldRefInput<$PrismaModel>
+  in?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClassesFilter<$PrismaModel> | $Enums.Classes
+}
+
+export type NestedEnumClassesWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.Classes | Prisma.EnumClassesFieldRefInput<$PrismaModel>
+  in?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  notIn?: $Enums.Classes[] | Prisma.ListEnumClassesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumClassesWithAggregatesFilter<$PrismaModel> | $Enums.Classes
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumClassesFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumClassesFilter<$PrismaModel>
 }
 
 export type NestedBoolFilter<$PrismaModel = never> = {

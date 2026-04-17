@@ -5,6 +5,9 @@ import { PrismaClient } from "./generated/client.js";
 import { userData } from "./seed/users.js";
 import { studentData } from "./seed/student.js";
 import { parentsData } from "./seed/parents.js";
+import { parentStudentData } from "./seed/parent-student.js";
+import { teachersData } from "./seed/teachers.js";
+import { classData } from "./seed/class.js";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const pool = new Pool({ connectionString });
@@ -16,12 +19,14 @@ async function main() {
 
   await userData(prisma)
   const { school } = await userData(prisma)
-  await studentData(prisma, school )
-  await parentsData(prisma, school )
-
-
- 
+  const classes = await classData(prisma, school)
+  const { student } = await studentData(prisma, school, classes)
+  const { parent } = await parentsData(prisma, school)
   
+  await classData(prisma, school)
+  await studentData(prisma, school, classes )
+  await parentStudentData(prisma, parent, student )
+  await teachersData(prisma, school)
 }
 
 main()
