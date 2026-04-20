@@ -1507,7 +1507,6 @@ export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof User
 
 export const AdminScalarFieldEnum = {
   id: 'id',
-  name: 'name',
   phone: 'phone',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -1519,7 +1518,7 @@ export type AdminScalarFieldEnum = (typeof AdminScalarFieldEnum)[keyof typeof Ad
 
 export const SchoolScalarFieldEnum = {
   id: 'id',
-  schoolId: 'schoolId',
+  userId: 'userId',
   address: 'address',
   phone: 'phone',
   name: 'name',
@@ -1535,7 +1534,8 @@ export const ClassScalarFieldEnum = {
   id: 'id',
   schoolId: 'schoolId',
   level: 'level',
-  arm: 'arm'
+  arm: 'arm',
+  formTeacherId: 'formTeacherId'
 } as const
 
 export type ClassScalarFieldEnum = (typeof ClassScalarFieldEnum)[keyof typeof ClassScalarFieldEnum]
@@ -1549,10 +1549,9 @@ export const StudentScalarFieldEnum = {
   dateOfBirth: 'dateOfBirth',
   phone: 'phone',
   address: 'address',
-  email: 'email',
-  password: 'password',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  userId: 'userId',
   schoolId: 'schoolId',
   classId: 'classId'
 } as const
@@ -1567,10 +1566,9 @@ export const ParentScalarFieldEnum = {
   phone: 'phone',
   address: 'address',
   occupation: 'occupation',
-  email: 'email',
-  password: 'password',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  userId: 'userId',
   schoolId: 'schoolId'
 } as const
 
@@ -1582,7 +1580,8 @@ export const ParentStudentScalarFieldEnum = {
   parentId: 'parentId',
   studentId: 'studentId',
   relation: 'relation',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type ParentStudentScalarFieldEnum = (typeof ParentStudentScalarFieldEnum)[keyof typeof ParentStudentScalarFieldEnum]
@@ -1593,13 +1592,12 @@ export const TeacherScalarFieldEnum = {
   employeeNo: 'employeeNo',
   firstName: 'firstName',
   lastName: 'lastName',
-  email: 'email',
-  password: 'password',
   address: 'address',
   qualification: 'qualification',
   phone: 'phone',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  userId: 'userId',
   schoolId: 'schoolId'
 } as const
 

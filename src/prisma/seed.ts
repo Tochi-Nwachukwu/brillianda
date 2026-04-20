@@ -8,6 +8,7 @@ import { parentsData } from "./seed/parents.js";
 import { parentStudentData } from "./seed/parent-student.js";
 import { teachersData } from "./seed/teachers.js";
 import { classData } from "./seed/class.js";
+import { formTeacherSeed } from "./seed/formTeacher.js";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 const pool = new Pool({ connectionString });
@@ -15,18 +16,22 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('🌱 Starting seed...');
+  console.log("🌱 Starting seed...");
 
-  await userData(prisma)
-  const { school } = await userData(prisma)
-  const classes = await classData(prisma, school)
-  const { student } = await studentData(prisma, school, classes)
-  const { parent } = await parentsData(prisma, school)
-  
-  await classData(prisma, school)
-  await studentData(prisma, school, classes )
-  await parentStudentData(prisma, parent, student )
-  await teachersData(prisma, school)
+  await userData(prisma);
+  const { school } = await userData(prisma);
+
+  const classes = await classData(prisma, school);
+  const { student } = await studentData(prisma, school, classes);
+
+  const { parent } = await parentsData(prisma, school);
+
+  await classData(prisma, school);
+  await studentData(prisma, school, classes);
+  await parentStudentData(prisma, parent, student);
+  await teachersData(prisma, school); 
+  const teachers = await teachersData(prisma, school);
+  await formTeacherSeed(prisma, classes, teachers); 
 }
 
 main()
@@ -34,7 +39,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error('❌ Error during seed:', e);
+    console.error("❌ Error during seed:", e);
     await prisma.$disconnect();
     process.exit(1);
   });

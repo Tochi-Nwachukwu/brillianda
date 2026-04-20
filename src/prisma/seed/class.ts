@@ -52,7 +52,7 @@ export async function classData(prisma: any, school: any[]) {
   ]);
 
   console.log("Classes created...");
-  console.log(school1Classes, school2Classes);
+  
 
   return {
     school1Classes,

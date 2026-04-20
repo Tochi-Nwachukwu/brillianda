@@ -1,72 +1,84 @@
 export async function parentStudentData(
   prisma: any,
-  parent: any,
-  student: any,
+  parents: any,
+  students: any,
 ) {
-  const [
-    student1,
-    student2,
-    student3,
-    student4,
-    student5,
-    student6,
-    student7,
-    student8,
-  ] = student;
-  const [parent1, parent2, parent3, parent4, parent5] = parent;
-  console.log("Creating parentStudent Relationship");
+  console.log("Creating ParentStudent relationships...");
+
+  const parentMap = Object.fromEntries(
+    parents.map((p: any) => [p.firstName + p.lastName, p]), // safe fallback key
+  );
+
+  const studentMap = Object.fromEntries(
+    students.map((s: any) => [s.enrollmentNo, s]),
+  );
+
+  const getP = (key: string) => {
+    const p = parentMap[key];
+    if (!p) throw new Error(`Parent not found: ${key}`);
+    return p;
+  };
+
+  const getS = (enrollmentNo: string) => {
+    const s = studentMap[enrollmentNo];
+    if (!s) throw new Error(`Student not found: ${enrollmentNo}`);
+    return s;
+  };
+
   await prisma.parentStudent.createMany({
     data: [
-      // 👨 Charles Badmus (Father of John + Peter)
+      // Charles Badmus → John, Peter
       {
-        parentId: parent1.id,
-        studentId: student1.id,
+        parentId: getP("CharlesBadmus").id,
+        studentId: getS("SB001").id,
         relation: "FATHER",
       },
       {
-        parentId: parent1.id,
-        studentId: student3.id,
+        parentId: getP("CharlesBadmus").id,
+        studentId: getS("SB003").id,
         relation: "FATHER",
       },
 
-      // 👩 Mary Badmus (Mother of John)
+      // Mary Badmus → John
       {
-        parentId: parent2.id,
-        studentId: student1.id,
+        parentId: getP("MaryBadmus").id,
+        studentId: getS("SB001").id,
         relation: "MOTHER",
       },
 
-      // 👩 Emily Okoro (Mother of David + Esther)
+      // Emily Okoro → David, Esther
       {
-        parentId: parent3.id,
-        studentId: student7.id,
+        parentId: getP("EmilyOkoro").id,
+        studentId: getS("SB007").id,
         relation: "MOTHER",
       },
       {
-        parentId: parent3.id,
-        studentId: student8.id,
+        parentId: getP("EmilyOkoro").id,
+        studentId: getS("SB010").id,
         relation: "MOTHER",
       },
 
-      // 👨 David Okoro (Father of David)
+      // David Okoro → David
       {
-        parentId: parent4.id,
-        studentId: student7.id,
+        parentId: getP("DavidOkoro").id,
+        studentId: getS("SB007").id,
         relation: "FATHER",
       },
 
-      // 👩 Grace Johnson (Guardian of Mary + Zainab)
+      // Grace Johnson → Mary, Zainab
       {
-        parentId: parent5.id,
-        studentId: student2.id,
+        parentId: getP("GraceJohnson").id,
+        studentId: getS("SB002").id,
         relation: "GUARDIAN",
       },
       {
-        parentId: parent5.id,
-        studentId: student6.id,
+        parentId: getP("GraceJohnson").id,
+        studentId: getS("SB006").id,
         relation: "GUARDIAN",
       },
     ],
     skipDuplicates: true,
   });
+
+  console.log("ParentStudent relationships created successfully");
 }

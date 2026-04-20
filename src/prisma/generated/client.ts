@@ -58,7 +58,8 @@ export type Admin = Prisma.AdminModel
 export type School = Prisma.SchoolModel
 /**
  * Model Class
- * 
+ * *
+ *  * Little bug i am running into for the main time backend must query school id and class id before assigning a student to a class so students of different schools wont be in the same class of diff schools
  */
 export type Class = Prisma.ClassModel
 /**

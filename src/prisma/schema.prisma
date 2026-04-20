@@ -25,15 +25,17 @@ model User {
   /**
    * Users are split into Schools and Admins
    */
-  school School?
-  admin  Admin?
+  student Student?
+  teacher Teacher?
+  parent  Parent?
+  school  School?
+  admin   Admin?
 
   @@index([email])
 }
 
 model Admin {
   id        String   @id @default(cuid())
-  name      String
   phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -44,14 +46,14 @@ model Admin {
 
 model School {
   id        String   @id @default(cuid())
-  schoolId  String   @unique
+  userId    String   @unique
   address   String?
   phone     String?
   name      String
   slug      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /**
    * 1-n relation roles must exist in relation to school before they can be cretaed
@@ -59,51 +61,66 @@ model School {
   students Student[]
   parents  Parent[]
   teachers Teacher[]
-  class    Class[]
+  classes  Class[]
 
-  @@index([schoolId])
+  @@index([userId])
 }
 
-/* Little bug i am running into for the main time backend must query school id and class id before assigning a student to a class so students of different schools wont be in the same class of diff schools */
+/**
+ * Little bug i am running into for the main time backend must query school id and class id before assigning a student to a class so students of different schools wont be in the same class of diff schools
+ */
 model Class {
-  id       String  @id @default(cuid())
+  id       String    @id @default(cuid())
   schoolId String
   level    Classes
   arm      String?
-  school   School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  students Student[] 
+  school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  students Student[]
 
+  /**
+   * Form Teacher
+   */
+  formTeacher   Teacher? @relation(fields: [formTeacherId], references: [id])
+  formTeacherId String? 
+
+  @@unique([level, schoolId, arm])
   @@index([schoolId])
-  @@unique([id, schoolId, arm])
+  @@index([formTeacherId])
 }
 
 model Student {
   id           String          @id @default(cuid())
-  enrollmentNo String          @unique
+  enrollmentNo String
   firstName    String
   lastName     String
   dateOfBirth  DateTime
   phone        String?
   address      String?
-  email        String          @unique
-  password     String
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   parentLinks  ParentStudent[]
   quizAttempts QuizAttempt[]
   subjects     Subject[]       @relation("StudentSubjects")
 
-  /* School */
-  school       School          @relation(fields: [schoolId], references: [id])
-  schoolId     String
+  /**
+   * User
+   */
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
 
-  /* Class */
+  /**
+   * School
+   */
+  school   School @relation(fields: [schoolId], references: [id])
+  schoolId String
+
+  /**
+   * Class
+   */
   classId String?
   class   Class?  @relation(fields: [classId], references: [id])
-  
 
-  @@index([enrollmentNo])
-  @@index([schoolId])
+  @@unique([enrollmentNo, schoolId])
   @@index([classId])
 }
 
@@ -114,10 +131,14 @@ model Parent {
   phone      String?
   address    String?
   occupation String?
-  email      String   @unique
-  password   String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  /**
+   * User
+   */
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
 
   school   School @relation(fields: [schoolId], references: [id])
   schoolId String
@@ -125,6 +146,7 @@ model Parent {
   studentLinks ParentStudent[]
 
   @@index([schoolId])
+  @@index([userId])
 }
 
 model ParentStudent {
@@ -133,6 +155,7 @@ model ParentStudent {
   studentId String
   relation  String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   parent    Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -146,13 +169,19 @@ model Teacher {
   employeeNo    String   @unique
   firstName     String
   lastName      String
-  email         String   @unique
-  password      String
   address       String
   qualification String?
   phone         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  formClass Class[]
+
+  /**
+   * User
+   */
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
 
   school   School @relation(fields: [schoolId], references: [id])
   schoolId String
@@ -163,6 +192,7 @@ model Teacher {
 
   @@index([employeeNo])
   @@index([schoolId])
+  @@index([userId])
 }
 
 model Subject {

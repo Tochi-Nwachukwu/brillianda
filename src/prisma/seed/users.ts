@@ -56,7 +56,6 @@ export async function userData(prisma: any) {
       role: Role.ADMIN,
       admin: {
         create: {
-          name: "Ezepue James",
           phone: "+234-801-123-4567",
         },
       },
@@ -74,7 +73,6 @@ export async function userData(prisma: any) {
       role: Role.ADMIN,
       admin: {
         create: {
-          name: "Ezepue Emeka",
           phone: "+234-801-123-4567",
         },
       },
@@ -92,7 +90,6 @@ export async function userData(prisma: any) {
       role: Role.ADMIN,
       admin: {
         create: {
-          name: "Ezepue Emeka",
           phone: "+234-801-123-4567",
         },
       },
@@ -109,7 +106,6 @@ export async function userData(prisma: any) {
       role: Role.ADMIN,
       admin: {
         create: {
-          name: "Ezepue Emeka",
           phone: "+234-801-123-4567",
         },
       },
