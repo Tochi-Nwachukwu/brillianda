@@ -341,9 +341,9 @@ export type StudentCreateInput = {
   parentLinks?: Prisma.ParentStudentCreateNestedManyWithoutStudentInput
   quizAttempts?: Prisma.QuizAttemptCreateNestedManyWithoutStudentInput
   subjects?: Prisma.SubjectCreateNestedManyWithoutStudentsInput
-  user: Prisma.UserCreateNestedOneWithoutStudentInput
-  school: Prisma.SchoolCreateNestedOneWithoutStudentsInput
-  class?: Prisma.ClassCreateNestedOneWithoutStudentsInput
+  user: Prisma.UserCreateNestedOneWithoutStudentInput | undefined
+  school: Prisma.SchoolCreateNestedOneWithoutStudentsInput | undefined
+  class?: Prisma.ClassCreateNestedOneWithoutStudentsInput | undefined
 }
 
 export type StudentUncheckedCreateInput = {
@@ -356,9 +356,9 @@ export type StudentUncheckedCreateInput = {
   address?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  userId: string
-  schoolId: string
-  classId?: string | null
+  userId: string | undefined
+  schoolId: string | undefined
+  classId?: string | null | undefined
   parentLinks?: Prisma.ParentStudentUncheckedCreateNestedManyWithoutStudentInput
   quizAttempts?: Prisma.QuizAttemptUncheckedCreateNestedManyWithoutStudentInput
   subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutStudentsInput
