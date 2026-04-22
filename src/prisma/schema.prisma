@@ -310,7 +310,7 @@ enum Role {
   TEACHER
   PARENT
   ADMIN
-  SCHOOL
+  SCHOOL_ADMIN
 }
 
 enum Classes {

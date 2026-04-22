@@ -1,37 +1,53 @@
-import express, { type Application, type Request, type Response } from "express";
-import { Server } from "http";
-import { config } from "dotenv";
-import { connectDB, disconnectDB } from "./config/db.js";
+import 'dotenv/config'
+import { PrismaClient, Prisma } from './prisma/generated/client.js' 
+import { PrismaPg } from '@prisma/adapter-pg'
+import express, { type Application } from 'express'
+import type { Server } from 'http'
+import authRoutes from './auth/auth.routes.js'
+import schoolRoutes from './school/school.routes.js'
+import cookieParser from "cookie-parser";
+import { authMiddleware } from './middleware/auth.middleware.js'
 
+  
+const pool = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
+const prisma = new PrismaClient({ adapter: pool })
 
-// Import Routes
-
-
-// Initialize environment variables
-config();
-
-const app: Application = express();
-const PORT: number = parseInt(process.env.PORT || "5001", 10);
+const app: Application = express()
+app.use(express.json())
 
 // Body parsing middlewares
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
+const server: Server = app.listen(3000, () =>
+  console.log(`
+🚀 Server ready at: http://localhost:3000
+⭐️ See sample requests: https://github.com/prisma/prisma-examples/blob/latest/orm/express/README.md#using-the-rest-api`),
+)
+
+// Import Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/schools", authMiddleware,schoolRoutes);
+
+
+
+
+
+
 // API Routes
-app.use("/students", studentRoutes);
+/* app.use("/students", studentRoutes); */
 
 // Basic Health Check (Optional but recommended in TS/Production)
-app.get("/health", (req: Request, res: Response) => {
+/* app.get("/health", (req: Request, res: Response) => {
   res.status(200).json({ status: "UP" });
 });
-
+ */
 // Database connection
-connectDB();
+/* connectDB(); */
 
 
-const server: Server = app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on PORT ${PORT}`);
-});
+
 
 
 
@@ -40,26 +56,26 @@ const server: Server = app.listen(PORT, "0.0.0.0", () => {
 // ==========================================
 
 // Handle unhandled promise rejections
-process.on("unhandledRejection", (reason: unknown) => {
+/* process.on("unhandledRejection", (reason: unknown) => {
   console.error("Unhandled Rejection:", reason);
   server.close(async () => {
     await disconnectDB();
     process.exit(1);
   });
-});
+}); */
 
 // Handle uncaught exceptions
-process.on("uncaughtException", async (err: Error) => {
+/* process.on("uncaughtException", async (err: Error) => {
   console.error("Uncaught Exception:", err.message);
   await disconnectDB();
   process.exit(1);
 });
-
+ */
 // Graceful shutdown
-process.on("SIGTERM", async () => {
+/* process.on("SIGTERM", async () => {
   console.log("SIGTERM received, shutting down gracefully");
   server.close(async () => {
     await disconnectDB();
     process.exit(0);
   });
-});
+}); */

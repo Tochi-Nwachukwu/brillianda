@@ -14,7 +14,7 @@ export const Role = {
   TEACHER: 'TEACHER',
   PARENT: 'PARENT',
   ADMIN: 'ADMIN',
-  SCHOOL: 'SCHOOL'
+  SCHOOL_ADMIN: 'SCHOOL_ADMIN'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
