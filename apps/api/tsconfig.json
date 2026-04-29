@@ -4,14 +4,19 @@
     "module": "Node16",
     "moduleResolution": "Node16",
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@brillianda/db": ["../../packages/db/src/index.ts"],
+      "@brillianda/types": ["../../packages/types/src/index.ts"],
+      "@brillianda/utils": ["../../packages/utils/src/index.ts"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../../packages/*/src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,12 +1,12 @@
 import jwt from 'jsonwebtoken';
-import type { JwtPayload, UserRole } from '@brillianda/types';
+import type { JwtPayload } from '@brillianda/types';
 
 export function signToken(
   payload: Omit<JwtPayload, 'iat' | 'exp'>,
   secret: string,
   expiresIn: string = '7d'
 ): string {
-  return jwt.sign(payload, secret, { expiresIn });
+  return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 }
 
 export function verifyToken(token: string, secret: string): JwtPayload {
