@@ -1,0 +1,167 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id           String   @id @default(cuid())
+  name         String
+  subdomain    String   @unique
+  logoUrl      String?
+  brandColor   String?
+  contactEmail String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  users        User[]
+  classes      Class[]
+  subjects     Subject[]
+  exams        Exam[]
+}
+
+model User {
+  id             String          @id @default(cuid())
+  tenantId       String
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  role           UserRole
+  email          String
+  passwordHash   String
+  firstName      String
+  lastName       String
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  studentProfile StudentProfile?
+  taughtSubjects Subject[]
+  examsCreated   Exam[]
+  attempts       ExamAttempt[]
+
+  @@unique([tenantId, email])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model Class {
+  id              String           @id @default(cuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  name            String
+  createdAt       DateTime         @default(now())
+  studentProfiles StudentProfile[]
+
+  @@unique([tenantId, name])
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  name      String
+  teacherId String
+  teacher   User     @relation(fields: [teacherId], references: [id])
+  exams     Exam[]
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, name])
+}
+
+model StudentProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Exam {
+  id                     String        @id @default(cuid())
+  tenantId               String
+  tenant                 Tenant        @relation(fields: [tenantId], references: [id])
+  subjectId              String
+  subject                Subject       @relation(fields: [subjectId], references: [id])
+  teacherId              String
+  teacher                User          @relation(fields: [teacherId], references: [id])
+  title                  String
+  instructions           String?
+  durationMinutes        Int
+  startTime              DateTime?
+  endTime                DateTime?
+  status                 ExamStatus    @default(DRAFT)
+  showResultsImmediately Boolean       @default(true)
+  questions              Question[]
+  attempts               ExamAttempt[]
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+}
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+model Question {
+  id        String          @id @default(cuid())
+  examId    String
+  exam      Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  text      String
+  type      QuestionType    @default(MULTIPLE_CHOICE)
+  points    Int             @default(1)
+  order     Int
+  options   Option[]
+  answers   StudentAnswer[]
+  createdAt DateTime        @default(now())
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int
+}
+
+model ExamAttempt {
+  id          String          @id @default(cuid())
+  studentId   String
+  student     User            @relation(fields: [studentId], references: [id])
+  examId      String
+  exam        Exam            @relation(fields: [examId], references: [id])
+  score       Float?
+  maxScore    Float?
+  startTime   DateTime        @default(now())
+  completedAt DateTime?
+  isSubmitted Boolean         @default(false)
+  answers     StudentAnswer[]
+
+  @@unique([studentId, examId])
+}
+
+model StudentAnswer {
+  id               String      @id @default(cuid())
+  attemptId        String
+  attempt          ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question    @relation(fields: [questionId], references: [id])
+  selectedOptionId String?
+  isCorrect        Boolean?
+  createdAt        DateTime    @default(now())
+
+  @@unique([attemptId, questionId])
+}
