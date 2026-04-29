@@ -29,7 +29,7 @@ export type AdminMinAggregateOutputType = {
   phone: string | null
   createdAt: Date | null
   updatedAt: Date | null
-  adminId: string | null
+  userId: string | null
 }
 
 export type AdminMaxAggregateOutputType = {
@@ -37,7 +37,7 @@ export type AdminMaxAggregateOutputType = {
   phone: string | null
   createdAt: Date | null
   updatedAt: Date | null
-  adminId: string | null
+  userId: string | null
 }
 
 export type AdminCountAggregateOutputType = {
@@ -45,7 +45,7 @@ export type AdminCountAggregateOutputType = {
   phone: number
   createdAt: number
   updatedAt: number
-  adminId: number
+  userId: number
   _all: number
 }
 
@@ -55,7 +55,7 @@ export type AdminMinAggregateInputType = {
   phone?: true
   createdAt?: true
   updatedAt?: true
-  adminId?: true
+  userId?: true
 }
 
 export type AdminMaxAggregateInputType = {
@@ -63,7 +63,7 @@ export type AdminMaxAggregateInputType = {
   phone?: true
   createdAt?: true
   updatedAt?: true
-  adminId?: true
+  userId?: true
 }
 
 export type AdminCountAggregateInputType = {
@@ -71,7 +71,7 @@ export type AdminCountAggregateInputType = {
   phone?: true
   createdAt?: true
   updatedAt?: true
-  adminId?: true
+  userId?: true
   _all?: true
 }
 
@@ -152,7 +152,7 @@ export type AdminGroupByOutputType = {
   phone: string | null
   createdAt: Date
   updatedAt: Date
-  adminId: string
+  userId: string
   _count: AdminCountAggregateOutputType | null
   _min: AdminMinAggregateOutputType | null
   _max: AdminMaxAggregateOutputType | null
@@ -181,7 +181,7 @@ export type AdminWhereInput = {
   phone?: Prisma.StringNullableFilter<"Admin"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Admin"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Admin"> | Date | string
-  adminId?: Prisma.StringFilter<"Admin"> | string
+  userId?: Prisma.StringFilter<"Admin"> | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
@@ -190,13 +190,13 @@ export type AdminOrderByWithRelationInput = {
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  adminId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
 }
 
 export type AdminWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  adminId?: string
+  userId?: string
   AND?: Prisma.AdminWhereInput | Prisma.AdminWhereInput[]
   OR?: Prisma.AdminWhereInput[]
   NOT?: Prisma.AdminWhereInput | Prisma.AdminWhereInput[]
@@ -204,14 +204,14 @@ export type AdminWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Admin"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Admin"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id" | "adminId">
+}, "id" | "userId">
 
 export type AdminOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  adminId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
   _count?: Prisma.AdminCountOrderByAggregateInput
   _max?: Prisma.AdminMaxOrderByAggregateInput
   _min?: Prisma.AdminMinOrderByAggregateInput
@@ -225,7 +225,7 @@ export type AdminScalarWhereWithAggregatesInput = {
   phone?: Prisma.StringNullableWithAggregatesFilter<"Admin"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Admin"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Admin"> | Date | string
-  adminId?: Prisma.StringWithAggregatesFilter<"Admin"> | string
+  userId?: Prisma.StringWithAggregatesFilter<"Admin"> | string
 }
 
 export type AdminCreateInput = {
@@ -241,7 +241,7 @@ export type AdminUncheckedCreateInput = {
   phone?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  adminId: string
+  userId: string
 }
 
 export type AdminUpdateInput = {
@@ -257,7 +257,7 @@ export type AdminUncheckedUpdateInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  adminId?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type AdminCreateManyInput = {
@@ -265,7 +265,7 @@ export type AdminCreateManyInput = {
   phone?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  adminId: string
+  userId: string
 }
 
 export type AdminUpdateManyMutationInput = {
@@ -280,7 +280,7 @@ export type AdminUncheckedUpdateManyInput = {
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  adminId?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type AdminNullableScalarRelationFilter = {
@@ -293,7 +293,7 @@ export type AdminCountOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  adminId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
 }
 
 export type AdminMaxOrderByAggregateInput = {
@@ -301,7 +301,7 @@ export type AdminMaxOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  adminId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
 }
 
 export type AdminMinOrderByAggregateInput = {
@@ -309,7 +309,7 @@ export type AdminMinOrderByAggregateInput = {
   phone?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  adminId?: Prisma.SortOrder
+  userId?: Prisma.SortOrder
 }
 
 export type AdminCreateNestedOneWithoutUserInput = {
@@ -399,7 +399,7 @@ export type AdminSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   phone?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  adminId?: boolean
+  userId?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["admin"]>
 
@@ -408,7 +408,7 @@ export type AdminSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   phone?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  adminId?: boolean
+  userId?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["admin"]>
 
@@ -417,7 +417,7 @@ export type AdminSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   phone?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  adminId?: boolean
+  userId?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["admin"]>
 
@@ -426,10 +426,10 @@ export type AdminSelectScalar = {
   phone?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  adminId?: boolean
+  userId?: boolean
 }
 
-export type AdminOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "createdAt" | "updatedAt" | "adminId", ExtArgs["result"]["admin"]>
+export type AdminOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "phone" | "createdAt" | "updatedAt" | "userId", ExtArgs["result"]["admin"]>
 export type AdminInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
@@ -450,7 +450,7 @@ export type $AdminPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     phone: string | null
     createdAt: Date
     updatedAt: Date
-    adminId: string
+    userId: string
   }, ExtArgs["result"]["admin"]>
   composites: {}
 }
@@ -879,7 +879,7 @@ export interface AdminFieldRefs {
   readonly phone: Prisma.FieldRef<"Admin", 'String'>
   readonly createdAt: Prisma.FieldRef<"Admin", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Admin", 'DateTime'>
-  readonly adminId: Prisma.FieldRef<"Admin", 'String'>
+  readonly userId: Prisma.FieldRef<"Admin", 'String'>
 }
     
 

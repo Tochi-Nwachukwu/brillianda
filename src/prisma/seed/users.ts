@@ -12,7 +12,7 @@ export async function userData(prisma: any) {
       email: "surebloomint@gmail.com",
       password: "hashed_password_123",
       name: "Sure Bloom Int School",
-      role: Role.SCHOOL,
+      role: Role.SCHOOL_ADMIN,
       school: {
         create: {
           address: "White House Alcon Road",
@@ -32,7 +32,7 @@ export async function userData(prisma: any) {
       email: "kingscollege@gmailcom",
       password: "hashed_password_123",
       name: "Kings College Lagos",
-      role: Role.SCHOOL,
+      role: Role.SCHOOL_ADMIN,
       school: {
         create: {
           address: "Obalende Road, Lagos",

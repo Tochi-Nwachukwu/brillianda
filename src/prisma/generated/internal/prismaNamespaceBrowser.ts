@@ -60,6 +60,7 @@ export const ModelName = {
   ParentStudent: 'ParentStudent',
   Teacher: 'Teacher',
   Subject: 'Subject',
+  StudentSubject: 'StudentSubject',
   Quiz: 'Quiz',
   Question: 'Question',
   QuestionOption: 'QuestionOption',
@@ -101,7 +102,7 @@ export const AdminScalarFieldEnum = {
   phone: 'phone',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
-  adminId: 'adminId'
+  userId: 'userId'
 } as const
 
 export type AdminScalarFieldEnum = (typeof AdminScalarFieldEnum)[keyof typeof AdminScalarFieldEnum]
@@ -126,7 +127,9 @@ export const ClassScalarFieldEnum = {
   schoolId: 'schoolId',
   level: 'level',
   arm: 'arm',
-  formTeacherId: 'formTeacherId'
+  formTeacherId: 'formTeacherId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 } as const
 
 export type ClassScalarFieldEnum = (typeof ClassScalarFieldEnum)[keyof typeof ClassScalarFieldEnum]
@@ -207,12 +210,24 @@ export const SubjectScalarFieldEnum = {
 export type SubjectScalarFieldEnum = (typeof SubjectScalarFieldEnum)[keyof typeof SubjectScalarFieldEnum]
 
 
+export const StudentSubjectScalarFieldEnum = {
+  id: 'id',
+  studentId: 'studentId',
+  subjectId: 'subjectId',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+} as const
+
+export type StudentSubjectScalarFieldEnum = (typeof StudentSubjectScalarFieldEnum)[keyof typeof StudentSubjectScalarFieldEnum]
+
+
 export const QuizScalarFieldEnum = {
   id: 'id',
   title: 'title',
   description: 'description',
   subjectId: 'subjectId',
   teacherId: 'teacherId',
+  classId: 'classId',
   totalQuestions: 'totalQuestions',
   totalMarks: 'totalMarks',
   passingMarks: 'passingMarks',
@@ -231,7 +246,6 @@ export type QuizScalarFieldEnum = (typeof QuizScalarFieldEnum)[keyof typeof Quiz
 export const QuestionScalarFieldEnum = {
   id: 'id',
   quizId: 'quizId',
-  teacherId: 'teacherId',
   questionText: 'questionText',
   questionType: 'questionType',
   marks: 'marks',

@@ -64,6 +64,11 @@ export type Teacher = Prisma.TeacherModel
  */
 export type Subject = Prisma.SubjectModel
 /**
+ * Model StudentSubject
+ * 
+ */
+export type StudentSubject = Prisma.StudentSubjectModel
+/**
  * Model Quiz
  * 
  */

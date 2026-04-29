@@ -239,6 +239,7 @@ export type QuestionOptionOrderByWithRelationInput = {
 
 export type QuestionOptionWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  questionId_order?: Prisma.QuestionOptionQuestionIdOrderCompoundUniqueInput
   AND?: Prisma.QuestionOptionWhereInput | Prisma.QuestionOptionWhereInput[]
   OR?: Prisma.QuestionOptionWhereInput[]
   NOT?: Prisma.QuestionOptionWhereInput | Prisma.QuestionOptionWhereInput[]
@@ -248,7 +249,7 @@ export type QuestionOptionWhereUniqueInput = Prisma.AtLeast<{
   order?: Prisma.IntFilter<"QuestionOption"> | number
   createdAt?: Prisma.DateTimeFilter<"QuestionOption"> | Date | string
   question?: Prisma.XOR<Prisma.QuestionScalarRelationFilter, Prisma.QuestionWhereInput>
-}, "id">
+}, "id" | "questionId_order">
 
 export type QuestionOptionOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -346,6 +347,11 @@ export type QuestionOptionListRelationFilter = {
 
 export type QuestionOptionOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type QuestionOptionQuestionIdOrderCompoundUniqueInput = {
+  questionId: string
+  order: number
 }
 
 export type QuestionOptionCountOrderByAggregateInput = {

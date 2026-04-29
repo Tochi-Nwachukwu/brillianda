@@ -53,3 +53,12 @@ export const AttemptStatus = {
 } as const
 
 export type AttemptStatus = (typeof AttemptStatus)[keyof typeof AttemptStatus]
+
+
+export const DifficultyLevel = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD'
+} as const
+
+export type DifficultyLevel = (typeof DifficultyLevel)[keyof typeof DifficultyLevel]

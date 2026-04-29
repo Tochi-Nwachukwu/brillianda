@@ -40,8 +40,8 @@ model Admin {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  adminId String @unique
-  user    User   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  userId String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model School {
@@ -81,7 +81,13 @@ model Class {
    * Form Teacher
    */
   formTeacher   Teacher? @relation(fields: [formTeacherId], references: [id])
-  formTeacherId String? 
+  formTeacherId String?
+
+  subjects Subject[] @relation("ClassSubjects")
+  quizzes  Quiz[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([level, schoolId, arm])
   @@index([schoolId])
@@ -100,7 +106,7 @@ model Student {
   updatedAt    DateTime        @updatedAt
   parentLinks  ParentStudent[]
   quizAttempts QuizAttempt[]
-  subjects     Subject[]       @relation("StudentSubjects")
+  subjects StudentSubject[]     
 
   /**
    * User
@@ -166,10 +172,10 @@ model ParentStudent {
 
 model Teacher {
   id            String   @id @default(cuid())
-  employeeNo    String   @unique
+  employeeNo    String   
   firstName     String
   lastName      String
-  address       String
+  address       String?
   qualification String?
   phone         String?
   createdAt     DateTime @default(now())
@@ -186,11 +192,11 @@ model Teacher {
   school   School @relation(fields: [schoolId], references: [id])
   schoolId String
 
-  questions Question[]
-  quizzes   Quiz[]
-  subjects  Subject[]  @relation("SubjectToTeacher")
+  quizzes  Quiz[]
+  subjects Subject[] @relation("SubjectToTeacher")
 
   @@index([employeeNo])
+  @@unique([employeeNo, schoolId])
   @@index([schoolId])
   @@index([userId])
 }
@@ -203,11 +209,26 @@ model Subject {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   quizzes     Quiz[]
-  students    Student[] @relation("StudentSubjects")
+  studentSubjects StudentSubject[]
+  classes     Class[]   @relation("ClassSubjects")
   teachers    Teacher[] @relation("SubjectToTeacher")
 
   @@index([code])
 }
+
+model StudentSubject {
+  id        String   @id @default(cuid())
+  studentId String
+  subjectId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subjectId])
+}
+
 
 model Quiz {
   id              String        @id @default(cuid())
@@ -215,11 +236,12 @@ model Quiz {
   description     String?
   subjectId       String
   teacherId       String
+  classId         String
   totalQuestions  Int
   totalMarks      Int
   passingMarks    Int
   duration        Int
-  difficultyLevel String
+  difficultyLevel DifficultyLevel
   isPublished     Boolean       @default(false)
   scheduledDate   DateTime?
   deadline        DateTime?
@@ -228,17 +250,19 @@ model Quiz {
   questions       Question[]
   subject         Subject       @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   teacher         Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  class           Class         @relation(fields: [classId], references: [id], onDelete: Cascade)
   attempts        QuizAttempt[]
 
   @@index([subjectId])
   @@index([teacherId])
   @@index([isPublished])
+  @@index([classId, isPublished])
+  
 }
 
 model Question {
   id           String           @id @default(cuid())
   quizId       String
-  teacherId    String
   questionText String
   questionType QuestionType
   marks        Int
@@ -246,12 +270,10 @@ model Question {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   quiz         Quiz             @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  teacher      Teacher          @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   options      QuestionOption[]
   answers      StudentAnswer[]
 
   @@index([quizId])
-  @@index([teacherId])
 }
 
 model QuestionOption {
@@ -259,11 +281,12 @@ model QuestionOption {
   questionId String
   optionText String
   isCorrect  Boolean  @default(false)
-  order      Int
+  order      Int 
   createdAt  DateTime @default(now())
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
+  @@unique([questionId, order])
 }
 
 model QuizAttempt {
@@ -337,4 +360,11 @@ enum AttemptStatus {
   IN_PROGRESS
   COMPLETED
   EXPIRED
+}
+
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
 }

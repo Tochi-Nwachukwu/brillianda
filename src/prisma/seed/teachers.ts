@@ -21,7 +21,12 @@ export async function teachersData(prisma: any, school: any) {
 
       // 2. TEACHER (profile layer)
       return tx.teacher.upsert({
-        where: { employeeNo: data.employeeNo },
+        where: {
+          employeeNo_schoolId: {
+            employeeNo: data.employeeNo,
+            schoolId: schoolId,
+          },
+        },
         update: {
           firstName: data.firstName,
           lastName: data.lastName,
@@ -55,7 +60,7 @@ export async function teachersData(prisma: any, school: any) {
       qualification: "BSc Education",
       phone: "+2348109000001",
     },
-    school1.id
+    school1.id,
   );
 
   const teacher2 = await createTeacher(
@@ -68,7 +73,7 @@ export async function teachersData(prisma: any, school: any) {
       qualification: "MSc Mathematics",
       phone: "+2348109000002",
     },
-    school1.id
+    school1.id,
   );
 
   const teacher3 = await createTeacher(
@@ -81,7 +86,7 @@ export async function teachersData(prisma: any, school: any) {
       qualification: "BEd Physics",
       phone: "+2348109000003",
     },
-    school2.id
+    school2.id,
   );
 
   const teacher4 = await createTeacher(
@@ -94,7 +99,7 @@ export async function teachersData(prisma: any, school: any) {
       qualification: "BSc Chemistry",
       phone: "+2348109000004",
     },
-    school2.id
+    school2.id,
   );
 
   console.log("Teachers created");

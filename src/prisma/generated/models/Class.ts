@@ -31,6 +31,8 @@ export type ClassMinAggregateOutputType = {
   level: $Enums.Classes | null
   arm: string | null
   formTeacherId: string | null
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type ClassMaxAggregateOutputType = {
@@ -39,6 +41,8 @@ export type ClassMaxAggregateOutputType = {
   level: $Enums.Classes | null
   arm: string | null
   formTeacherId: string | null
+  createdAt: Date | null
+  updatedAt: Date | null
 }
 
 export type ClassCountAggregateOutputType = {
@@ -47,6 +51,8 @@ export type ClassCountAggregateOutputType = {
   level: number
   arm: number
   formTeacherId: number
+  createdAt: number
+  updatedAt: number
   _all: number
 }
 
@@ -57,6 +63,8 @@ export type ClassMinAggregateInputType = {
   level?: true
   arm?: true
   formTeacherId?: true
+  createdAt?: true
+  updatedAt?: true
 }
 
 export type ClassMaxAggregateInputType = {
@@ -65,6 +73,8 @@ export type ClassMaxAggregateInputType = {
   level?: true
   arm?: true
   formTeacherId?: true
+  createdAt?: true
+  updatedAt?: true
 }
 
 export type ClassCountAggregateInputType = {
@@ -73,6 +83,8 @@ export type ClassCountAggregateInputType = {
   level?: true
   arm?: true
   formTeacherId?: true
+  createdAt?: true
+  updatedAt?: true
   _all?: true
 }
 
@@ -154,6 +166,8 @@ export type ClassGroupByOutputType = {
   level: $Enums.Classes
   arm: string | null
   formTeacherId: string | null
+  createdAt: Date
+  updatedAt: Date
   _count: ClassCountAggregateOutputType | null
   _min: ClassMinAggregateOutputType | null
   _max: ClassMaxAggregateOutputType | null
@@ -183,9 +197,13 @@ export type ClassWhereInput = {
   level?: Prisma.EnumClassesFilter<"Class"> | $Enums.Classes
   arm?: Prisma.StringNullableFilter<"Class"> | string | null
   formTeacherId?: Prisma.StringNullableFilter<"Class"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Class"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Class"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
   students?: Prisma.StudentListRelationFilter
   formTeacher?: Prisma.XOR<Prisma.TeacherNullableScalarRelationFilter, Prisma.TeacherWhereInput> | null
+  subjects?: Prisma.SubjectListRelationFilter
+  quizzes?: Prisma.QuizListRelationFilter
 }
 
 export type ClassOrderByWithRelationInput = {
@@ -194,9 +212,13 @@ export type ClassOrderByWithRelationInput = {
   level?: Prisma.SortOrder
   arm?: Prisma.SortOrderInput | Prisma.SortOrder
   formTeacherId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   school?: Prisma.SchoolOrderByWithRelationInput
   students?: Prisma.StudentOrderByRelationAggregateInput
   formTeacher?: Prisma.TeacherOrderByWithRelationInput
+  subjects?: Prisma.SubjectOrderByRelationAggregateInput
+  quizzes?: Prisma.QuizOrderByRelationAggregateInput
 }
 
 export type ClassWhereUniqueInput = Prisma.AtLeast<{
@@ -209,9 +231,13 @@ export type ClassWhereUniqueInput = Prisma.AtLeast<{
   level?: Prisma.EnumClassesFilter<"Class"> | $Enums.Classes
   arm?: Prisma.StringNullableFilter<"Class"> | string | null
   formTeacherId?: Prisma.StringNullableFilter<"Class"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Class"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Class"> | Date | string
   school?: Prisma.XOR<Prisma.SchoolScalarRelationFilter, Prisma.SchoolWhereInput>
   students?: Prisma.StudentListRelationFilter
   formTeacher?: Prisma.XOR<Prisma.TeacherNullableScalarRelationFilter, Prisma.TeacherWhereInput> | null
+  subjects?: Prisma.SubjectListRelationFilter
+  quizzes?: Prisma.QuizListRelationFilter
 }, "id" | "level_schoolId_arm">
 
 export type ClassOrderByWithAggregationInput = {
@@ -220,6 +246,8 @@ export type ClassOrderByWithAggregationInput = {
   level?: Prisma.SortOrder
   arm?: Prisma.SortOrderInput | Prisma.SortOrder
   formTeacherId?: Prisma.SortOrderInput | Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
   _count?: Prisma.ClassCountOrderByAggregateInput
   _max?: Prisma.ClassMaxOrderByAggregateInput
   _min?: Prisma.ClassMinOrderByAggregateInput
@@ -234,15 +262,21 @@ export type ClassScalarWhereWithAggregatesInput = {
   level?: Prisma.EnumClassesWithAggregatesFilter<"Class"> | $Enums.Classes
   arm?: Prisma.StringNullableWithAggregatesFilter<"Class"> | string | null
   formTeacherId?: Prisma.StringNullableWithAggregatesFilter<"Class"> | string | null
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Class"> | Date | string
+  updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Class"> | Date | string
 }
 
 export type ClassCreateInput = {
   id?: string
   level: $Enums.Classes
   arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutClassesInput
   students?: Prisma.StudentCreateNestedManyWithoutClassInput
   formTeacher?: Prisma.TeacherCreateNestedOneWithoutFormClassInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutClassInput
 }
 
 export type ClassUncheckedCreateInput = {
@@ -251,16 +285,24 @@ export type ClassUncheckedCreateInput = {
   level: $Enums.Classes
   arm?: string | null
   formTeacherId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   students?: Prisma.StudentUncheckedCreateNestedManyWithoutClassInput
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutClassInput
 }
 
 export type ClassUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutClassesNestedInput
   students?: Prisma.StudentUpdateManyWithoutClassNestedInput
   formTeacher?: Prisma.TeacherUpdateOneWithoutFormClassNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutClassNestedInput
 }
 
 export type ClassUncheckedUpdateInput = {
@@ -269,7 +311,11 @@ export type ClassUncheckedUpdateInput = {
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   students?: Prisma.StudentUncheckedUpdateManyWithoutClassNestedInput
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutClassNestedInput
 }
 
 export type ClassCreateManyInput = {
@@ -278,12 +324,16 @@ export type ClassCreateManyInput = {
   level: $Enums.Classes
   arm?: string | null
   formTeacherId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type ClassUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ClassUncheckedUpdateManyInput = {
@@ -292,6 +342,8 @@ export type ClassUncheckedUpdateManyInput = {
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ClassListRelationFilter = {
@@ -316,6 +368,8 @@ export type ClassCountOrderByAggregateInput = {
   level?: Prisma.SortOrder
   arm?: Prisma.SortOrder
   formTeacherId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type ClassMaxOrderByAggregateInput = {
@@ -324,6 +378,8 @@ export type ClassMaxOrderByAggregateInput = {
   level?: Prisma.SortOrder
   arm?: Prisma.SortOrder
   formTeacherId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type ClassMinOrderByAggregateInput = {
@@ -332,11 +388,18 @@ export type ClassMinOrderByAggregateInput = {
   level?: Prisma.SortOrder
   arm?: Prisma.SortOrder
   formTeacherId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
+  updatedAt?: Prisma.SortOrder
 }
 
 export type ClassNullableScalarRelationFilter = {
   is?: Prisma.ClassWhereInput | null
   isNot?: Prisma.ClassWhereInput | null
+}
+
+export type ClassScalarRelationFilter = {
+  is?: Prisma.ClassWhereInput
+  isNot?: Prisma.ClassWhereInput
 }
 
 export type ClassCreateNestedManyWithoutSchoolInput = {
@@ -443,12 +506,68 @@ export type ClassUncheckedUpdateManyWithoutFormTeacherNestedInput = {
   deleteMany?: Prisma.ClassScalarWhereInput | Prisma.ClassScalarWhereInput[]
 }
 
+export type ClassCreateNestedManyWithoutSubjectsInput = {
+  create?: Prisma.XOR<Prisma.ClassCreateWithoutSubjectsInput, Prisma.ClassUncheckedCreateWithoutSubjectsInput> | Prisma.ClassCreateWithoutSubjectsInput[] | Prisma.ClassUncheckedCreateWithoutSubjectsInput[]
+  connectOrCreate?: Prisma.ClassCreateOrConnectWithoutSubjectsInput | Prisma.ClassCreateOrConnectWithoutSubjectsInput[]
+  connect?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+}
+
+export type ClassUncheckedCreateNestedManyWithoutSubjectsInput = {
+  create?: Prisma.XOR<Prisma.ClassCreateWithoutSubjectsInput, Prisma.ClassUncheckedCreateWithoutSubjectsInput> | Prisma.ClassCreateWithoutSubjectsInput[] | Prisma.ClassUncheckedCreateWithoutSubjectsInput[]
+  connectOrCreate?: Prisma.ClassCreateOrConnectWithoutSubjectsInput | Prisma.ClassCreateOrConnectWithoutSubjectsInput[]
+  connect?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+}
+
+export type ClassUpdateManyWithoutSubjectsNestedInput = {
+  create?: Prisma.XOR<Prisma.ClassCreateWithoutSubjectsInput, Prisma.ClassUncheckedCreateWithoutSubjectsInput> | Prisma.ClassCreateWithoutSubjectsInput[] | Prisma.ClassUncheckedCreateWithoutSubjectsInput[]
+  connectOrCreate?: Prisma.ClassCreateOrConnectWithoutSubjectsInput | Prisma.ClassCreateOrConnectWithoutSubjectsInput[]
+  upsert?: Prisma.ClassUpsertWithWhereUniqueWithoutSubjectsInput | Prisma.ClassUpsertWithWhereUniqueWithoutSubjectsInput[]
+  set?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  disconnect?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  delete?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  connect?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  update?: Prisma.ClassUpdateWithWhereUniqueWithoutSubjectsInput | Prisma.ClassUpdateWithWhereUniqueWithoutSubjectsInput[]
+  updateMany?: Prisma.ClassUpdateManyWithWhereWithoutSubjectsInput | Prisma.ClassUpdateManyWithWhereWithoutSubjectsInput[]
+  deleteMany?: Prisma.ClassScalarWhereInput | Prisma.ClassScalarWhereInput[]
+}
+
+export type ClassUncheckedUpdateManyWithoutSubjectsNestedInput = {
+  create?: Prisma.XOR<Prisma.ClassCreateWithoutSubjectsInput, Prisma.ClassUncheckedCreateWithoutSubjectsInput> | Prisma.ClassCreateWithoutSubjectsInput[] | Prisma.ClassUncheckedCreateWithoutSubjectsInput[]
+  connectOrCreate?: Prisma.ClassCreateOrConnectWithoutSubjectsInput | Prisma.ClassCreateOrConnectWithoutSubjectsInput[]
+  upsert?: Prisma.ClassUpsertWithWhereUniqueWithoutSubjectsInput | Prisma.ClassUpsertWithWhereUniqueWithoutSubjectsInput[]
+  set?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  disconnect?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  delete?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  connect?: Prisma.ClassWhereUniqueInput | Prisma.ClassWhereUniqueInput[]
+  update?: Prisma.ClassUpdateWithWhereUniqueWithoutSubjectsInput | Prisma.ClassUpdateWithWhereUniqueWithoutSubjectsInput[]
+  updateMany?: Prisma.ClassUpdateManyWithWhereWithoutSubjectsInput | Prisma.ClassUpdateManyWithWhereWithoutSubjectsInput[]
+  deleteMany?: Prisma.ClassScalarWhereInput | Prisma.ClassScalarWhereInput[]
+}
+
+export type ClassCreateNestedOneWithoutQuizzesInput = {
+  create?: Prisma.XOR<Prisma.ClassCreateWithoutQuizzesInput, Prisma.ClassUncheckedCreateWithoutQuizzesInput>
+  connectOrCreate?: Prisma.ClassCreateOrConnectWithoutQuizzesInput
+  connect?: Prisma.ClassWhereUniqueInput
+}
+
+export type ClassUpdateOneRequiredWithoutQuizzesNestedInput = {
+  create?: Prisma.XOR<Prisma.ClassCreateWithoutQuizzesInput, Prisma.ClassUncheckedCreateWithoutQuizzesInput>
+  connectOrCreate?: Prisma.ClassCreateOrConnectWithoutQuizzesInput
+  upsert?: Prisma.ClassUpsertWithoutQuizzesInput
+  connect?: Prisma.ClassWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ClassUpdateToOneWithWhereWithoutQuizzesInput, Prisma.ClassUpdateWithoutQuizzesInput>, Prisma.ClassUncheckedUpdateWithoutQuizzesInput>
+}
+
 export type ClassCreateWithoutSchoolInput = {
   id?: string
   level: $Enums.Classes
   arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   students?: Prisma.StudentCreateNestedManyWithoutClassInput
   formTeacher?: Prisma.TeacherCreateNestedOneWithoutFormClassInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutClassInput
 }
 
 export type ClassUncheckedCreateWithoutSchoolInput = {
@@ -456,7 +575,11 @@ export type ClassUncheckedCreateWithoutSchoolInput = {
   level: $Enums.Classes
   arm?: string | null
   formTeacherId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   students?: Prisma.StudentUncheckedCreateNestedManyWithoutClassInput
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutClassInput
 }
 
 export type ClassCreateOrConnectWithoutSchoolInput = {
@@ -494,14 +617,20 @@ export type ClassScalarWhereInput = {
   level?: Prisma.EnumClassesFilter<"Class"> | $Enums.Classes
   arm?: Prisma.StringNullableFilter<"Class"> | string | null
   formTeacherId?: Prisma.StringNullableFilter<"Class"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Class"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"Class"> | Date | string
 }
 
 export type ClassCreateWithoutStudentsInput = {
   id?: string
   level: $Enums.Classes
   arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutClassesInput
   formTeacher?: Prisma.TeacherCreateNestedOneWithoutFormClassInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutClassInput
 }
 
 export type ClassUncheckedCreateWithoutStudentsInput = {
@@ -510,6 +639,10 @@ export type ClassUncheckedCreateWithoutStudentsInput = {
   level: $Enums.Classes
   arm?: string | null
   formTeacherId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutClassInput
 }
 
 export type ClassCreateOrConnectWithoutStudentsInput = {
@@ -532,8 +665,12 @@ export type ClassUpdateWithoutStudentsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutClassesNestedInput
   formTeacher?: Prisma.TeacherUpdateOneWithoutFormClassNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutClassNestedInput
 }
 
 export type ClassUncheckedUpdateWithoutStudentsInput = {
@@ -542,14 +679,22 @@ export type ClassUncheckedUpdateWithoutStudentsInput = {
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutClassNestedInput
 }
 
 export type ClassCreateWithoutFormTeacherInput = {
   id?: string
   level: $Enums.Classes
   arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   school: Prisma.SchoolCreateNestedOneWithoutClassesInput
   students?: Prisma.StudentCreateNestedManyWithoutClassInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutClassInput
 }
 
 export type ClassUncheckedCreateWithoutFormTeacherInput = {
@@ -557,7 +702,11 @@ export type ClassUncheckedCreateWithoutFormTeacherInput = {
   schoolId: string
   level: $Enums.Classes
   arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
   students?: Prisma.StudentUncheckedCreateNestedManyWithoutClassInput
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutClassesInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutClassInput
 }
 
 export type ClassCreateOrConnectWithoutFormTeacherInput = {
@@ -586,19 +735,134 @@ export type ClassUpdateManyWithWhereWithoutFormTeacherInput = {
   data: Prisma.XOR<Prisma.ClassUpdateManyMutationInput, Prisma.ClassUncheckedUpdateManyWithoutFormTeacherInput>
 }
 
+export type ClassCreateWithoutSubjectsInput = {
+  id?: string
+  level: $Enums.Classes
+  arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  school: Prisma.SchoolCreateNestedOneWithoutClassesInput
+  students?: Prisma.StudentCreateNestedManyWithoutClassInput
+  formTeacher?: Prisma.TeacherCreateNestedOneWithoutFormClassInput
+  quizzes?: Prisma.QuizCreateNestedManyWithoutClassInput
+}
+
+export type ClassUncheckedCreateWithoutSubjectsInput = {
+  id?: string
+  schoolId: string
+  level: $Enums.Classes
+  arm?: string | null
+  formTeacherId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  students?: Prisma.StudentUncheckedCreateNestedManyWithoutClassInput
+  quizzes?: Prisma.QuizUncheckedCreateNestedManyWithoutClassInput
+}
+
+export type ClassCreateOrConnectWithoutSubjectsInput = {
+  where: Prisma.ClassWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClassCreateWithoutSubjectsInput, Prisma.ClassUncheckedCreateWithoutSubjectsInput>
+}
+
+export type ClassUpsertWithWhereUniqueWithoutSubjectsInput = {
+  where: Prisma.ClassWhereUniqueInput
+  update: Prisma.XOR<Prisma.ClassUpdateWithoutSubjectsInput, Prisma.ClassUncheckedUpdateWithoutSubjectsInput>
+  create: Prisma.XOR<Prisma.ClassCreateWithoutSubjectsInput, Prisma.ClassUncheckedCreateWithoutSubjectsInput>
+}
+
+export type ClassUpdateWithWhereUniqueWithoutSubjectsInput = {
+  where: Prisma.ClassWhereUniqueInput
+  data: Prisma.XOR<Prisma.ClassUpdateWithoutSubjectsInput, Prisma.ClassUncheckedUpdateWithoutSubjectsInput>
+}
+
+export type ClassUpdateManyWithWhereWithoutSubjectsInput = {
+  where: Prisma.ClassScalarWhereInput
+  data: Prisma.XOR<Prisma.ClassUpdateManyMutationInput, Prisma.ClassUncheckedUpdateManyWithoutSubjectsInput>
+}
+
+export type ClassCreateWithoutQuizzesInput = {
+  id?: string
+  level: $Enums.Classes
+  arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  school: Prisma.SchoolCreateNestedOneWithoutClassesInput
+  students?: Prisma.StudentCreateNestedManyWithoutClassInput
+  formTeacher?: Prisma.TeacherCreateNestedOneWithoutFormClassInput
+  subjects?: Prisma.SubjectCreateNestedManyWithoutClassesInput
+}
+
+export type ClassUncheckedCreateWithoutQuizzesInput = {
+  id?: string
+  schoolId: string
+  level: $Enums.Classes
+  arm?: string | null
+  formTeacherId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  students?: Prisma.StudentUncheckedCreateNestedManyWithoutClassInput
+  subjects?: Prisma.SubjectUncheckedCreateNestedManyWithoutClassesInput
+}
+
+export type ClassCreateOrConnectWithoutQuizzesInput = {
+  where: Prisma.ClassWhereUniqueInput
+  create: Prisma.XOR<Prisma.ClassCreateWithoutQuizzesInput, Prisma.ClassUncheckedCreateWithoutQuizzesInput>
+}
+
+export type ClassUpsertWithoutQuizzesInput = {
+  update: Prisma.XOR<Prisma.ClassUpdateWithoutQuizzesInput, Prisma.ClassUncheckedUpdateWithoutQuizzesInput>
+  create: Prisma.XOR<Prisma.ClassCreateWithoutQuizzesInput, Prisma.ClassUncheckedCreateWithoutQuizzesInput>
+  where?: Prisma.ClassWhereInput
+}
+
+export type ClassUpdateToOneWithWhereWithoutQuizzesInput = {
+  where?: Prisma.ClassWhereInput
+  data: Prisma.XOR<Prisma.ClassUpdateWithoutQuizzesInput, Prisma.ClassUncheckedUpdateWithoutQuizzesInput>
+}
+
+export type ClassUpdateWithoutQuizzesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
+  arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  school?: Prisma.SchoolUpdateOneRequiredWithoutClassesNestedInput
+  students?: Prisma.StudentUpdateManyWithoutClassNestedInput
+  formTeacher?: Prisma.TeacherUpdateOneWithoutFormClassNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutClassesNestedInput
+}
+
+export type ClassUncheckedUpdateWithoutQuizzesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
+  arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  students?: Prisma.StudentUncheckedUpdateManyWithoutClassNestedInput
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutClassesNestedInput
+}
+
 export type ClassCreateManySchoolInput = {
   id?: string
   level: $Enums.Classes
   arm?: string | null
   formTeacherId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type ClassUpdateWithoutSchoolInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   students?: Prisma.StudentUpdateManyWithoutClassNestedInput
   formTeacher?: Prisma.TeacherUpdateOneWithoutFormClassNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutClassNestedInput
 }
 
 export type ClassUncheckedUpdateWithoutSchoolInput = {
@@ -606,7 +870,11 @@ export type ClassUncheckedUpdateWithoutSchoolInput = {
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   students?: Prisma.StudentUncheckedUpdateManyWithoutClassNestedInput
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutClassNestedInput
 }
 
 export type ClassUncheckedUpdateManyWithoutSchoolInput = {
@@ -614,6 +882,8 @@ export type ClassUncheckedUpdateManyWithoutSchoolInput = {
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type ClassCreateManyFormTeacherInput = {
@@ -621,14 +891,20 @@ export type ClassCreateManyFormTeacherInput = {
   schoolId: string
   level: $Enums.Classes
   arm?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 export type ClassUpdateWithoutFormTeacherInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   school?: Prisma.SchoolUpdateOneRequiredWithoutClassesNestedInput
   students?: Prisma.StudentUpdateManyWithoutClassNestedInput
+  subjects?: Prisma.SubjectUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutClassNestedInput
 }
 
 export type ClassUncheckedUpdateWithoutFormTeacherInput = {
@@ -636,7 +912,11 @@ export type ClassUncheckedUpdateWithoutFormTeacherInput = {
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   students?: Prisma.StudentUncheckedUpdateManyWithoutClassNestedInput
+  subjects?: Prisma.SubjectUncheckedUpdateManyWithoutClassesNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutClassNestedInput
 }
 
 export type ClassUncheckedUpdateManyWithoutFormTeacherInput = {
@@ -644,6 +924,42 @@ export type ClassUncheckedUpdateManyWithoutFormTeacherInput = {
   schoolId?: Prisma.StringFieldUpdateOperationsInput | string
   level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
   arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ClassUpdateWithoutSubjectsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
+  arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  school?: Prisma.SchoolUpdateOneRequiredWithoutClassesNestedInput
+  students?: Prisma.StudentUpdateManyWithoutClassNestedInput
+  formTeacher?: Prisma.TeacherUpdateOneWithoutFormClassNestedInput
+  quizzes?: Prisma.QuizUpdateManyWithoutClassNestedInput
+}
+
+export type ClassUncheckedUpdateWithoutSubjectsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
+  arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  students?: Prisma.StudentUncheckedUpdateManyWithoutClassNestedInput
+  quizzes?: Prisma.QuizUncheckedUpdateManyWithoutClassNestedInput
+}
+
+export type ClassUncheckedUpdateManyWithoutSubjectsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.StringFieldUpdateOperationsInput | string
+  level?: Prisma.EnumClassesFieldUpdateOperationsInput | $Enums.Classes
+  arm?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  formTeacherId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -653,10 +969,14 @@ export type ClassUncheckedUpdateManyWithoutFormTeacherInput = {
 
 export type ClassCountOutputType = {
   students: number
+  subjects: number
+  quizzes: number
 }
 
 export type ClassCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   students?: boolean | ClassCountOutputTypeCountStudentsArgs
+  subjects?: boolean | ClassCountOutputTypeCountSubjectsArgs
+  quizzes?: boolean | ClassCountOutputTypeCountQuizzesArgs
 }
 
 /**
@@ -676,6 +996,20 @@ export type ClassCountOutputTypeCountStudentsArgs<ExtArgs extends runtime.Types.
   where?: Prisma.StudentWhereInput
 }
 
+/**
+ * ClassCountOutputType without action
+ */
+export type ClassCountOutputTypeCountSubjectsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SubjectWhereInput
+}
+
+/**
+ * ClassCountOutputType without action
+ */
+export type ClassCountOutputTypeCountQuizzesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.QuizWhereInput
+}
+
 
 export type ClassSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -683,9 +1017,13 @@ export type ClassSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   level?: boolean
   arm?: boolean
   formTeacherId?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   students?: boolean | Prisma.Class$studentsArgs<ExtArgs>
   formTeacher?: boolean | Prisma.Class$formTeacherArgs<ExtArgs>
+  subjects?: boolean | Prisma.Class$subjectsArgs<ExtArgs>
+  quizzes?: boolean | Prisma.Class$quizzesArgs<ExtArgs>
   _count?: boolean | Prisma.ClassCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["class"]>
 
@@ -695,6 +1033,8 @@ export type ClassSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   level?: boolean
   arm?: boolean
   formTeacherId?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   formTeacher?: boolean | Prisma.Class$formTeacherArgs<ExtArgs>
 }, ExtArgs["result"]["class"]>
@@ -705,6 +1045,8 @@ export type ClassSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   level?: boolean
   arm?: boolean
   formTeacherId?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   formTeacher?: boolean | Prisma.Class$formTeacherArgs<ExtArgs>
 }, ExtArgs["result"]["class"]>
@@ -715,13 +1057,17 @@ export type ClassSelectScalar = {
   level?: boolean
   arm?: boolean
   formTeacherId?: boolean
+  createdAt?: boolean
+  updatedAt?: boolean
 }
 
-export type ClassOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "level" | "arm" | "formTeacherId", ExtArgs["result"]["class"]>
+export type ClassOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "schoolId" | "level" | "arm" | "formTeacherId" | "createdAt" | "updatedAt", ExtArgs["result"]["class"]>
 export type ClassInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   school?: boolean | Prisma.SchoolDefaultArgs<ExtArgs>
   students?: boolean | Prisma.Class$studentsArgs<ExtArgs>
   formTeacher?: boolean | Prisma.Class$formTeacherArgs<ExtArgs>
+  subjects?: boolean | Prisma.Class$subjectsArgs<ExtArgs>
+  quizzes?: boolean | Prisma.Class$quizzesArgs<ExtArgs>
   _count?: boolean | Prisma.ClassCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ClassIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -743,6 +1089,8 @@ export type $ClassPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
      *    * Form Teacher
      */
     formTeacher: Prisma.$TeacherPayload<ExtArgs> | null
+    subjects: Prisma.$SubjectPayload<ExtArgs>[]
+    quizzes: Prisma.$QuizPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -750,6 +1098,8 @@ export type $ClassPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     level: $Enums.Classes
     arm: string | null
     formTeacherId: string | null
+    createdAt: Date
+    updatedAt: Date
   }, ExtArgs["result"]["class"]>
   composites: {}
 }
@@ -1147,6 +1497,8 @@ export interface Prisma__ClassClient<T, Null = never, ExtArgs extends runtime.Ty
   school<T extends Prisma.SchoolDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.SchoolDefaultArgs<ExtArgs>>): Prisma.Prisma__SchoolClient<runtime.Types.Result.GetResult<Prisma.$SchoolPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   students<T extends Prisma.Class$studentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Class$studentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StudentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   formTeacher<T extends Prisma.Class$formTeacherArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Class$formTeacherArgs<ExtArgs>>): Prisma.Prisma__TeacherClient<runtime.Types.Result.GetResult<Prisma.$TeacherPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  subjects<T extends Prisma.Class$subjectsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Class$subjectsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  quizzes<T extends Prisma.Class$quizzesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Class$quizzesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuizPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1181,6 +1533,8 @@ export interface ClassFieldRefs {
   readonly level: Prisma.FieldRef<"Class", 'Classes'>
   readonly arm: Prisma.FieldRef<"Class", 'String'>
   readonly formTeacherId: Prisma.FieldRef<"Class", 'String'>
+  readonly createdAt: Prisma.FieldRef<"Class", 'DateTime'>
+  readonly updatedAt: Prisma.FieldRef<"Class", 'DateTime'>
 }
     
 
@@ -1622,6 +1976,54 @@ export type Class$formTeacherArgs<ExtArgs extends runtime.Types.Extensions.Inter
    */
   include?: Prisma.TeacherInclude<ExtArgs> | null
   where?: Prisma.TeacherWhereInput
+}
+
+/**
+ * Class.subjects
+ */
+export type Class$subjectsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Subject
+   */
+  select?: Prisma.SubjectSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Subject
+   */
+  omit?: Prisma.SubjectOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SubjectInclude<ExtArgs> | null
+  where?: Prisma.SubjectWhereInput
+  orderBy?: Prisma.SubjectOrderByWithRelationInput | Prisma.SubjectOrderByWithRelationInput[]
+  cursor?: Prisma.SubjectWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SubjectScalarFieldEnum | Prisma.SubjectScalarFieldEnum[]
+}
+
+/**
+ * Class.quizzes
+ */
+export type Class$quizzesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Quiz
+   */
+  select?: Prisma.QuizSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Quiz
+   */
+  omit?: Prisma.QuizOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuizInclude<ExtArgs> | null
+  where?: Prisma.QuizWhereInput
+  orderBy?: Prisma.QuizOrderByWithRelationInput | Prisma.QuizOrderByWithRelationInput[]
+  cursor?: Prisma.QuizWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuizScalarFieldEnum | Prisma.QuizScalarFieldEnum[]
 }
 
 /**
