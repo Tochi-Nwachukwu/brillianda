@@ -9,11 +9,14 @@ export function getToken(): string | null {
 export function setToken(token: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem('token', token);
+  // Also set as cookie so Next.js middleware can read it for route protection
+  document.cookie = `token=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
 }
 
 export function removeToken(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem('token');
+  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 }
 
 export function decodeToken(): JwtPayload | null {
