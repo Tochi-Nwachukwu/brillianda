@@ -8,12 +8,13 @@ export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const host = request.headers.get('host') || '';
 
-  // Extract subdomain
+  // Extract subdomain (strip port first)
+  const hostname = host.split(':')[0];
   let subdomain: string | null = null;
 
-  if (host !== 'localhost' && host !== `www.${BASE_DOMAIN}` && host !== BASE_DOMAIN) {
-    if (host.endsWith(`.${BASE_DOMAIN}`)) {
-      subdomain = host.slice(0, -BASE_DOMAIN.length - 1);
+  if (hostname !== 'localhost' && hostname !== `www.${BASE_DOMAIN}` && hostname !== BASE_DOMAIN) {
+    if (hostname.endsWith(`.${BASE_DOMAIN}`)) {
+      subdomain = hostname.slice(0, -BASE_DOMAIN.length - 1);
     }
   }
 
