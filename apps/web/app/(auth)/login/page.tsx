@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { setToken } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -33,9 +31,9 @@ export default function LoginPage() {
       if (res.data.success) {
         setToken(res.data.data.token);
         const role = res.data.data.user.role;
-        if (role === 'ADMIN') router.push('/admin');
-        else if (role === 'TEACHER') router.push('/teacher');
-        else router.push('/student');
+        if (role === 'ADMIN') window.location.href = '/admin';
+        else if (role === 'TEACHER') window.location.href = '/teacher';
+        else window.location.href = '/student';
       }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed');
