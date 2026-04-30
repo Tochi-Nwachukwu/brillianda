@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'brillianda.com';
+const ENV_SUBDOMAIN = process.env.NEXT_PUBLIC_TENANT_SUBDOMAIN || null;
 
 export const api = axios.create({
   baseURL: API_URL + '/api/v1',
@@ -11,9 +12,16 @@ export const api = axios.create({
 });
 
 function getSubdomain(): string | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') {
+    return ENV_SUBDOMAIN;
+  }
 
-  // First try deriving from hostname (most reliable)
+  // 1. Environment variable (highest priority — used for deployed frontends)
+  if (ENV_SUBDOMAIN) {
+    return ENV_SUBDOMAIN;
+  }
+
+  // 2. Derive from hostname
   const host = window.location.hostname;
   if (host !== 'localhost' && host !== `www.${BASE_DOMAIN}` && host !== BASE_DOMAIN) {
     if (host.endsWith(`.${BASE_DOMAIN}`)) {
@@ -21,7 +29,7 @@ function getSubdomain(): string | null {
     }
   }
 
-  // Fallback to cookie
+  // 3. Cookie fallback
   const match = document.cookie.match(/tenant_subdomain=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }

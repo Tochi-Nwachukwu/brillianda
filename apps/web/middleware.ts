@@ -3,18 +3,21 @@ import type { NextRequest } from 'next/server';
 
 const BASE_DOMAIN = process.env.NEXT_PUBLIC_BASE_DOMAIN || 'brillianda.com';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const ENV_SUBDOMAIN = process.env.NEXT_PUBLIC_TENANT_SUBDOMAIN || null;
 
 export async function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || '';
-
-  // Extract subdomain (strip port first)
   const hostname = host.split(':')[0];
-  let subdomain: string | null = null;
 
-  if (hostname !== 'localhost' && hostname !== `www.${BASE_DOMAIN}` && hostname !== BASE_DOMAIN) {
-    if (hostname.endsWith(`.${BASE_DOMAIN}`)) {
-      subdomain = hostname.slice(0, -BASE_DOMAIN.length - 1);
+  // Determine subdomain: env var > hostname extraction
+  let subdomain: string | null = ENV_SUBDOMAIN;
+
+  if (!subdomain) {
+    if (hostname !== 'localhost' && hostname !== `www.${BASE_DOMAIN}` && hostname !== BASE_DOMAIN) {
+      if (hostname.endsWith(`.${BASE_DOMAIN}`)) {
+        subdomain = hostname.slice(0, -BASE_DOMAIN.length - 1);
+      }
     }
   }
 
@@ -58,7 +61,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Basic role check via JWT payload (no verification needed here, backend does that)
     try {
       const payload = JSON.parse(
         Buffer.from(token.split('.')[1], 'base64').toString()
