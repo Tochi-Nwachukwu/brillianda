@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+      DB_OWNER_PASSWORD: owner_ci_password
+      DB_APP_PASSWORD: app_ci_password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+
+      # Includes the Phase 0 gate: the two-school isolation suite and the RLS coverage check.
+      - name: Test (against real Postgres with production roles)
+        run: pnpm test
+
+      - name: Migrations are in sync with the schema
+        run: |
+          pnpm db:generate
+          git diff --exit-code packages/db/migrations || (echo "Schema changed without a migration. Run pnpm db:generate and commit it." && exit 1)
+
+      - name: OpenAPI document is up to date
+        run: |
+          pnpm --filter @brillianda/api openapi
+          git diff --exit-code openapi.json || (echo "API contract changed. Run pnpm --filter @brillianda/api openapi and commit openapi.json." && exit 1)
+
+      - name: Build
+        run: pnpm build

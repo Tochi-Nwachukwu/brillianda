@@ -1,17 +1,33 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "$schema": "https://turborepo.com/schema.json",
+  "globalEnv": [
+    "NODE_ENV"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": [
+        "^typecheck"
+      ]
+    },
+    "test": {
+      "passThroughEnv": [
+        "TEST_DATABASE_ADMIN_URL",
+        "DB_OWNER_PASSWORD",
+        "DB_APP_PASSWORD"
+      ],
+      "cache": false
     },
     "dev": {
       "cache": false,
       "persistent": true
-    },
-    "lint": {
-      "cache": false
     }
   }
 }
