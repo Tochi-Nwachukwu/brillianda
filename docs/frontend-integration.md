@@ -45,9 +45,9 @@ the API response back to the browser.
 
 - `openapi.json` at this repo's root is the contract. Generate types with
   `npx openapi-typescript <path-to>/openapi.json -o src/lib/api/schema.d.ts` and call with `openapi-fetch`.
-- Errors are always `{ error: { code, message, requestId, details? } }`. Switch on `code`:
-  `unauthenticated` → login page; `school_not_found` / `school_unavailable` → the 404 page;
-  `validation_failed` → `details[]` has `{ path, message }` per field; `rate_limited` → `Retry-After`.
+- Errors are RFC 9457 problem details (`application/problem+json`). Switch on `code`; the full
+  list, with what the UI should do for each, is in `docs/api-conventions.md`.
+  `validation_failed` carries `errors[]` with a JSON Pointer per field; `rate_limited` carries `Retry-After`.
 - Every non-GET needs a same-origin `Origin` header. Browsers send it automatically.
 
 ## Local development

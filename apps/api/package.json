@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "seed": "tsx --env-file-if-exists=../../.env scripts/seed.ts",
-    "openapi": "tsx scripts/openapi.ts"
+    "openapi": "tsx scripts/openapi.ts",
+    "bench": "tsx --env-file-if-exists=../../.env scripts/bench.ts"
   },
   "dependencies": {
     "@brillianda/auth": "workspace:*",

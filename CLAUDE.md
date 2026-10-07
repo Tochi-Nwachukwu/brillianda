@@ -36,7 +36,10 @@ pnpm --filter @brillianda/api openapi   # regenerate openapi.json after changing
   rate limit → `withSchool` → audit). The only exception is logout, which must work without a
   valid session.
 - **Nothing outside `packages/db` imports `pg` or `drizzle-orm/node-postgres`.** ESLint enforces it.
-- **Zod on every input** via the route's `createRoute` schema. Errors leave as `{ error: { code, message, requestId, details? } }`.
+- **Zod on every input** via the route's `createRoute` schema, with human messages on format rules.
+- **Responses follow `docs/api-conventions.md`**: errors are RFC 9457 problems built only by
+  `problemResponse()` / `throw new ApiError(code, detail)`; codes live in the catalog in
+  `apps/api/src/lib/errors.ts` and must be documented (a test checks).
 - **Auth is ours.** Do not add Better Auth, Lucia, Passport or similar. Never store a raw token;
   store `AuthSecret.hash(...)`. Never compare secrets with `===`.
 - **Ask before adding a dependency.**

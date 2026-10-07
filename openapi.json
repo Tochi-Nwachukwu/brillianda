@@ -3,7 +3,7 @@
   "info": {
     "title": "Brillianda API",
     "version": "0.1.0",
-    "description": "Multi-tenant school registry API. The school is resolved from the request host; call it through the frontend's /api rewrite."
+    "description": "Multi-tenant school registry API. The school is resolved from the request host; call it through the frontend's /api rewrite. Errors are RFC 9457 problem details (application/problem+json); see docs/api-conventions.md."
   },
   "components": {
     "schemas": {
@@ -42,32 +42,99 @@
           "logoUrl"
         ]
       },
-      "Error": {
+      "Problem": {
         "type": "object",
         "properties": {
-          "error": {
-            "type": "object",
-            "properties": {
-              "code": {
-                "type": "string",
-                "example": "unauthenticated"
+          "type": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://brillianda.com/problems/unauthenticated"
+          },
+          "title": {
+            "type": "string",
+            "example": "Sign in required"
+          },
+          "status": {
+            "type": "integer",
+            "example": 401
+          },
+          "detail": {
+            "type": "string",
+            "example": "Please sign in."
+          },
+          "instance": {
+            "type": "string",
+            "example": "/v1/me"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "bad_request",
+              "validation_failed",
+              "unauthenticated",
+              "forbidden",
+              "csrf_rejected",
+              "not_found",
+              "school_not_found",
+              "school_unavailable",
+              "method_not_allowed",
+              "conflict",
+              "payload_too_large",
+              "unsupported_media_type",
+              "rate_limited",
+              "internal",
+              "service_unavailable"
+            ],
+            "description": "Stable machine-readable code. Switch on this."
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Quote this when reporting a problem."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pointer": {
+                  "type": "string"
+                },
+                "parameter": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                }
               },
-              "message": {
-                "type": "string"
-              },
-              "requestId": {
-                "type": "string"
-              },
-              "details": {}
+              "required": [
+                "detail",
+                "code"
+              ]
             },
-            "required": [
-              "code",
-              "message"
-            ]
+            "description": "validation_failed only: one entry per field."
+          },
+          "retryAfterSec": {
+            "type": "integer",
+            "description": "rate_limited only."
+          },
+          "allow": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "method_not_allowed only."
           }
         },
         "required": [
-          "error"
+          "type",
+          "title",
+          "status",
+          "instance",
+          "code",
+          "requestId"
         ]
       },
       "Me": {
@@ -247,9 +314,9 @@
           "404": {
             "description": "No active school here",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -277,9 +344,9 @@
           "401": {
             "description": "Not signed in to this school",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -287,9 +354,9 @@
           "404": {
             "description": "No active school here",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }
@@ -311,9 +378,9 @@
           "404": {
             "description": "No active school here",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             }

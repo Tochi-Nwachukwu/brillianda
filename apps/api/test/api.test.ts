@@ -70,7 +70,7 @@ describe("system", () => {
   it("returns the standard error shape for unknown paths", async () => {
     const res = await h.app.request("/nope");
     expect(res.status).toBe(404);
-    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("not_found");
+    expect(((await res.json()) as { code: string }).code).toBe("not_found");
   });
 });
 
@@ -90,7 +90,7 @@ describe("school resolution comes from the host only", () => {
   ])("404s for %s", async (_label, host, code) => {
     const res = await h.app.request("/v1/school", { headers: { host } });
     expect(res.status).toBe(404);
-    expect(((await res.json()) as { error: { code: string } }).error.code).toBe(code);
+    expect(((await res.json()) as { code: string }).code).toBe(code);
   });
 
   it("ignores x-forwarded-host unless the proxy secret is presented", async () => {
@@ -182,7 +182,7 @@ describe("CSRF", () => {
   ])("rejects a POST with %s", async (_label, extra) => {
     const res = await h.app.request("/v1/auth/logout", { method: "POST", headers: { host: ALPHA, ...extra } });
     expect(res.status).toBe(403);
-    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("csrf_rejected");
+    expect(((await res.json()) as { code: string }).code).toBe("csrf_rejected");
   });
 
   it("accepts a same-origin Referer when Origin is absent", async () => {
@@ -220,9 +220,9 @@ describe("schoolRoute()", () => {
     const token = await signIn(h, alpha.school.id, alpha.user.id);
     const res = await post("/v1/__test/audit-then-fail", token);
     expect(res.status).toBe(500);
-    const body = (await res.json()) as { error: { code: string; message: string } };
-    expect(body.error.code).toBe("internal");
-    expect(body.error.message).not.toContain("boom");
+    const body = (await res.json()) as { code: string; detail: string; title: string };
+    expect(body.code).toBe("internal");
+    expect(JSON.stringify(body)).not.toContain("boom");
     const rows = await withSchool(h.db, alpha.school.id, (tx) =>
       tx.select().from(auditLog).where(eq(auditLog.action, "test.should_not_persist")),
     );

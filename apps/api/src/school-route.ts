@@ -54,12 +54,17 @@ export async function requireSchool(c: Context<AppEnv>): Promise<ResolvedSchool>
   return school;
 }
 
+/**
+ * Applies a rate-limit rule and reports it with the IETF RateLimit headers
+ * (draft-ietf-httpapi-ratelimit-headers-11): RateLimit-Policy describes the quota,
+ * RateLimit what is left. Several rules on one request each add an entry to both lists.
+ */
 export async function enforceRateLimit(c: Context<AppEnv>, rule: RateRule, key: string): Promise<void> {
   const result = await c.get("deps").rateLimiter.limit(rule, key);
-  c.header("RateLimit-Remaining", String(result.remaining));
-  if (!result.success) {
-    throw errors.rateLimited(Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000)));
-  }
+  const resetSec = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000));
+  c.header("RateLimit-Policy", `"${rule.name}";q=${rule.limit};w=${rule.windowSec}`, { append: true });
+  c.header("RateLimit", `"${rule.name}";r=${result.remaining};t=${resetSec}`, { append: true });
+  if (!result.success) throw errors.rateLimited(resetSec);
 }
 
 export function readSessionToken(c: Context<AppEnv>): string | undefined {

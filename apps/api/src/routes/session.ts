@@ -2,7 +2,7 @@ import { invalidateSession, validateSession } from "@brillianda/auth";
 import { auditLog, withSchool } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "../context.js";
-import { ErrorSchema } from "../lib/errors.js";
+import { problemContent } from "../lib/errors.js";
 import { clearSessionCookie, readSessionToken, requireSchool, schoolRoute } from "../school-route.js";
 
 export const sessionRoutes = new OpenAPIHono<AppEnv>();
@@ -21,8 +21,8 @@ export const MeSchema = z
   .openapi("Me");
 
 const errorResponses = {
-  401: { description: "Not signed in to this school", content: { "application/json": { schema: ErrorSchema } } },
-  404: { description: "No active school here", content: { "application/json": { schema: ErrorSchema } } },
+  401: problemContent("Not signed in to this school"),
+  404: problemContent("No active school here"),
 } as const;
 
 sessionRoutes.openapi(
