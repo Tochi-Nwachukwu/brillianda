@@ -14,7 +14,9 @@
     "generate": "drizzle-kit generate",
     "bootstrap": "tsx --env-file-if-exists=../../.env scripts/bootstrap.ts",
     "migrate": "tsx --env-file-if-exists=../../.env scripts/migrate.ts",
-    "reset": "tsx --env-file-if-exists=../../.env scripts/reset.ts"
+    "reset": "tsx --env-file-if-exists=../../.env scripts/reset.ts",
+    "check-migrations": "tsx scripts/check-migrations.ts",
+    "verify-restore": "tsx --env-file-if-exists=../../.env scripts/verify-restore.ts"
   },
   "dependencies": {
     "@brillianda/core": "workspace:*",

@@ -7,6 +7,7 @@ import { uuidv7 } from "uuidv7";
 export const ROLE_OWNER = "brillianda_owner";
 export const ROLE_APP = "brillianda_app";
 export const ROLE_PLATFORM = "brillianda_platform";
+export const ROLE_BACKUP = "brillianda_backup";
 
 /** The API's login role: not a superuser, no BYPASSRLS, owns no table. */
 export const appRole = pgRole(ROLE_APP).existing();
@@ -42,6 +43,19 @@ export const schoolIsolation = (schoolId: AnyPgColumn) =>
     to: appRole,
     using: sql`${schoolId} = app_current_school_id()`,
     withCheck: sql`${schoolId} = app_current_school_id()`,
+  });
+
+/**
+ * Lets the nightly backup (pg_dump --enable-row-security, connected as brillianda_backup) read
+ * every school's rows. Read-only: the role has SELECT and nothing else. Same current_user
+ * pattern as platformAccess, for the same reason.
+ */
+export const backupRead = () =>
+  pgPolicy("backup_read", {
+    as: "permissive",
+    for: "select",
+    to: "public",
+    using: sql`current_user = ${sql.raw(`'${ROLE_BACKUP}'`)}`,
   });
 
 /**

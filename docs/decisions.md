@@ -50,3 +50,20 @@ member of `brillianda_platform` (to hand it function ownership), so a `TO brilli
 policy would have let the owner role read every school. The platform policies use
 `current_user = 'brillianda_platform'` instead, which only matches inside its SECURITY DEFINER
 functions. Verified by `isolation.test.ts` ("subjects the owner role to the policies too").
+
+## 4. Enterprise SSO (SAML/OIDC) and SCIM: its own phase, provider decided later (Oct 7, 2026)
+
+Brillianda is enterprise-focused, so schools will ask for SAML SSO and SCIM provisioning.
+Decided:
+- **Our auth stays the session authority.** SSO only replaces how identity is proven; after the
+  school's IdP confirms someone we mint the usual school-bound session. SCIM is another way
+  members are created and deactivated (deactivation revokes sessions everywhere).
+- **Phase 1 ships password signup/login first.** SSO is its own phase right after it.
+- **The protocol provider is chosen when the first enterprise school needs it**, behind a
+  provider-agnostic adapter. Options weighed: WorkOS (managed, ~$125/connection/month each for
+  SSO and SCIM per a Jul 2026 third-party summary, US-hosted), Ory Polis (ex-BoxyHQ SAML Jackson,
+  Apache-2.0, self-hosted), or in-house (node-saml + own SCIM 2.0; SAML is the risky part).
+- **SSO phase scope:** verified school email domains (DNS TXT), per-school SSO connections with an
+  "SSO required" switch, directory (SCIM) connections with group→role mapping, external identity
+  links per member, email-first login routing, and an owner break-glass login (password + 2FA).
+- Better Auth was never installed; it remains out (its organisation model fights per-tenant SSO).

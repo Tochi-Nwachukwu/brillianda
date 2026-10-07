@@ -25,6 +25,7 @@ interface TableSecurity {
   rls: boolean;
   force: boolean;
   isolationPolicy: boolean;
+  backupPolicy: boolean;
   compositeKey: boolean;
 }
 
@@ -42,6 +43,12 @@ async function schoolTableSecurity(): Promise<TableSecurity[]> {
                and p.qual like '%app_current_school_id()%'
                and p.with_check like '%app_current_school_id()%'
            ) as "isolationPolicy",
+           exists (
+             select 1 from pg_policies p
+             where p.schemaname = 'public' and p.tablename = c.relname
+               and p.policyname = 'backup_read' and p.cmd = 'SELECT'
+               and p.qual = '(CURRENT_USER = ''brillianda_backup''::name)'
+           ) as "backupPolicy",
            exists (
              select 1 from pg_constraint k
              where k.conrelid = c.oid and k.contype in ('u', 'p')
@@ -62,11 +69,12 @@ describe("row-level security coverage", () => {
     expect((await schoolTableSecurity()).length).toBeGreaterThanOrEqual(3);
   });
 
-  it("every table with a school_id has RLS enabled, FORCED, the isolation policy and unique (school_id, id)", async () => {
+  it("every table with a school_id has RLS enabled, FORCED, isolation + backup policies and unique (school_id, id)", async () => {
     const problems = (await schoolTableSecurity()).flatMap((t) => [
       ...(t.rls ? [] : [`${t.table}: RLS not enabled`]),
       ...(t.force ? [] : [`${t.table}: RLS not forced`]),
       ...(t.isolationPolicy ? [] : [`${t.table}: missing school_isolation policy`]),
+      ...(t.backupPolicy ? [] : [`${t.table}: missing backup_read policy (nightly backups would skip its rows)`]),
       ...(t.compositeKey ? [] : [`${t.table}: missing unique (school_id, id)`]),
     ]);
     expect(problems).toEqual([]);

@@ -1,0 +1,115 @@
+# Monthly restore drill: a backup nobody has restored is a hope, not a backup.
+# Pulls the newest nightly backup, decrypts it, restores it into a throwaway Postgres 17,
+# and runs pnpm db:verify-restore (data present, migrations ledger, isolation intact).
+# Also fails if the newest backup is older than 36 hours, i.e. the nightly job stopped.
+name: Restore drill
+
+on:
+  schedule:
+    - cron: "0 6 1 * *" # 1st of each month, 07:00 Lagos
+  workflow_dispatch:
+    inputs:
+      key:
+        description: "Backup object key to drill (blank = newest)"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Holds the age PRIVATE key. Protect this environment with required reviewers.
+    environment: restore-drill
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+      BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
+      DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+      DB_OWNER_PASSWORD: drill_owner
+      DB_APP_PASSWORD: drill_app
+      DB_NAME: brillianda_restore
+      RESTORE_URL: postgres://postgres:postgres@localhost:5432/brillianda_restore
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install pg_restore 17 and age
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 age
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Fetch the backup
+        env:
+          INPUT_KEY: ${{ inputs.key }}
+        run: |
+          EP=${BACKUP_S3_ENDPOINT:+--endpoint-url $BACKUP_S3_ENDPOINT}
+          KEY="$INPUT_KEY"
+          if [ -z "$KEY" ]; then
+            KEY=$(aws s3 ls $EP --recursive "s3://$BACKUP_BUCKET/brillianda/daily/" | awk '{print $4}' | grep '\.dump\.age$' | sort | tail -1)
+          fi
+          [ -n "$KEY" ] || { echo "::error::No backups found in s3://$BACKUP_BUCKET/brillianda/daily/"; exit 1; }
+          echo "Drilling $KEY"
+          aws s3 cp $EP "s3://$BACKUP_BUCKET/$KEY" brillianda.dump.age --no-progress
+          aws s3 cp $EP "s3://$BACKUP_BUCKET/$KEY.sha256" brillianda.dump.age.sha256 --no-progress
+          [ "$(sha256sum brillianda.dump.age | cut -d' ' -f1)" = "$(cat brillianda.dump.age.sha256)" ] \
+            || { echo "::error::Checksum mismatch: the backup file is corrupt"; exit 1; }
+          STAMP=$(echo "$KEY" | grep -oE '[0-9]{8}T[0-9]{6}Z')
+          AGE_H=$(( ( $(date -u +%s) - $(date -u -d "$(echo $STAMP | sed -E 's/(....)(..)(..)T(..)(..)(..)Z/\1-\2-\3 \4:\5:\6/')" +%s) ) / 3600 ))
+          echo "BACKUP_KEY=$KEY" >> "$GITHUB_ENV"
+          echo "BACKUP_AGE_HOURS=$AGE_H" >> "$GITHUB_ENV"
+
+      - name: Decrypt
+        env:
+          BACKUP_AGE_SECRET_KEY: ${{ secrets.BACKUP_AGE_SECRET_KEY }}
+        run: |
+          umask 077
+          printf '%s\n' "$BACKUP_AGE_SECRET_KEY" > key.txt
+          age -d -i key.txt -o brillianda.dump brillianda.dump.age
+          shred -u key.txt
+
+      - name: Restore into a throwaway database
+        run: |
+          pnpm db:bootstrap
+          pg_restore --exit-on-error --no-comments -d "$RESTORE_URL" brillianda.dump
+
+      - name: Verify
+        run: pnpm db:verify-restore "$RESTORE_URL"
+
+      - name: Backups are still running
+        if: ${{ !inputs.key }}
+        run: |
+          if [ "$BACKUP_AGE_HOURS" -gt 36 ]; then
+            echo "::error::Newest backup is $BACKUP_AGE_HOURS hours old. The nightly backup has stopped."
+            exit 1
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Drilled \`${BACKUP_KEY:-none}\` (${BACKUP_AGE_HOURS:-?}h old): ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          shred -u brillianda.dump 2>/dev/null || true

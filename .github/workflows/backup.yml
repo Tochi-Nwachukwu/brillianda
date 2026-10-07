@@ -1,0 +1,79 @@
+# Nightly off-site backup, separate from Neon's own history.
+# Neon point-in-time restore covers "undo the last few hours/days". This covers "Neon itself
+# lost it, or the account is gone": an encrypted copy in storage we control.
+# Setup: docs/safety.md → "Off-site backups".
+name: Nightly backup
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # 01:00 UTC = 02:00 Lagos
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production-backup
+    env:
+      BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+      BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+      BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+      BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
+    steps:
+      - name: Check configuration
+        run: |
+          missing=""
+          for v in BACKUP_DATABASE_URL BACKUP_AGE_RECIPIENT BACKUP_BUCKET AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Backup is not configured. Missing:$missing (see docs/safety.md)"
+            exit 1
+          fi
+
+      - name: Install pg_dump 17 and age
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 age
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Dump (as brillianda_backup, read-only)
+        run: |
+          echo "STAMP=$(date -u +%Y%m%dT%H%M%SZ)" >> "$GITHUB_ENV"
+          # --enable-row-security: school tables are FORCE RLS; brillianda_backup reads them through
+          # its backup_read policy. Without the flag pg_dump refuses (by design).
+          pg_dump -Fc --enable-row-security --no-password -f brillianda.dump "$BACKUP_DATABASE_URL"
+          pg_restore --list brillianda.dump > toc.txt
+          for t in schools users school_members; do
+            grep -q "TABLE DATA public $t " toc.txt || { echo "::error::Dump is missing data for $t"; exit 1; }
+          done
+          echo "Dump size: $(du -h brillianda.dump | cut -f1)"
+
+      - name: Encrypt (age, public key only; the private key never touches CI)
+        run: |
+          age -r "$BACKUP_AGE_RECIPIENT" -o brillianda.dump.age brillianda.dump
+          sha256sum brillianda.dump.age | cut -d' ' -f1 > brillianda.dump.age.sha256
+          shred -u brillianda.dump toc.txt
+
+      - name: Upload
+        run: |
+          EP=${BACKUP_S3_ENDPOINT:+--endpoint-url $BACKUP_S3_ENDPOINT}
+          KEY="brillianda/daily/$(date -u +%Y/%m/%d)/brillianda-$STAMP.dump.age"
+          aws s3 cp $EP brillianda.dump.age "s3://$BACKUP_BUCKET/$KEY" --no-progress
+          aws s3 cp $EP brillianda.dump.age.sha256 "s3://$BACKUP_BUCKET/$KEY.sha256" --no-progress
+          aws s3 ls $EP "s3://$BACKUP_BUCKET/$KEY" > /dev/null
+          echo "Backup stored: \`$KEY\` ($(du -h brillianda.dump.age | cut -f1))" >> "$GITHUB_STEP_SUMMARY"

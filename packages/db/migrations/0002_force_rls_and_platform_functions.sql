@@ -18,6 +18,7 @@ GRANT SELECT ON schools, school_members, sessions TO brillianda_platform;--> sta
 GRANT DELETE ON sessions TO brillianda_platform;--> statement-breakpoint
 
 -- Login school picker / Find my school: names and subdomains of a user's ACTIVE schools only.
+-- safety: allow security-definer because the login picker must list a user's schools across tenants; returns names and subdomains only, search_path pinned
 CREATE FUNCTION app_user_schools(p_user_id uuid)
   RETURNS TABLE (school_id uuid, name text, subdomain text, role member_role)
   LANGUAGE sql STABLE SECURITY DEFINER
@@ -33,6 +34,7 @@ AS $$
 $$;--> statement-breakpoint
 
 -- Sign a user out of every school (password change, account disabled).
+-- safety: allow security-definer because a password change must end the user's sessions in every school; deletes only that user's sessions, search_path pinned
 CREATE FUNCTION app_revoke_user_sessions(p_user_id uuid, p_except_session_id uuid DEFAULT NULL)
   RETURNS integer
   LANGUAGE plpgsql VOLATILE SECURITY DEFINER

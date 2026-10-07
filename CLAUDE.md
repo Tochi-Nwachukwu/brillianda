@@ -11,7 +11,9 @@ docker compose up -d          # Postgres on :5433 (5432 is left free for any loc
 cp .env.example .env          # then set AUTH_SECRET and PROXY_SHARED_SECRET
 pnpm install
 pnpm db:bootstrap             # roles + database (idempotent)
-pnpm db:migrate               # apply migrations as brillianda_owner
+pnpm db:plan                  # show pending migrations, change nothing
+pnpm db:migrate               # apply as brillianda_owner (remote: Neon snapshot first)
+pnpm db:check                 # migration safety guard (also in CI)
 pnpm db:seed                  # Surebloom demo school; prints a curl with a session cookie
 pnpm dev                      # API on :4000 (school = Host header, e.g. surebloom.localhost:4000)
 pnpm check                    # typecheck + lint + all tests (needs Postgres running)
@@ -39,6 +41,8 @@ pnpm --filter @brillianda/api openapi   # regenerate openapi.json after changing
   store `AuthSecret.hash(...)`. Never compare secrets with `===`.
 - **Ask before adding a dependency.**
 - Tests run against real Postgres with the production roles. Do not mock the database.
+- **Schema changes follow expand → migrate → contract** (`docs/safety.md`). Never edit a shipped
+  migration; never add `-- safety: allow ...` without a reason a reviewer can check.
 
 ## Gotchas
 
@@ -52,3 +56,7 @@ pnpm --filter @brillianda/api openapi   # regenerate openapi.json after changing
 - Use node-postgres (TCP/pooled). HTTP drivers (neon-http) cannot hold a transaction, so `withSchool` breaks.
 - Drizzle wraps Postgres errors: the real message is on `err.cause`.
 - Cookies are `__Host-bd_session` in https mode (no Domain, Path=/), plain `bd_session` locally.
+- `pg_dump` as the owner fails on FORCE RLS tables by design. Backups use `brillianda_backup`
+  with `--enable-row-security`; every school table needs the `backup_read` policy.
+- Migrations that grant to a role need that role to exist: new roles go in `bootstrapCluster()`,
+  then `pnpm db:bootstrap` runs before `pnpm db:migrate` on every environment.

@@ -3,13 +3,14 @@
  *   - has school_id NOT NULL, leading its main indexes
  *   - has unique (school_id, id) so children can use composite foreign keys
  *   - carries the school_isolation policy, with RLS enabled AND forced (migration 0002)
+ *   - carries backup_read, so the nightly backup can read it (and nobody else gains anything)
  *   - is covered by test/isolation.test.ts and test/rls-coverage.test.ts
  *
  * Checklist for a new school table: see .claude/skills/brillianda-tenancy/SKILL.md.
  */
 import { sql } from "drizzle-orm";
 import { foreignKey, index, jsonb, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { createdAt, id, platformAccess, schoolIsolation, updatedAt } from "./columns.js";
+import { backupRead, createdAt, id, platformAccess, schoolIsolation, updatedAt } from "./columns.js";
 import { schools, users } from "./platform.js";
 
 const schoolId = () =>
@@ -43,6 +44,7 @@ export const schoolMembers = pgTable(
     uniqueIndex("school_members_one_owner_idx").on(t.schoolId).where(sql`${t.role} = 'owner'`),
     index("school_members_user_idx").on(t.userId),
     schoolIsolation(t.schoolId),
+    backupRead(),
     platformAccess("select"),
   ],
 ).enableRLS();
@@ -80,6 +82,7 @@ export const sessions = pgTable(
     index("sessions_school_user_idx").on(t.schoolId, t.userId),
     index("sessions_expires_idx").on(t.expiresAt),
     schoolIsolation(t.schoolId),
+    backupRead(),
     platformAccess("select"),
     platformAccess("delete"),
   ],
@@ -105,5 +108,6 @@ export const auditLog = pgTable(
     index("audit_log_school_created_idx").on(t.schoolId, t.createdAt.desc()),
     index("audit_log_school_entity_idx").on(t.schoolId, t.entity, t.entityId),
     schoolIsolation(t.schoolId),
+    backupRead(),
   ],
 ).enableRLS();
