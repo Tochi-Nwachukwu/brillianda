@@ -1,11 +1,14 @@
-import { PrismaClient } from '@prisma/client';
-
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-export const db = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = db;
-}
+export * from "./client.js";
+export * from "./with-school.js";
+export * from "./platform.js";
+export * as schema from "./schema/index.js";
+export {
+  users,
+  schools,
+  verificationTokens,
+  schoolMembers,
+  sessions,
+  auditLog,
+} from "./schema/index.js";
+// Re-export the query helpers feature code needs, so nothing imports drizzle internals ad hoc.
+export { and, asc, desc, eq, gt, gte, inArray, isNull, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";
