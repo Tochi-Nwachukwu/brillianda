@@ -7,7 +7,7 @@ Multi-tenant school registry API. The product plan is `docs/plan.md`; deviations
 ## Commands
 
 ```bash
-docker compose up -d          # Postgres on :5432
+docker compose up -d          # Postgres on :5433 (5432 is left free for any local Postgres)
 cp .env.example .env          # then set AUTH_SECRET and PROXY_SHARED_SECRET
 pnpm install
 pnpm db:bootstrap             # roles + database (idempotent)

@@ -91,6 +91,16 @@ describe("row-level security coverage", () => {
     expect(owned.rows).toEqual([]);
   });
 
+  it("no role inherits the owner or platform roles (membership is SET-only)", async () => {
+    const res = await client.query<{ member: string; role: string }>(`
+      select r.rolname as member, m.rolname as role
+      from pg_auth_members a
+      join pg_roles r on r.oid = a.member
+      join pg_roles m on m.oid = a.roleid
+      where m.rolname in ('brillianda_owner', 'brillianda_platform') and a.inherit_option`);
+    expect(res.rows).toEqual([]);
+  });
+
   it("SECURITY DEFINER functions pin their search_path and are owned by the platform role", async () => {
     const res = await client.query<{ name: string; owner: string; config: string[] | null }>(`
       select p.proname as name, r.rolname as owner, p.proconfig as config

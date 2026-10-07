@@ -49,19 +49,40 @@ export async function bootstrapCluster(opts: BootstrapOptions): Promise<void> {
   if (!IDENT.test(opts.dbName)) throw new Error(`Invalid database name: ${opts.dbName}`);
 
   await withClient(opts.adminUrl, async (client) => {
-    const lit = (v: string) => client.escapeLiteral(v);
-    const versionRow = await client.query<{ v: string }>("show server_version_num");
-    const version = Number(versionRow.rows[0]?.v ?? 0);
+    // Role changes are cluster-wide. Parallel test files (or two deploys) bootstrapping at once
+    // would race on the same pg_authid rows ("tuple concurrently updated"), so take turns.
+    // Session-level lock: released explicitly below, or by Postgres when the connection closes.
+    await client.query("select pg_advisory_lock(hashtext('brillianda:bootstrap'))");
+    try {
+      await bootstrapLocked(client, opts);
+    } finally {
+      await client.query("select pg_advisory_unlock(hashtext('brillianda:bootstrap'))");
+    }
+  });
+}
 
+async function bootstrapLocked(client: pg.Client, opts: BootstrapOptions): Promise<void> {
+  {
+    const lit = (v: string) => client.escapeLiteral(v);
+    const versionRow = await client.query<{ v: number }>("select current_setting('server_version_num')::int as v");
+    const version = versionRow.rows[0]?.v ?? 0;
+    if (version < 150000) throw new Error(`Postgres 15+ required (found ${version}); 16+ recommended`);
+
+    // Attributes are set on CREATE only. On a re-run only the password is updated: a
+    // non-superuser admin (managed Postgres) may not touch BYPASSRLS/REPLICATION at all,
+    // not even to restate NO.
     const ensureRole = async (name: string, attrs: string, password?: string) => {
       const exists = await client.query("select 1 from pg_roles where rolname = $1", [name]);
       const pw = password === undefined ? "" : ` PASSWORD ${lit(password)}`;
-      const verb = exists.rowCount ? "ALTER" : "CREATE";
-      await client.query(`${verb} ROLE ${name} WITH ${attrs}${pw}`);
+      if (!exists.rowCount) {
+        await client.query(`CREATE ROLE ${name} WITH ${attrs}${pw}`);
+      } else if (pw) {
+        await client.query(`ALTER ROLE ${name} WITH${pw}`);
+      }
     };
 
     const safe = "NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS";
-    await ensureRole(ROLE_OWNER, `LOGIN ${safe}`, opts.ownerPassword);
+    await ensureRole(ROLE_OWNER, `LOGIN NOINHERIT ${safe}`, opts.ownerPassword);
     await ensureRole(ROLE_APP, `LOGIN NOINHERIT ${safe}`, opts.appPassword);
     await ensureRole(ROLE_PLATFORM, `NOLOGIN ${safe}`);
 
@@ -74,13 +95,33 @@ export async function bootstrapCluster(opts: BootstrapOptions): Promise<void> {
       await client.query(`ALTER ROLE ${ROLE_OWNER} NOINHERIT`);
     }
 
+    // Managed Postgres (Neon, RDS, Supabase) gives you a CREATEROLE admin, not a superuser.
+    // Since PG16 such an admin can manage the roles it created but not ACT as them, and
+    // CREATE DATABASE ... OWNER needs to. Grant the admin SET (not INHERIT) on the owner role:
+    // it can switch to it deliberately, but never silently gains the owner's privileges.
+    const su = await client.query<{ rolsuper: boolean }>("select rolsuper from pg_roles where rolname = current_user");
+    const isSuperuser = su.rows[0]?.rolsuper === true;
+    if (!isSuperuser) {
+      await client.query(
+        version >= 160000
+          ? `GRANT ${ROLE_OWNER} TO CURRENT_USER WITH INHERIT FALSE, SET TRUE`
+          : `GRANT ${ROLE_OWNER} TO CURRENT_USER`,
+      );
+    }
+
     const db = await client.query("select 1 from pg_database where datname = $1", [opts.dbName]);
     if (!db.rowCount) {
       await client.query(`CREATE DATABASE ${opts.dbName} OWNER ${ROLE_OWNER}`);
     }
-    await client.query(`REVOKE ALL ON DATABASE ${opts.dbName} FROM PUBLIC`);
-    await client.query(`GRANT CONNECT ON DATABASE ${opts.dbName} TO ${ROLE_APP}`);
-  });
+    // Database-level grants belong to its owner, so make them as the owner.
+    await client.query(`SET ROLE ${ROLE_OWNER}`);
+    try {
+      await client.query(`REVOKE ALL ON DATABASE ${opts.dbName} FROM PUBLIC`);
+      await client.query(`GRANT CONNECT ON DATABASE ${opts.dbName} TO ${ROLE_APP}`);
+    } finally {
+      await client.query("RESET ROLE");
+    }
+  }
 }
 
 export async function dropDatabase(adminUrl: string, dbName: string): Promise<void> {
