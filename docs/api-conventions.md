@@ -82,14 +82,20 @@ Every error is `application/problem+json`:
 | Code | Status | When | What the frontend should do |
 |---|---|---|---|
 | `bad_request` | 400 | Malformed JSON or a request the API cannot read | Treat as a bug; log with requestId |
+| `verification_failed` | 400 | Email code wrong, expired or out of attempts; `reason` is `invalid`, `expired` or `too_many_attempts` | Show `detail`; for expired/too_many_attempts offer "Send a new code" |
 | `unauthenticated` | 401 | No valid session for this school | Go to this school's login page |
+| `invalid_credentials` | 401 | Login failed. Same answer for unknown email, wrong password or not a member here | "Email or password is incorrect" + reset link; never guess which |
 | `forbidden` | 403 | Signed in, but the role does not allow it (e.g. admin doing an owner action) | Hide the action; show "ask the owner" |
 | `csrf_rejected` | 403 | Non-GET request without a matching Origin | Bug in the caller; never shown to users |
+| `bot_check_failed` | 403 | Turnstile check failed at signup | Reset the widget and let them try again |
 | `not_found` | 404 | No such endpoint or record (or not visible to this school) | Show not found |
 | `school_not_found` | 404 | No school at this address | Show the "no school here" page with a link to brillianda.com |
 | `school_unavailable` | 404 | School exists but is suspended or archived | Show the "school unavailable" page |
 | `method_not_allowed` | 405 | Known path, wrong method; `Allow` header and `allow` list say which work | Bug in the caller |
-| `conflict` | 409 | Clashes with current state (subdomain taken, duplicate admission number) | Show `detail` next to the field |
+| `conflict` | 409 | Clashes with current state (already a member, signup already finished) | Show `detail` |
+| `subdomain_unavailable` | 409 | Chosen address taken, reserved or invalid; `reason` + `suggestions` | Show the reason and the suggestions as tap-to-pick chips |
+| `signup_incomplete` | 409 | A signup step was skipped; `nextStep` names it | Go to that step |
+| `link_invalid` | 410 | Emailed link or token expired, used, revoked, or from another school | "This link has expired" + a way to ask for a new one |
 | `payload_too_large` | 413 | Body over 256 KB | Split the request or upload as a file |
 | `unsupported_media_type` | 415 | Body not sent as JSON | Bug in the caller |
 | `validation_failed` | 422 | Input failed validation; `errors[]` lists each field | Show each message on its field |

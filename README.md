@@ -28,7 +28,8 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | Phase | Scope | State |
 |---|---|---|
 | 0 Foundations | Monorepo, roles, forced RLS, `withSchool`, `schoolRoute`, auth primitives, isolation gate, CI | ✅ |
-| 1 Signup and tenancy | Subdomain check, 4-step signup, email code, provisioning, handover, login, Find my school, invites | next |
+| 1 Signup and tenancy | Subdomain check, 4-step signup, email code, provisioning, handover, login, magic link, password reset, Find my school, invites | ✅ API (email via console until a provider is chosen) |
+| SSO | SAML/OIDC + SCIM per school, provider chosen later (`docs/decisions.md` #4) | after Phase 1 |
 | 2–5 | Calendar/classes/arms, subjects, students, hardening | planned |
 
 ## Production database setup

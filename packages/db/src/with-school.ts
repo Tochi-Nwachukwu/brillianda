@@ -26,3 +26,13 @@ export async function withSchool<T>(db: Database, schoolId: string, run: (tx: Tx
     return run(tx);
   });
 }
+
+/**
+ * Scopes an ALREADY OPEN transaction to a school. For the rare flow that must write platform rows
+ * and school rows atomically (signup creates the school, then its owner membership). Prefer
+ * withSchool() everywhere else.
+ */
+export async function scopeToSchool(tx: Tx, schoolId: string): Promise<void> {
+  if (!isUuid(schoolId)) throw new InvalidSchoolIdError();
+  await tx.execute(sql`select set_config('app.school_id', ${schoolId}, true)`);
+}

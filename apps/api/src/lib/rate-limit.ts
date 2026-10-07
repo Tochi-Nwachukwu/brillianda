@@ -31,7 +31,14 @@ export const RATE_RULES = {
   loginPerIp: { name: "login:ip", limit: 20, windowSec: 300 },
   loginPerEmail: { name: "login:email", limit: 10, windowSec: 900 },
   codeSendPerEmail: { name: "code-send:email", limit: 5, windowSec: 3600 },
+  signupStepPerIp: { name: "signup-step:ip", limit: 60, windowSec: 600 },
+  signupCompletePerIp: { name: "signup-complete:ip", limit: 10, windowSec: 3600 },
   findSchoolPerIp: { name: "find-school:ip", limit: 5, windowSec: 3600 },
+  findSchoolPerEmail: { name: "find-school:email", limit: 3, windowSec: 3600 },
+  emailLinkPerIp: { name: "email-link:ip", limit: 10, windowSec: 3600 },
+  emailLinkPerEmail: { name: "email-link:email", limit: 3, windowSec: 3600 },
+  tokenRedeemPerIp: { name: "token-redeem:ip", limit: 30, windowSec: 600 },
+  invitePerUser: { name: "invite:user", limit: 50, windowSec: 86_400 },
 } as const satisfies Record<string, RateRule>;
 
 /** Single-process fallback for local development and tests. Not shared across instances. */

@@ -10,6 +10,7 @@
  */
 import { sql } from "drizzle-orm";
 import { foreignKey, index, jsonb, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { citext } from "./columns.js";
 import { backupRead, createdAt, id, platformAccess, schoolIsolation, updatedAt } from "./columns.js";
 import { schools, users } from "./platform.js";
 
@@ -107,6 +108,41 @@ export const auditLog = pgTable(
     unique("audit_log_school_id_id_key").on(t.schoolId, t.id),
     index("audit_log_school_created_idx").on(t.schoolId, t.createdAt.desc()),
     index("audit_log_school_entity_idx").on(t.schoolId, t.entity, t.entityId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/**
+ * Admin invitations (owner-only). The emailed link carries a random token; only its HMAC is
+ * stored. Lookup happens on the school's own host, inside withSchool, so a token can only ever
+ * be redeemed at the school that issued it.
+ */
+export const invitations = pgTable(
+  "invitations",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    email: citext().notNull(),
+    role: memberRole().notNull(),
+    tokenHash: text().notNull().unique(),
+    invitedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    acceptedAt: timestamp({ withTimezone: true }),
+    acceptedUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    revokedAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("invitations_school_id_id_key").on(t.schoolId, t.id),
+    // At most one open invitation per email per school.
+    uniqueIndex("invitations_one_open_idx")
+      .on(t.schoolId, t.email)
+      .where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
+    index("invitations_school_created_idx").on(t.schoolId, t.createdAt.desc()),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],

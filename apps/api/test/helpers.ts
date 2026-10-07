@@ -5,6 +5,8 @@ import { randomBytes } from "node:crypto";
 import { createApp } from "../src/app.js";
 import type { AppConfig, AppDeps } from "../src/context.js";
 import { silentLogger } from "../src/lib/logger.js";
+import { AllowAllBotCheck, type BotCheck } from "../src/lib/bot-check.js";
+import { MemoryMailer } from "../src/lib/mailer.js";
 import { MemoryRateLimiter } from "../src/lib/rate-limit.js";
 import { SchoolDirectory } from "../src/lib/school-directory.js";
 
@@ -14,17 +16,21 @@ export interface Harness {
   t: TestDatabase;
   db: Database;
   deps: AppDeps;
+  mail: MemoryMailer;
   app: ReturnType<typeof createApp>;
 }
 
-export async function createHarness(config: Partial<AppConfig> = {}): Promise<Harness> {
+export async function createHarness(config: Partial<AppConfig> = {}, botCheck: BotCheck = new AllowAllBotCheck()): Promise<Harness> {
   const t = await createTestDatabase();
+  const mail = new MemoryMailer();
   const deps: AppDeps = {
     db: t.db,
     secret: AuthSecret.fromBase64(randomBytes(32).toString("base64")),
     rateLimiter: new MemoryRateLimiter(),
     schools: new SchoolDirectory(t.db, 0),
     logger: silentLogger,
+    mailer: mail,
+    botCheck,
     config: {
       rootDomain: "brillianda.test",
       protocol: "https",
@@ -34,7 +40,7 @@ export async function createHarness(config: Partial<AppConfig> = {}): Promise<Ha
       ...config,
     },
   };
-  return { t, db: t.db, deps, app: createApp(deps) };
+  return { t, db: t.db, deps, mail, app: createApp(deps) };
 }
 
 export async function seedSchoolWithMember(

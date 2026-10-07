@@ -50,6 +50,22 @@ the API response back to the browser.
   `validation_failed` carries `errors[]` with a JSON Pointer per field; `rate_limited` carries `Retry-After`.
 - Every non-GET needs a same-origin `Origin` header. Browsers send it automatically.
 
+## Pages the API's emails and responses link to
+
+The API builds these links; the frontend must serve these paths on each school's address:
+
+| Path (school address) | Reads | Calls |
+|---|---|---|
+| `/auth/handover?token=` | token | `POST /v1/auth/handover` → then go to Home (setup checklist) |
+| `/auth/magic?token=` | token | `POST /v1/auth/magic-link/confirm` |
+| `/reset-password?token=` | token | form → `POST /v1/auth/password-reset/confirm` |
+| `/invite?token=` | token | `GET /v1/invitations/lookup` → if `existingAccount` just accept, else ask name + password → `POST /v1/invitations/accept` |
+
+Signup lives on the main site (`brillianda.com/signup`): `POST /v1/signup/school` → `/owner` →
+`/verify-email` → `/complete`, with `GET /v1/signup` to resume and `GET /v1/signup/subdomain-check`
+while typing (debounce ~300 ms). The draft travels in an HttpOnly cookie; the frontend stores nothing.
+`complete` returns `handoverUrl`: navigate the browser to it.
+
 ## Local development
 
 - API: `pnpm dev` → `http://localhost:4000`, `ROOT_DOMAIN=localhost`, `PUBLIC_PROTOCOL=http`

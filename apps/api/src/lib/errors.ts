@@ -17,15 +17,21 @@ export const PROBLEM_TYPE_BASE = "https://brillianda.com/problems/";
 
 export const PROBLEMS = {
   bad_request: { status: 400, title: "Bad request" },
+  verification_failed: { status: 400, title: "That code did not work" },
   validation_failed: { status: 422, title: "Some fields need fixing" },
   unauthenticated: { status: 401, title: "Sign in required" },
+  invalid_credentials: { status: 401, title: "Email or password is incorrect" },
   forbidden: { status: 403, title: "Not allowed" },
   csrf_rejected: { status: 403, title: "Request did not come from this school's site" },
+  bot_check_failed: { status: 403, title: "Could not confirm you are human" },
   not_found: { status: 404, title: "Not found" },
   school_not_found: { status: 404, title: "No school at this address" },
   school_unavailable: { status: 404, title: "School unavailable" },
   method_not_allowed: { status: 405, title: "Method not allowed" },
   conflict: { status: 409, title: "Conflict with current state" },
+  subdomain_unavailable: { status: 409, title: "That address is not available" },
+  signup_incomplete: { status: 409, title: "Finish the earlier signup steps first" },
+  link_invalid: { status: 410, title: "This link has expired or was already used" },
   payload_too_large: { status: 413, title: "Request body too large" },
   unsupported_media_type: { status: 415, title: "Unsupported content type" },
   rate_limited: { status: 429, title: "Too many requests" },
@@ -124,6 +130,9 @@ export const ProblemSchema = z
       .optional()
       .openapi({ description: "validation_failed only: one entry per field." }),
     retryAfterSec: z.number().int().optional().openapi({ description: "rate_limited only." }),
+    reason: z.string().optional().openapi({ description: "verification_failed: invalid | expired | too_many_attempts. subdomain_unavailable: taken | reserved | invalid." }),
+    suggestions: z.array(z.string()).optional().openapi({ description: "subdomain_unavailable only: available alternatives." }),
+    nextStep: z.string().optional().openapi({ description: "signup_incomplete only: the step to do first." }),
     allow: z.array(z.string()).optional().openapi({ description: "method_not_allowed only." }),
   })
   .openapi("Problem");

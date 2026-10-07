@@ -28,6 +28,8 @@ try {
     rateLimiter: { limit: async () => ({ success: true, remaining: 999, resetAt: Date.now() + 60_000 }) },
     schools: new SchoolDirectory(t.db),
     logger: silentLogger,
+    mailer: { send: async () => {} },
+    botCheck: { verify: async () => true },
     config: { rootDomain: "brillianda.test", protocol: "https", proxySecret: "x".repeat(16), allowSchoolQueryParam: false, secureCookies: false },
   });
 

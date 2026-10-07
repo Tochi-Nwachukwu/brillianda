@@ -42,9 +42,12 @@ export class SchoolDirectory {
       .limit(1);
 
     const value = row ?? null;
-    if (this.#cache.size >= this.maxEntries) this.#cache.clear();
-    // Cache misses briefly too, so a flood of requests for a non-existent school does not hit Postgres.
-    this.#cache.set(key, { value, expiresAt: Date.now() + (value ? this.ttlMs : 10_000) });
+    // Misses are NOT cached: a school created a moment ago (signup → handover) must resolve on
+    // every instance immediately. Floods of unknown hosts are bounded by the per-IP rate limit.
+    if (value) {
+      if (this.#cache.size >= this.maxEntries) this.#cache.clear();
+      this.#cache.set(key, { value, expiresAt: Date.now() + this.ttlMs });
+    }
     return value;
   }
 

@@ -7,8 +7,11 @@ import { ApiError, type ErrorCode, type FieldError, problemResponse, toPointer }
 import { csrf } from "./middleware/csrf.js";
 import { buildAllowLookup, requireJsonBody, serverTiming } from "./middleware/http.js";
 import { requestContext } from "./middleware/request-context.js";
+import { authRoutes } from "./routes/auth.js";
+import { invitationRoutes } from "./routes/invitations.js";
 import { schoolRoutes } from "./routes/school.js";
 import { sessionRoutes } from "./routes/session.js";
+import { signupRoutes } from "./routes/signup.js";
 import { systemRoutes } from "./routes/system.js";
 
 const HTTP_EXCEPTION_CODES: Partial<Record<number, ErrorCode>> = {
@@ -74,6 +77,9 @@ export function createApp(deps: AppDeps) {
   app.route("/", systemRoutes);
   app.route("/", schoolRoutes);
   app.route("/", sessionRoutes);
+  app.route("/", signupRoutes);
+  app.route("/", authRoutes);
+  app.route("/", invitationRoutes);
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",

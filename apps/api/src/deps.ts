@@ -2,7 +2,9 @@ import { AuthSecret } from "@brillianda/auth";
 import { createDatabase } from "@brillianda/db";
 import type { AppDeps } from "./context.js";
 import type { Env } from "./env.js";
+import { AllowAllBotCheck, TurnstileBotCheck } from "./lib/bot-check.js";
 import { createLogger, type Logger } from "./lib/logger.js";
+import { ConsoleMailer } from "./lib/mailer.js";
 import { MemoryRateLimiter, UpstashRateLimiter } from "./lib/rate-limit.js";
 import { SchoolDirectory } from "./lib/school-directory.js";
 
@@ -21,12 +23,15 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.NODE_ENV =
     rateLimiter,
     schools: new SchoolDirectory(db),
     logger,
+    mailer: new ConsoleMailer(logger),
+    botCheck: env.TURNSTILE_SECRET_KEY ? new TurnstileBotCheck(env.TURNSTILE_SECRET_KEY) : new AllowAllBotCheck(),
     config: {
       rootDomain: env.ROOT_DOMAIN,
       protocol: env.PUBLIC_PROTOCOL,
       proxySecret: env.PROXY_SHARED_SECRET,
       allowSchoolQueryParam: env.ALLOW_SCHOOL_QUERY_PARAM,
       secureCookies: env.PUBLIC_PROTOCOL === "https",
+      ...(env.PUBLIC_PORT ? { publicPort: env.PUBLIC_PORT } : {}),
     },
   };
 }

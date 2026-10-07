@@ -29,6 +29,20 @@
       "when": 1791401370545,
       "tag": "0003_backup_read_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791403238832,
+      "tag": "0004_signup_and_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791403240136,
+      "tag": "0005_force_rls_invitations",
+      "breakpoints": true
     }
   ]
 }

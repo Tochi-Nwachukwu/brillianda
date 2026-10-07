@@ -94,3 +94,37 @@ export const verificationTokens = pgTable(
     index("verification_tokens_expires_idx").on(t.expiresAt),
   ],
 );
+
+export const signupStatus = pgEnum("signup_status", ["open", "completed"]);
+
+/**
+ * A school signup in progress (plan: "each step saves as it goes"). Lives before any school
+ * exists, so it is a platform table. The browser holds a random token in a host-only cookie on
+ * the apex; only its HMAC is stored. Drafts expire after 7 days.
+ */
+export const signupDrafts = pgTable(
+  "signup_drafts",
+  {
+    id: id(),
+    tokenHash: text().notNull().unique(),
+    status: signupStatus().notNull().default("open"),
+    schoolName: text(),
+    levelsOffered: text().array(),
+    state: text(),
+    schoolPhone: text(),
+    ownerFullName: text(),
+    ownerEmail: citext(),
+    ownerPhone: text(),
+    /** Argon2id hash of the password chosen in step 2. Never the password itself. */
+    ownerPasswordHash: text(),
+    emailVerifiedAt: timestamp({ withTimezone: true }),
+    /** Set when the verified email already has a Brillianda account (second campus, etc.). */
+    existingUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    completedSchoolId: uuid().references(() => schools.id, { onDelete: "set null" }),
+    ip: text(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("signup_drafts_expires_idx").on(t.expiresAt), index("signup_drafts_email_idx").on(t.ownerEmail)],
+);

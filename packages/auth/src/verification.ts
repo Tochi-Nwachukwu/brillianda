@@ -29,7 +29,10 @@ const linkHash = (secret: AuthSecret, purpose: string, token: string) => secret.
 
 // ── Codes ───────────────────────────────────────────────────────────────────
 
-/** Milliseconds until a new code may be sent for this purpose/identifier (0 = now). */
+/**
+ * Milliseconds until a new code may be sent for this purpose/identifier (0 = now).
+ * Only an UNUSED code counts: once a code has been redeemed, the next flow may send one at once.
+ */
 export async function codeResendWaitMs(
   db: Executor,
   purpose: CodePurpose,
@@ -39,7 +42,13 @@ export async function codeResendWaitMs(
   const [last] = await db
     .select({ createdAt: verificationTokens.createdAt })
     .from(verificationTokens)
-    .where(and(eq(verificationTokens.purpose, purpose), eq(verificationTokens.identifier, normaliseIdentifier(identifier))))
+    .where(
+      and(
+        eq(verificationTokens.purpose, purpose),
+        eq(verificationTokens.identifier, normaliseIdentifier(identifier)),
+        isNull(verificationTokens.consumedAt),
+      ),
+    )
     .orderBy(desc(verificationTokens.createdAt))
     .limit(1);
   if (!last) return 0;

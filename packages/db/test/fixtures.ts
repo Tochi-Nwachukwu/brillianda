@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { auditLog, schoolMembers, schools, sessions, users } from "../src/schema/index.js";
+import { auditLog, invitations, schoolMembers, schools, sessions, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -31,6 +31,14 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
       absoluteExpiresAt: later,
     });
     await tx.insert(auditLog).values({ schoolId, actorUserId: ownerId, action: "school.created", entity: "school", entityId: schoolId });
+    await tx.insert(invitations).values({
+      schoolId,
+      email: `admin@${subdomain}.test`,
+      role: "admin",
+      tokenHash: `invite-${subdomain}-${sessionId}`,
+      invitedBy: ownerId,
+      expiresAt: later,
+    });
   });
 
   return { schoolId, ownerId, sessionId };

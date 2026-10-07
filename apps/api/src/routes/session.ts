@@ -1,24 +1,14 @@
 import { invalidateSession, validateSession } from "@brillianda/auth";
 import { auditLog, withSchool } from "@brillianda/db";
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import type { AppEnv } from "../context.js";
+import { meBody, MeSchema } from "../auth-helpers.js";
 import { problemContent } from "../lib/errors.js";
 import { clearSessionCookie, readSessionToken, requireSchool, schoolRoute } from "../school-route.js";
 
 export const sessionRoutes = new OpenAPIHono<AppEnv>();
 
-export const MeSchema = z
-  .object({
-    user: z.object({
-      id: z.string().uuid(),
-      email: z.string().email(),
-      fullName: z.string(),
-      emailVerified: z.boolean(),
-    }),
-    membership: z.object({ role: z.enum(["owner", "admin"]) }),
-    school: z.object({ id: z.string().uuid(), name: z.string(), subdomain: z.string() }),
-  })
-  .openapi("Me");
+
 
 const errorResponses = {
   401: problemContent("Not signed in to this school"),
@@ -37,16 +27,7 @@ sessionRoutes.openapi(
     },
   }),
   async (c) => {
-    const me = await schoolRoute(c, {}, async ({ auth, school }) => ({
-      user: {
-        id: auth.user.id,
-        email: auth.user.email,
-        fullName: auth.user.fullName,
-        emailVerified: auth.user.emailVerifiedAt !== null,
-      },
-      membership: { role: auth.membership.role },
-      school: { id: school.id, name: school.name, subdomain: school.subdomain },
-    }));
+    const me = await schoolRoute(c, {}, async ({ auth, school }) => meBody(auth.user, auth.membership, school));
     c.header("Cache-Control", "no-store");
     return c.json(me, 200);
   },

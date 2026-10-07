@@ -18,6 +18,8 @@ const deps = {
   secret: AuthSecret.fromBase64(Buffer.alloc(32, 1).toString("base64")),
   rateLimiter: new MemoryRateLimiter(),
   logger: silentLogger,
+  mailer: { send: async () => {} },
+  botCheck: { verify: async () => true },
   config: { rootDomain: "brillianda.com", protocol: "https", proxySecret: "x".repeat(16), allowSchoolQueryParam: false, secureCookies: true },
 } satisfies AppDeps;
 
