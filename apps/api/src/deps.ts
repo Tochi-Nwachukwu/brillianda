@@ -8,7 +8,7 @@ import { ConsoleMailer } from "./lib/mailer.js";
 import { MemoryRateLimiter, UpstashRateLimiter } from "./lib/rate-limit.js";
 import { SchoolDirectory } from "./lib/school-directory.js";
 
-export function buildDeps(env: Env, logger: Logger = createLogger(env.NODE_ENV === "production" ? "info" : "debug")): AppDeps {
+export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV === "production" ? "info" : "debug")): AppDeps {
   const db = createDatabase(env.DATABASE_URL, {
     max: env.DATABASE_POOL_MAX,
     onIdleError: (err) => logger.warn("idle database connection dropped", { err }),
@@ -26,6 +26,8 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.NODE_ENV =
     mailer: new ConsoleMailer(logger),
     botCheck: env.TURNSTILE_SECRET_KEY ? new TurnstileBotCheck(env.TURNSTILE_SECRET_KEY) : new AllowAllBotCheck(),
     config: {
+      appEnv: env.APP_ENV,
+      onVercel: process.env.VERCEL === "1",
       rootDomain: env.ROOT_DOMAIN,
       protocol: env.PUBLIC_PROTOCOL,
       proxySecret: env.PROXY_SHARED_SECRET,

@@ -7,6 +7,14 @@ const bool = z
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  /**
+   * Which rules apply. Separate from NODE_ENV because hosts (Vercel) always set NODE_ENV=production.
+   *   development  laptop
+   *   staging      a hosted test environment: console email allowed (codes appear in the host's logs),
+   *                ?school= addressing, Turnstile and Upstash optional, /docs test page on
+   *   production   real schools: every safety requirement enforced
+   */
+  APP_ENV: z.enum(["development", "staging", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.string().url(),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
@@ -28,18 +36,25 @@ const EnvSchema = z.object({
 export type Env = z.infer<typeof EnvSchema>;
 
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
-  const parsed = EnvSchema.safeParse(source);
+  // On Vercel, default the root domain to the project's own address (e.g. brillianda-api.vercel.app),
+  // which Vercel exposes as a system environment variable.
+  const withDefaults = { ...source, ROOT_DOMAIN: source.ROOT_DOMAIN || source.VERCEL_PROJECT_PRODUCTION_URL };
+  const parsed = EnvSchema.safeParse(withDefaults);
   if (!parsed.success) {
     const lines = parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
     throw new Error(`Invalid environment:\n${lines}`);
   }
   const env = parsed.data;
-  if (env.NODE_ENV === "production") {
+  if (env.APP_ENV === "production") {
     if (env.PUBLIC_PROTOCOL !== "https") throw new Error("PUBLIC_PROTOCOL must be https in production");
     if (env.ALLOW_SCHOOL_QUERY_PARAM) throw new Error("ALLOW_SCHOOL_QUERY_PARAM must be off in production");
+    if (env.NODE_ENV !== "production") throw new Error("APP_ENV=production needs NODE_ENV=production");
     if (!env.UPSTASH_REDIS_REST_URL) throw new Error("Upstash is required in production (rate limits must be shared)");
     if (!env.TURNSTILE_SECRET_KEY) throw new Error("TURNSTILE_SECRET_KEY is required in production (signup bot check)");
     if (env.MAIL_PROVIDER === "console") throw new Error("A real MAIL_PROVIDER is required in production; console mail reaches nobody");
+  }
+  if (env.APP_ENV === "staging" && env.PUBLIC_PROTOCOL !== "https") {
+    throw new Error("PUBLIC_PROTOCOL must be https on a hosted staging environment");
   }
   return env;
 }

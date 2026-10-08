@@ -1,5 +1,6 @@
 import { createSession, type SessionMembership, type SessionUser } from "@brillianda/auth";
 import { auditLog, type Tx } from "@brillianda/db";
+import { waitUntil } from "@vercel/functions";
 import { z } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import type { AppEnv } from "./context.js";
@@ -87,9 +88,12 @@ export async function startSession(
 export function inBackground(c: Context<AppEnv>, label: string, work: () => Promise<void>): void {
   const { logger } = c.get("deps");
   const requestId = c.get("requestId");
-  setImmediate(() => {
-    work().catch((err) => logger.error(`background task failed: ${label}`, { err, requestId }));
-  });
+  const task = new Promise<void>((resolve) => setImmediate(resolve))
+    .then(work)
+    .catch((err) => logger.error(`background task failed: ${label}`, { err, requestId }));
+  // On Vercel, keep the function alive until the email is sent; elsewhere this is a no-op and the
+  // task simply runs on the long-lived process.
+  waitUntil(task);
 }
 
 /** The same 202 body whether or not anything was sent, so it reveals nothing. */

@@ -8,12 +8,15 @@ import type { RateLimiter } from "./lib/rate-limit.js";
 import type { SchoolDirectory } from "./lib/school-directory.js";
 
 export interface AppConfig {
+  appEnv?: "development" | "staging" | "production";
   rootDomain: string;
   protocol: "http" | "https";
   proxySecret: string;
   allowSchoolQueryParam: boolean;
   /** Secure + __Host- cookies. True whenever protocol is https. */
   secureCookies: boolean;
+  /** Running on Vercel: its edge sets x-real-ip to the client address and clients cannot forge it. */
+  onVercel?: boolean;
   /** Port the BROWSER uses (frontend), for links in emails. Unset in production (443). */
   publicPort?: number;
 }

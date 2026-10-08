@@ -45,6 +45,8 @@ export const requestContext = (deps: AppDeps) =>
     let clientIp: string | null = null;
     if (trusted) {
       clientIp = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || null;
+    } else if (deps.config.onVercel) {
+      clientIp = c.req.header("x-real-ip")?.trim() || null;
     } else {
       try {
         clientIp = getConnInfo(c).remote.address ?? null;

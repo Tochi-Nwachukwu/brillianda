@@ -208,3 +208,34 @@ describe("the contract", () => {
     expect(Object.keys(doc.paths["/v1/me"]!.get!.responses["401"]!.content!)).toEqual(["application/problem+json"]);
   });
 });
+
+describe("staging addressing", () => {
+  it("serves /s/<school>/... as that school, and /docs, only when the staging flag is on", async () => {
+    const { createServer } = await import("../src/entry.js");
+    const staging = createServer({ ...h.deps, config: { ...h.deps.config, allowSchoolQueryParam: true, appEnv: "staging", rootDomain: "brillianda-api.vercel.app" } });
+    const res = await staging.request("/s/alpha/v1/school", { headers: { host: "brillianda-api.vercel.app" } });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ subdomain: "alpha" });
+    expect((await staging.request("/docs")).status).toBe(200);
+    const doc = (await (await staging.request("/openapi.json")).json()) as { servers: { url: string }[] };
+    expect(doc.servers.map((s) => s.url)).toEqual(["/", "/s/{school}"]);
+
+    const production = createServer({ ...h.deps, config: { ...h.deps.config, appEnv: "production" } });
+    expect((await production.request("/s/alpha/v1/school", { headers: { host: HOST } })).status).toBe(404);
+    expect((await production.request("/docs")).status).toBe(404);
+  });
+
+  it("builds ?school= links in staging", async () => {
+    const { schoolUrl } = await import("../src/lib/urls.js");
+    const cfg = { ...h.deps.config, allowSchoolQueryParam: true, rootDomain: "brillianda-api.vercel.app" };
+    expect(schoolUrl(cfg, "kingsway", "/auth/handover?token=abc")).toBe("https://brillianda-api.vercel.app/auth/handover?token=abc&school=kingsway");
+    expect(schoolUrl(h.deps.config, "kingsway", "/invite?token=abc")).toBe("https://kingsway.brillianda.test/invite?token=abc");
+  });
+
+  it("refuses production settings that would be unsafe", async () => {
+    const { loadEnv } = await import("../src/env.js");
+    const base = { DATABASE_URL: "postgres://x@y/z", ROOT_DOMAIN: "brillianda.com", AUTH_SECRET: "a".repeat(44), PROXY_SHARED_SECRET: "b".repeat(20), NODE_ENV: "production" };
+    expect(() => loadEnv({ ...base, APP_ENV: "production" })).toThrow(/Upstash|TURNSTILE|MAIL_PROVIDER/);
+    expect(() => loadEnv({ ...base, APP_ENV: "staging", ALLOW_SCHOOL_QUERY_PARAM: "true" })).not.toThrow();
+  });
+});

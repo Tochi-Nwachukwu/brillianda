@@ -5,7 +5,16 @@ export function apexUrl(config: AppConfig, path = "/"): string {
   return `${config.protocol}://${config.rootDomain}${portSuffix(config)}${path}`;
 }
 
+/**
+ * A school's own address. Where schools are addressed with ?school= (a staging host without
+ * wildcard subdomains, e.g. *.vercel.app), links become https://host/path?school=<subdomain>.
+ */
 export function schoolUrl(config: AppConfig, subdomain: string, path = "/"): string {
+  if (config.allowSchoolQueryParam) {
+    const url = new URL(`${config.protocol}://${config.rootDomain}${portSuffix(config)}${path}`);
+    url.searchParams.set("school", subdomain);
+    return url.toString();
+  }
   return `${config.protocol}://${subdomain}.${config.rootDomain}${portSuffix(config)}${path}`;
 }
 

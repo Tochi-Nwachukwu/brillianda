@@ -1,3 +1,4 @@
+import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
@@ -45,16 +46,28 @@ export function createApp(deps: AppDeps) {
 
   app.use("*", serverTiming());
   app.use("*", requestContext(deps));
-  app.use(
-    "*",
-    secureHeaders({
-      contentSecurityPolicy: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
-      strictTransportSecurity: deps.config.protocol === "https" ? "max-age=63072000; includeSubDomains; preload" : false,
-      xFrameOptions: "DENY",
-      referrerPolicy: "strict-origin-when-cross-origin",
-      crossOriginResourcePolicy: "same-origin",
-    }),
-  );
+  const showDocs = deps.config.appEnv !== "production";
+  const strictHeaders = secureHeaders({
+    contentSecurityPolicy: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+    strictTransportSecurity: deps.config.protocol === "https" ? "max-age=63072000; includeSubDomains; preload" : false,
+    xFrameOptions: "DENY",
+    referrerPolicy: "strict-origin-when-cross-origin",
+    crossOriginResourcePolicy: "same-origin",
+  });
+  // The /docs test page (never in production) loads Swagger UI from jsDelivr, so it gets its own,
+  // looser policy; every API response keeps default-src 'none'.
+  const docsHeaders = secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      imgSrc: ["'self'", "data:", "https://cdn.jsdelivr.net"],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+    xFrameOptions: "DENY",
+  });
+  app.use("*", (c, next) => (showDocs && c.req.path === "/docs" ? docsHeaders(c, next) : strictHeaders(c, next)));
   // No compression here: the frontend's edge compresses what reaches browsers, and API↔edge
   // traffic stays inside one region. Compressing twice only burns CPU.
   app.use("*", async (c, next) => {
@@ -83,6 +96,14 @@ export function createApp(deps: AppDeps) {
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",
+    ...(deps.config.allowSchoolQueryParam
+      ? {
+          servers: [
+            { url: "/", description: "Main site: signup, find my school" },
+            { url: "/s/{school}", description: "A school's address (staging)", variables: { school: { default: "surebloom" } } },
+          ],
+        }
+      : {}),
     info: {
       title: "Brillianda API",
       version: "0.1.0",
@@ -91,6 +112,10 @@ export function createApp(deps: AppDeps) {
         "Errors are RFC 9457 problem details (application/problem+json); see docs/api-conventions.md.",
     },
   });
+
+  if (showDocs) {
+    app.get("/docs", swaggerUI({ url: "/openapi.json", persistAuthorization: true, withCredentials: true }));
+  }
 
   const allowedMethods = buildAllowLookup(app);
 
