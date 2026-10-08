@@ -25,9 +25,10 @@ const EnvSchema = z.object({
   ALLOW_SCHOOL_QUERY_PARAM: bool,
   /** Port browsers use for the frontend (local: 3000). Leave unset in production. */
   PUBLIC_PORT: z.coerce.number().int().positive().optional().or(z.literal("").transform(() => undefined)),
-  /** console = print emails to the terminal. Provider adapters are added as they are chosen. */
-  MAIL_PROVIDER: z.enum(["console"]).default("console"),
+  /** console = print emails to the terminal / host logs. resend = send for real (needs RESEND_API_KEY). */
+  MAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   MAIL_FROM: z.string().default("Brillianda <no-reply@brillianda.com>"),
+  RESEND_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
   TURNSTILE_SECRET_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
   UPSTASH_REDIS_REST_URL: z.string().url().optional().or(z.literal("").transform(() => undefined)),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional().or(z.literal("").transform(() => undefined)),
@@ -45,7 +46,13 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     throw new Error(`Invalid environment:\n${lines}`);
   }
   const env = parsed.data;
+  if (env.MAIL_PROVIDER === "resend" && !env.RESEND_API_KEY) {
+    throw new Error("MAIL_PROVIDER=resend needs RESEND_API_KEY");
+  }
   if (env.APP_ENV === "production") {
+    if (/@resend\.dev>?\s*$/i.test(env.MAIL_FROM)) {
+      throw new Error("MAIL_FROM is Resend's test sender, which only reaches the account owner; use your verified domain in production");
+    }
     if (env.PUBLIC_PROTOCOL !== "https") throw new Error("PUBLIC_PROTOCOL must be https in production");
     if (env.ALLOW_SCHOOL_QUERY_PARAM) throw new Error("ALLOW_SCHOOL_QUERY_PARAM must be off in production");
     if (env.NODE_ENV !== "production") throw new Error("APP_ENV=production needs NODE_ENV=production");

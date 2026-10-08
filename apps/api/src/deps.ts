@@ -4,7 +4,7 @@ import type { AppDeps } from "./context.js";
 import type { Env } from "./env.js";
 import { AllowAllBotCheck, TurnstileBotCheck } from "./lib/bot-check.js";
 import { createLogger, type Logger } from "./lib/logger.js";
-import { ConsoleMailer } from "./lib/mailer.js";
+import { ConsoleMailer, ResendMailer } from "./lib/mailer.js";
 import { MemoryRateLimiter, UpstashRateLimiter } from "./lib/rate-limit.js";
 import { SchoolDirectory } from "./lib/school-directory.js";
 
@@ -23,7 +23,8 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
     rateLimiter,
     schools: new SchoolDirectory(db),
     logger,
-    mailer: new ConsoleMailer(logger),
+    mailer:
+      env.MAIL_PROVIDER === "resend" ? new ResendMailer(env.RESEND_API_KEY!, env.MAIL_FROM, logger) : new ConsoleMailer(logger),
     botCheck: env.TURNSTILE_SECRET_KEY ? new TurnstileBotCheck(env.TURNSTILE_SECRET_KEY) : new AllowAllBotCheck(),
     config: {
       appEnv: env.APP_ENV,

@@ -182,3 +182,24 @@ describe("a proprietor with a second campus", () => {
     expect(res.status).toBe(410);
   });
 });
+
+describe("when the email provider refuses", () => {
+  it("answers 503 with Retry-After instead of a 500, and the draft can continue later", async () => {
+    const { MailDeliveryError } = await import("../src/lib/mailer.js");
+    const fresh = await createHarness(); // its own rate-limit budget
+    fresh.mail.send = async () => {
+      throw new MailDeliveryError("Resend 403: You can only send testing emails to your own email address", 403);
+    };
+    try {
+      const apex = browser(fresh, APEX);
+      expect((await apex.post("/v1/signup/school", schoolStep)).status).toBe(200);
+      const res = await apex.post("/v1/signup/owner", { fullName: "Bola Ade", email: "bola@mailfail.test", password: "correct horse battery" });
+      expect(res.status).toBe(503);
+      expect(res.headers.get("retry-after")).toBe("60");
+      expect(await res.json()).toMatchObject({ code: "service_unavailable", detail: expect.stringMatching(/could not send the email/) });
+      expect(await (await apex.get("/v1/signup")).json()).toMatchObject({ step: "verify_email" });
+    } finally {
+      await fresh.t.close();
+    }
+  });
+});

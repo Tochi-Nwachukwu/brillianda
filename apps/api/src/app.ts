@@ -4,6 +4,7 @@ import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { secureHeaders } from "hono/secure-headers";
 import type { AppDeps, AppEnv } from "./context.js";
+import { MailDeliveryError } from "./lib/mailer.js";
 import { ApiError, type ErrorCode, type FieldError, problemResponse, toPointer } from "./lib/errors.js";
 import { csrf } from "./middleware/csrf.js";
 import { buildAllowLookup, requireJsonBody, serverTiming } from "./middleware/http.js";
@@ -139,6 +140,13 @@ export function createApp(deps: AppDeps) {
     if (err instanceof HTTPException) {
       const code = HTTP_EXCEPTION_CODES[err.status] ?? (err.status < 500 ? "bad_request" : "internal");
       return problemResponse(c, code, err.status < 500 ? err.message : undefined);
+    }
+    // The email provider refused or was down (already logged by the mailer). The request did not
+    // complete its purpose, so say so plainly instead of a generic 500.
+    if (err instanceof MailDeliveryError) {
+      return problemResponse(c, "service_unavailable", "We could not send the email just now. Try again in a minute.", {
+        headers: { "retry-after": "60" },
+      });
     }
     deps.logger.error("unhandled error", { err, requestId: c.get("requestId"), path: c.req.path, method: c.req.method });
     return problemResponse(c, "internal", "Quote the requestId if you report this.");
