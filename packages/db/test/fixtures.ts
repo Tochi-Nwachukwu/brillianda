@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { academicSessions, auditLog, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
+import { academicSessions, arms, auditLog, classArms, classLevels, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -44,6 +44,9 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
       .values({ schoolId, startYear: 2026, name: "2026/2027", startsOn: "2026-09-14", endsOn: "2027-07-23", isCurrent: true })
       .returning({ id: academicSessions.id });
     await tx.insert(terms).values({ schoolId, sessionId: year!.id, name: "First Term", position: 1, startsOn: "2026-09-14", endsOn: "2026-12-18" });
+    const [level] = await tx.insert(classLevels).values({ schoolId, key: "jss1", name: "JSS 1", shortName: "JSS1", section: "junior", position: 0 }).returning({ id: classLevels.id });
+    const [arm] = await tx.insert(arms).values({ schoolId, name: "Gold", code: "GOL", position: 0 }).returning({ id: arms.id });
+    await tx.insert(classArms).values({ schoolId, classLevelId: level!.id, armId: arm!.id });
   });
 
   return { schoolId, ownerId, sessionId };

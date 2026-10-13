@@ -1080,6 +1080,438 @@
           "who",
           "what"
         ]
+      },
+      "ClassStructure": {
+        "type": "object",
+        "properties": {
+          "levels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassLevel"
+            },
+            "description": "Youngest first"
+          },
+          "armNames": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArmName"
+            },
+            "description": "In the school's order"
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassArm"
+            }
+          },
+          "levelsOffered": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "From signup, lowercase: nursery, primary, secondary"
+          }
+        },
+        "required": [
+          "levels",
+          "armNames",
+          "arms",
+          "levelsOffered"
+        ]
+      },
+      "ClassLevel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Ladder place (\"jss1\"), or null for a class the school added"
+          },
+          "name": {
+            "type": "string"
+          },
+          "short": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string",
+            "enum": [
+              "preschool",
+              "primary",
+              "junior",
+              "senior"
+            ]
+          },
+          "position": {
+            "type": "integer"
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "short",
+          "section",
+          "position",
+          "archived"
+        ]
+      },
+      "ArmName": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code"
+        ]
+      },
+      "ClassArm": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "armNameId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "science",
+              "arts",
+              "commercial",
+              null
+            ]
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "studentCount": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "levelId",
+          "armNameId",
+          "department",
+          "archived",
+          "studentCount"
+        ]
+      },
+      "ClassSetup": {
+        "type": "object",
+        "properties": {
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 20
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "short": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 8
+                },
+                "section": {
+                  "type": "string",
+                  "enum": [
+                    "preschool",
+                    "primary",
+                    "junior",
+                    "senior"
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "name",
+                "short",
+                "section"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 30
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4
+                }
+              },
+              "required": [
+                "name",
+                "code"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 10
+          },
+          "armsByLevel": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minItems": 1
+            },
+            "description": "For each level (same order), the arms it has, as indexes into `arms`"
+          }
+        },
+        "required": [
+          "levels",
+          "arms",
+          "armsByLevel"
+        ]
+      },
+      "NewClassLevel": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "short": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8
+          },
+          "section": {
+            "type": "string",
+            "enum": [
+              "preschool",
+              "primary",
+              "junior",
+              "senior"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "short",
+          "section"
+        ]
+      },
+      "ClassLevelChange": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "short": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NewClassArm": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "armNameId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "required": [
+              "armNameId"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 30
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4
+              }
+            },
+            "required": [
+              "name",
+              "code"
+            ]
+          }
+        ],
+        "description": "{ armNameId } for an existing arm name, or { name, code } for a new one"
+      },
+      "ArmNameChange": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4
+          }
+        },
+        "required": [
+          "name",
+          "code"
+        ]
+      },
+      "ClassArmChange": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "science",
+              "arts",
+              "commercial",
+              null
+            ]
+          },
+          "archived": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ArmLayoutResult": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "example": "new arm Emerald; 3 classes added"
+          }
+        },
+        "required": [
+          "summary"
+        ]
+      },
+      "ArmLayout": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "description": "An arm name's id, or any new key such as \"new-1\""
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4
+                }
+              },
+              "required": [
+                "key",
+                "name",
+                "code"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 26
+          },
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "levelId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "arms": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "levelId",
+                "arms"
+              ]
+            },
+            "description": "Every class in use (not archived), each with the keys of the arms it should have"
+          }
+        },
+        "required": [
+          "names",
+          "levels"
+        ]
       }
     },
     "parameters": {}
@@ -2744,6 +3176,751 @@
           },
           "404": {
             "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/classes": {
+      "get": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "The school's class levels, arm names and arms, with student counts",
+        "responses": {
+          "200": {
+            "description": "Class structure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassStructure"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/classes/setup": {
+      "post": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Quick setup: every class level and arm at once. Only while the school has no classes",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassSetup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassStructure"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Classes are already set up",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/class-levels": {
+      "post": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Add a class after setup (Year 13, Pre-JSS). It goes at the end of its section, with the school's first arm",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewClassLevel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No classes set up yet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Another class has this name",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/class-levels/{id}": {
+      "patch": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Rename a class (name and short name) and/or archive it or bring it back",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassLevelChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Another class has this name",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Remove a class and its arms. Refused while any of its arms has students: archive it instead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The class has students",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/class-levels/{id}/arms": {
+      "post": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Add an arm to one class: one of the school's arm names, or a new name made for the whole school",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewClassArm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The class already has this arm",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A new arm's name or code is already used",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arm-names/{id}": {
+      "patch": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Rename an arm name and its code. It changes in every class",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArmNameChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Another arm has this name or code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{id}": {
+      "patch": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Set one class's department (senior classes only) and/or archive it or bring it back",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassArmChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Departments are for senior classes",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Remove one class's arm. Refused while it has students, or if it's the class's only arm",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Has students, or is the class's only arm",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/layout": {
+      "put": {
+        "tags": [
+          "classes"
+        ],
+        "summary": "Classes › Edit arms: the arm names in order and which classes have each. Checked as a whole; a refused save changes nothing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArmLayout"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArmLayoutResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or arm here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Something changed while editing, or an arm with students would be removed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing",
             "content": {
               "application/problem+json": {
                 "schema": {

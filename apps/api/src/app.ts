@@ -14,6 +14,7 @@ import { invitationRoutes } from "./routes/invitations.js";
 import { memberRoutes } from "./routes/members.js";
 import { calendarRoutes } from "./routes/calendar.js";
 import { homeRoutes } from "./routes/home.js";
+import { classRoutes } from "./routes/classes.js";
 import { schoolRoutes } from "./routes/school.js";
 import { sessionRoutes } from "./routes/session.js";
 import { signupRoutes } from "./routes/signup.js";
@@ -100,6 +101,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", memberRoutes);
   app.route("/", calendarRoutes);
   app.route("/", homeRoutes);
+  app.route("/", classRoutes);
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",

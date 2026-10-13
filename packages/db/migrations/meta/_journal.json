@@ -64,6 +64,20 @@
       "when": 1791905739735,
       "tag": "0008_audit_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791906367957,
+      "tag": "0009_classes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791906369573,
+      "tag": "0010_force_rls_classes",
+      "breakpoints": true
     }
   ]
 }

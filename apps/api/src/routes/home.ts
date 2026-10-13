@@ -5,7 +5,7 @@
  *   PUT /v1/setup/hidden   hide or show the checklist on Home
  *   GET /v1/home           counts and the latest changes
  *
- * Steps whose tables arrive in later phases (classes, arms, subjects, students) report not done
+ * Steps whose tables arrive in later phases (subjects, students) report not done
  * and count 0 until then; the response shape does not change when they arrive.
  */
 import { auditLog, count, desc, eq, invitations, isNotNull, schoolMembers, schools, sql, users } from "@brillianda/db";
@@ -14,6 +14,7 @@ import type { AppEnv } from "../context.js";
 import { problemContent } from "../lib/errors.js";
 import { schoolRoute } from "../school-route.js";
 import { currentSession } from "./calendar.js";
+import { classCounts } from "./classes.js";
 
 export const homeRoutes = new OpenAPIHono<AppEnv>();
 
@@ -69,11 +70,12 @@ homeRoutes.openapi(
       const session = await currentSession(tx);
       const [members] = await tx.select({ n: count() }).from(schoolMembers).where(eq(schoolMembers.status, "active"));
       const [invited] = await tx.select({ n: count() }).from(invitations);
+      const classes = await classCounts(tx);
       const done: Record<(typeof STEPS)[number], boolean> = {
         branding: row?.settings?.brandingSaved === true || row?.brandColor != null || row?.logoKey != null,
         calendar: session.confirmed,
-        classes: false,
-        arms: false,
+        classes: classes.levels > 0,
+        arms: classes.classes > 0,
         subjects: false,
         students: false,
         admins: (members?.n ?? 0) > 1 || (invited?.n ?? 0) > 0,
@@ -116,6 +118,7 @@ homeRoutes.openapi(
   async (c) => {
     const data = await schoolRoute(c, {}, async ({ tx }) => {
       const [members] = await tx.select({ n: count() }).from(schoolMembers).where(eq(schoolMembers.status, "active"));
+      const classes = await classCounts(tx);
       const recent = await tx
         .select({ id: auditLog.id, at: auditLog.createdAt, who: users.fullName, what: auditLog.summary })
         .from(auditLog)
@@ -125,8 +128,8 @@ homeRoutes.openapi(
         .limit(6);
       return {
         students: 0,
-        classes: 0,
-        arms: 0,
+        classes: classes.classes,
+        arms: classes.armNames,
         subjects: 0,
         admins: members?.n ?? 0,
         recent: recent.map((r) => ({ id: r.id, at: r.at.toISOString(), who: r.who ?? "Someone", what: r.what! })),

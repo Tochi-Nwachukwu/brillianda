@@ -13,6 +13,9 @@ export {
   invitations,
   academicSessions,
   terms,
+  classLevels,
+  arms,
+  classArms,
 } from "./schema/index.js";
 // Re-export the query helpers feature code needs, so nothing imports drizzle internals ad hoc.
 export { and, asc, count, desc, eq, gt, gte, inArray, isNull, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";

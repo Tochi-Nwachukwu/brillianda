@@ -220,3 +220,89 @@ export const terms = pgTable(
     backupRead(),
   ],
 ).enableRLS();
+
+export const classSection = pgEnum("class_section", ["preschool", "primary", "junior", "senior"]);
+export const department = pgEnum("department", ["science", "arts", "commercial"]);
+
+/**
+ * The school's ladder of class levels, youngest first (plan: "The class ladder"). Position orders
+ * the ladder so promotion later knows JSS 3 leads to SS 1. `key` is the ladder place
+ * ("jss1") for generated levels, null for ones the school added (Year 13, Pre-JSS).
+ */
+export const classLevels = pgTable(
+  "class_levels",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    key: text(),
+    name: text().notNull(),
+    shortName: text().notNull(),
+    section: classSection().notNull(),
+    position: integer().notNull(),
+    /** Other spellings for import matching (JSS1, JS1, Year 7). Filled by the import phase. */
+    aliases: text().array().notNull().default(sql`'{}'::text[]`),
+    archivedAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("class_levels_school_id_id_key").on(t.schoolId, t.id),
+    unique("class_levels_school_position_key").on(t.schoolId, t.position),
+    uniqueIndex("class_levels_school_name_idx").on(t.schoolId, sql`lower(${t.name})`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** Arm names, kept once per school, so renaming Daisy renames it in every class (plan: "Arms"). */
+export const arms = pgTable(
+  "arms",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    name: text().notNull(),
+    /** Short code for tight screens: Anthurium → ANT. */
+    code: text().notNull(),
+    position: integer().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("arms_school_id_id_key").on(t.schoolId, t.id),
+    uniqueIndex("arms_school_name_idx").on(t.schoolId, sql`lower(${t.name})`),
+    unique("arms_school_code_key").on(t.schoolId, t.code),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** One class: a level and an arm (JSS 1 Gold). Students will sit in these. */
+export const classArms = pgTable(
+  "class_arms",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    classLevelId: uuid().notNull(),
+    armId: uuid().notNull(),
+    /** Senior classes only: subject defaults follow the arm's department. */
+    department: department(),
+    archivedAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("class_arms_school_id_id_key").on(t.schoolId, t.id),
+    unique("class_arms_level_arm_key").on(t.schoolId, t.classLevelId, t.armId),
+    foreignKey({ name: "class_arms_level_fk", columns: [t.schoolId, t.classLevelId], foreignColumns: [classLevels.schoolId, classLevels.id] }),
+    foreignKey({ name: "class_arms_arm_fk", columns: [t.schoolId, t.armId], foreignColumns: [arms.schoolId, arms.id] }),
+    index("class_arms_school_arm_idx").on(t.schoolId, t.armId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();

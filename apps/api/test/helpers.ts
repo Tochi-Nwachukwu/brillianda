@@ -4,7 +4,7 @@ import { createTestDatabase, type TestDatabase } from "@brillianda/db/testing";
 import { randomBytes } from "node:crypto";
 import { createApp } from "../src/app.js";
 import type { AppConfig, AppDeps } from "../src/context.js";
-import { silentLogger } from "../src/lib/logger.js";
+import { createLogger, silentLogger } from "../src/lib/logger.js";
 import { AllowAllBotCheck, type BotCheck } from "../src/lib/bot-check.js";
 import { MemoryMailer } from "../src/lib/mailer.js";
 import { MemoryRateLimiter } from "../src/lib/rate-limit.js";
@@ -28,7 +28,7 @@ export async function createHarness(config: Partial<AppConfig> = {}, botCheck: B
     secret: AuthSecret.fromBase64(randomBytes(32).toString("base64")),
     rateLimiter: new MemoryRateLimiter(),
     schools: new SchoolDirectory(t.db, 0),
-    logger: silentLogger,
+    logger: process.env.TEST_LOG ? createLogger("error") : silentLogger,
     mailer: mail,
     botCheck,
     config: {

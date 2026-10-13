@@ -137,3 +137,24 @@ while typing (debounce ~300 ms). The draft travels in an HttpOnly cookie; the fr
 `recent[].what` is a sentence written when the change happens, in the frontend's wording ("Set the
 2026/2027 calendar", "Invited ada@x.ng as an admin", "Removed Bisi Ade as an admin"). Sign-ins
 are recorded for security but never listed.
+
+**13 October 2026, evening** (batch 6: classes and arms)
+
+Shapes are the fake's `ClassStructure`, `ClassLevel`, `ArmName` and `ClassArm`. Owners and admins.
+
+| Frontend function | Endpoint | Notes |
+|---|---|---|
+| `getClassStructure` | `GET /v1/classes` | `levelsOffered` is lowercase (`secondary`); upper-case it for `SchoolLevel`. `studentCount` is 0 until students ship |
+| `setupClasses` | `POST /v1/classes/setup` (`classSetupSchema`) → 201 with the new structure | 409 if classes already exist |
+| `addLevel` | `POST /v1/class-levels` `{ name, short, section }` → 201 `{ id }` | Goes at the end of its section, with the first arm |
+| `renameLevel`, `setLevelArchived` | `PATCH /v1/class-levels/{id}` `{ name?, short?, archived? }` → 204 | |
+| `removeLevel` | `DELETE /v1/class-levels/{id}` → 204 | 409 while it has students |
+| `addArm` | `POST /v1/class-levels/{id}/arms` `{ armNameId }` or `{ name, code }` → 201 `{ id }` | |
+| `renameArmName` | `PATCH /v1/arm-names/{id}` `{ name, code }` → 204 | Renames it in every class |
+| `setArmDepartment`, `setArmArchived` | `PATCH /v1/arms/{id}` `{ department?, archived? }` → 204 | 409 for a department on a non-senior class |
+| `removeArm` | `DELETE /v1/arms/{id}` → 204 | 409 with students, or for a class's only arm |
+| `saveArmLayout` | `PUT /v1/arms/layout` (`armLayoutSchema`) → `{ summary }` | All or nothing; 409 when the screen is stale |
+
+Name and code clashes are 422 with a pointer (`#/name`, `#/code`), so they land under the field.
+Refusals that aren't about one field (has students, stale screen, already set up) are 409 with the
+same sentence the fake returns in `detail`.
