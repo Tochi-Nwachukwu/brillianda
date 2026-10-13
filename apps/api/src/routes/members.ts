@@ -89,7 +89,7 @@ memberRoutes.openapi(
 
       // Their sessions at this school go with the membership (sessions_membership_fk cascades).
       await tx.delete(schoolMembers).where(eq(schoolMembers.userId, userId));
-      audit({ action: "member.removed", entity: "user", entityId: userId, changes: { email: member.email, fullName: member.fullName, role: member.role } });
+      audit({ action: "member.removed", entity: "user", entityId: userId, changes: { email: member.email, fullName: member.fullName, role: member.role }, summary: `Removed ${member.fullName} as an admin` });
     });
     return c.body(null, 204);
   },

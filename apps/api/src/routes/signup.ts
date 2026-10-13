@@ -622,6 +622,7 @@ signupRoutes.openapi(
           schoolId: school!.id,
           actorUserId: userId,
           action: "school.created",
+          summary: "Created the school",
           entity: "school",
           entityId: school!.id,
           changes: { name: draft.schoolName, subdomain, levelsOffered: draft.levelsOffered, state: draft.state, via: "signup" },

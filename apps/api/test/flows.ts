@@ -20,6 +20,7 @@ export interface Client {
   get(path: string): Promise<Response>;
   post(path: string, body?: unknown): Promise<Response>;
   del(path: string): Promise<Response>;
+  send(method: string, path: string, body?: unknown): Promise<Response>;
   cookies: Map<string, string>;
 }
 
@@ -44,6 +45,7 @@ export function browser(h: Harness, host: string, cookies = new Map<string, stri
     get: (p) => send("GET", p),
     post: (p, b) => send("POST", p, b),
     del: (p) => send("DELETE", p),
+    send,
     cookies,
   };
 }

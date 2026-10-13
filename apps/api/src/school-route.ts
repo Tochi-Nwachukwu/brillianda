@@ -28,6 +28,8 @@ export interface AuditEntry {
   entity: string;
   entityId?: string | null;
   changes?: Record<string, unknown>;
+  /** A sentence for the change history ("Removed Bisi Ade as an admin"). Omit for non-changes. */
+  summary?: string;
 }
 
 export interface SchoolContext {
@@ -113,6 +115,7 @@ export async function schoolRoute<T>(
           entity: e.entity,
           entityId: e.entityId ?? null,
           changes: e.changes ?? {},
+          summary: e.summary ?? null,
           ip: c.get("clientIp"),
           userAgent: c.get("userAgent"),
         })),

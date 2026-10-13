@@ -57,6 +57,13 @@
       "when": 1791905247841,
       "tag": "0007_force_rls_calendar",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791905739735,
+      "tag": "0008_audit_summary",
+      "breakpoints": true
     }
   ]
 }

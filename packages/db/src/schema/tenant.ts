@@ -100,6 +100,11 @@ export const auditLog = pgTable(
     entity: text().notNull(),
     entityId: uuid(),
     changes: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+    /**
+     * One sentence for people ("Set the 2026/2027 calendar"), shown on Home and in the change
+     * history. Null for entries that are not changes to the school's records (sign-ins).
+     */
+    summary: text(),
     ip: text(),
     userAgent: text(),
     createdAt: createdAt(),
@@ -108,6 +113,7 @@ export const auditLog = pgTable(
     unique("audit_log_school_id_id_key").on(t.schoolId, t.id),
     index("audit_log_school_created_idx").on(t.schoolId, t.createdAt.desc()),
     index("audit_log_school_entity_idx").on(t.schoolId, t.entity, t.entityId),
+    index("audit_log_school_changes_idx").on(t.schoolId, t.createdAt.desc()).where(sql`${t.summary} IS NOT NULL`),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],

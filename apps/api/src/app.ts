@@ -12,6 +12,8 @@ import { requestContext } from "./middleware/request-context.js";
 import { authRoutes } from "./routes/auth.js";
 import { invitationRoutes } from "./routes/invitations.js";
 import { memberRoutes } from "./routes/members.js";
+import { calendarRoutes } from "./routes/calendar.js";
+import { homeRoutes } from "./routes/home.js";
 import { schoolRoutes } from "./routes/school.js";
 import { sessionRoutes } from "./routes/session.js";
 import { signupRoutes } from "./routes/signup.js";
@@ -96,6 +98,8 @@ export function createApp(deps: AppDeps) {
   app.route("/", authRoutes);
   app.route("/", invitationRoutes);
   app.route("/", memberRoutes);
+  app.route("/", calendarRoutes);
+  app.route("/", homeRoutes);
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",

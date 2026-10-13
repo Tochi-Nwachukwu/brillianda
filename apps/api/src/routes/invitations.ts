@@ -106,7 +106,7 @@ invitationRoutes.openapi(
           updatedBy: auth.user.id,
         })
         .returning();
-      audit({ action: "invitation.created", entity: "invitation", entityId: inv!.id, changes: { email, role } });
+      audit({ action: "invitation.created", entity: "invitation", entityId: inv!.id, changes: { email, role }, summary: `Invited ${email} as an admin` });
       return { inv: inv!, school, inviter: auth.user.fullName };
     });
     await mailer.send(
@@ -177,7 +177,7 @@ invitationRoutes.openapi(
         .where(and(eq(invitations.id, id), openInvite()))
         .returning({ id: invitations.id, email: invitations.email });
       if (!inv) throw new ApiError("not_found", "No open invitation with that id.");
-      audit({ action: "invitation.revoked", entity: "invitation", entityId: inv.id, changes: { email: inv.email } });
+      audit({ action: "invitation.revoked", entity: "invitation", entityId: inv.id, changes: { email: inv.email }, summary: `Cancelled the invite to ${inv.email}` });
     });
     return c.body(null, 204);
   },
@@ -293,6 +293,7 @@ invitationRoutes.openapi(
         schoolId: school.id,
         actorUserId: user!.id,
         action: "member.joined",
+        summary: "Joined as an admin",
         entity: "school_member",
         entityId: membership.id,
         changes: { email: inv.email, role: membership.role, invitationId: inv.id },

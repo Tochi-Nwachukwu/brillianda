@@ -123,3 +123,17 @@ while typing (debounce ~300 ms). The draft travels in an HttpOnly cookie; the fr
 - `GET /v1/members` (owner and admins): `{ data: [{ userId, fullName, email, role, joinedAt }] }`,
   owner first. `DELETE /v1/members/{userId}` (owner only): 204; 403 for the owner or a non-owner
   caller; 404 if not a member here. The removed admin's sessions at this school end immediately.
+
+**13 October 2026, later** (batch 5: Home and the calendar)
+
+| Frontend function | Endpoint (school address, owner or admin) | Notes |
+|---|---|---|
+| `getSession` | `GET /v1/session` → `{ startYear, name, terms[{ name, startsOn, endsOn }], confirmed }` | Never null for a member: suggested dates when nothing is saved |
+| `saveSession` | `PUT /v1/session` `{ startYear, terms }` → the same shape, `confirmed: true` | Same rules as `sessionSchema`; 422 pointers like `#/terms/1/startsOn`; 409 if another session already uses that year |
+| `getSetupProgress` | `GET /v1/setup` → `{ items[{ id, done }], hidden }` | Ids in order: branding, calendar, classes, arms, subjects, students, admins |
+| `hideChecklist` | `PUT /v1/setup/hidden` `{ hidden }` → 204 | |
+| `getHomeSummary` | `GET /v1/home` → `{ students, classes, arms, subjects, admins, recent[{ id, at, who, what }] }` | `at` is ISO 8601 (the fake uses milliseconds: `Date.parse(at)`). Classes, arms, subjects and students are 0 until their endpoints ship |
+
+`recent[].what` is a sentence written when the change happens, in the frontend's wording ("Set the
+2026/2027 calendar", "Invited ada@x.ng as an admin", "Removed Bisi Ade as an admin"). Sign-ins
+are recorded for security but never listed.
