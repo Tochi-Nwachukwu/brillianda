@@ -3,7 +3,7 @@
  * The API reads them directly (e.g. school lookup by subdomain, user by email).
  */
 import { sql } from "drizzle-orm";
-import { check, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { check, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { citext, createdAt, id, updatedAt } from "./columns.js";
 
 export const userStatus = pgEnum("user_status", ["active", "disabled"]);
@@ -112,6 +112,9 @@ export const signupDrafts = pgTable(
     levelsOffered: text().array(),
     state: text(),
     schoolPhone: text(),
+    /** "When does your school year start?" (month 1-12, year). Null on drafts started before it was asked. */
+    sessionStartMonth: smallint(),
+    sessionStartYear: smallint(),
     ownerFullName: text(),
     ownerEmail: citext(),
     ownerPhone: text(),

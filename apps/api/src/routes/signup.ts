@@ -22,13 +22,17 @@ import {
   verifyPassword,
 } from "@brillianda/auth";
 import {
+  defaultSessionStart,
+  defaultTerms,
   NIGERIAN_STATES,
   normaliseNigerianPhone,
   SCHOOL_LEVELS,
+  sessionName,
   suggestSubdomains,
   validateSubdomain,
 } from "@brillianda/core";
 import {
+  academicSessions,
   and,
   auditLog,
   eq,
@@ -38,7 +42,9 @@ import {
   schools,
   scopeToSchool,
   signupDrafts,
+  terms,
   users,
+  type Tx,
 } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
@@ -73,15 +79,30 @@ const PhoneSchema = z
     return e164;
   });
 
+const SessionStartSchema = z
+  .object({
+    month: z.number().int().min(1, "Choose a month").max(12, "Choose a month"),
+    year: z.number().int().min(2000, "Choose a year").max(2100, "Choose a year"),
+  })
+  .openapi("SessionStart");
+
 const SchoolStepSchema = z
   .object({
     name: z.string().trim().min(2, "Enter the school's name").max(120, "Use at most 120 characters"),
     levelsOffered: z
-      .array(z.enum(SCHOOL_LEVELS, { message: "Choose nursery, primary or secondary" }))
+      .array(
+        z.preprocess(
+          (v) => (typeof v === "string" ? v.toLowerCase() : v),
+          z.enum(SCHOOL_LEVELS, { message: "Choose nursery, primary or secondary" }),
+        ),
+      )
       .min(1, "Choose at least one level")
       .transform((v) => [...new Set(v)]),
     state: z.enum(NIGERIAN_STATES, { message: "Choose the state the school is in" }),
     phone: PhoneSchema,
+    sessionStart: SessionStartSchema.optional().openapi({
+      description: "When the school's year starts, e.g. { month: 9, year: 2026 }. Omitted: September of the current session",
+    }),
   })
   .openapi("SignupSchoolStep");
 
@@ -114,7 +135,13 @@ const DraftSchema = z
   .object({
     step: z.enum(["school", "owner", "verify_email", "address", "completed"]),
     school: z
-      .object({ name: z.string(), levelsOffered: z.array(z.string()), state: z.string().nullable(), phone: z.string().nullable() })
+      .object({
+        name: z.string(),
+        levelsOffered: z.array(z.string()),
+        state: z.string().nullable(),
+        phone: z.string().nullable(),
+        sessionStart: SessionStartSchema.nullable(),
+      })
       .nullable(),
     owner: z.object({ fullName: z.string(), email: z.string(), phone: z.string().nullable() }).nullable(),
     emailVerified: z.boolean(),
@@ -195,6 +222,41 @@ function stepOf(d: Draft): z.infer<typeof DraftSchema>["step"] {
   return "address";
 }
 
+/**
+ * The school's first session, with suggested term dates, unconfirmed: Home's checklist asks the
+ * owner to check the dates. The session is named by the year the school said its year starts
+ * (the frontend does the same), defaulting to the current one.
+ */
+async function createFirstSession(tx: Tx, schoolId: string, userId: string, d: Draft): Promise<void> {
+  const startYear = d.sessionStartYear ?? defaultSessionStart(new Date()).year;
+  const suggested = defaultTerms(startYear);
+  const [session] = await tx
+    .insert(academicSessions)
+    .values({
+      schoolId,
+      startYear,
+      name: sessionName(startYear),
+      startsOn: suggested[0]!.startsOn,
+      endsOn: suggested[suggested.length - 1]!.endsOn,
+      isCurrent: true,
+      createdBy: userId,
+      updatedBy: userId,
+    })
+    .returning({ id: academicSessions.id });
+  await tx.insert(terms).values(
+    suggested.map((t, i) => ({
+      schoolId,
+      sessionId: session!.id,
+      name: t.name,
+      position: i + 1,
+      startsOn: t.startsOn,
+      endsOn: t.endsOn,
+      createdBy: userId,
+      updatedBy: userId,
+    })),
+  );
+}
+
 const STEP_ORDER = ["school", "owner", "verify_email", "address", "completed"] as const;
 
 function requireStep(d: Draft, atLeast: (typeof STEP_ORDER)[number]): void {
@@ -222,7 +284,13 @@ async function draftView(c: Context<AppEnv>, d: Draft): Promise<z.infer<typeof D
   return {
     step: stepOf(d),
     school: d.schoolName
-      ? { name: d.schoolName, levelsOffered: d.levelsOffered ?? [], state: d.state, phone: d.schoolPhone }
+      ? {
+          name: d.schoolName,
+          levelsOffered: d.levelsOffered ?? [],
+          state: d.state,
+          phone: d.schoolPhone,
+          sessionStart: d.sessionStartMonth && d.sessionStartYear ? { month: d.sessionStartMonth, year: d.sessionStartYear } : null,
+        }
       : null,
     owner: d.ownerEmail ? { fullName: d.ownerFullName ?? "", email: d.ownerEmail, phone: d.ownerPhone } : null,
     emailVerified: d.emailVerifiedAt !== null,
@@ -323,7 +391,15 @@ signupRoutes.openapi(
     await enforceRateLimit(c, RATE_RULES.signupStepPerIp, ip);
     const input = c.req.valid("json");
     const { db } = c.get("deps");
-    const values = { schoolName: input.name, levelsOffered: input.levelsOffered, state: input.state, schoolPhone: input.phone };
+    const start = input.sessionStart ?? defaultSessionStart(new Date());
+    const values = {
+      schoolName: input.name,
+      levelsOffered: input.levelsOffered,
+      state: input.state,
+      schoolPhone: input.phone,
+      sessionStartMonth: start.month,
+      sessionStartYear: start.year,
+    };
 
     const existing = await loadDraft(c);
     let draft: Draft | undefined;
@@ -552,6 +628,8 @@ signupRoutes.openapi(
           ip: c.get("clientIp"),
           userAgent: c.get("userAgent"),
         });
+
+        await createFirstSession(tx, school!.id, userId, draft);
 
         await tx
           .update(signupDrafts)

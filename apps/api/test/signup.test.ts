@@ -203,3 +203,60 @@ describe("when the email provider refuses", () => {
     }
   });
 });
+
+describe("the school's first session (frontend ask #1)", () => {
+  it("keeps sessionStart on the draft, takes levels in any case, and creates an unconfirmed session with three terms", async () => {
+    const fresh = await createHarness();
+    try {
+      const apex = browser(fresh, APEX);
+      let res = await apex.post("/v1/signup/school", {
+        name: "Oyo Grammar School",
+        levelsOffered: ["PRIMARY", "SECONDARY"],
+        state: "Oyo",
+        phone: "08030000002",
+        sessionStart: { month: 9, year: 2027 },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({
+        school: { levelsOffered: ["primary", "secondary"], sessionStart: { month: 9, year: 2027 } },
+      });
+      expect(await (await apex.get("/v1/signup")).json()).toMatchObject({ school: { sessionStart: { month: 9, year: 2027 } } });
+
+      res = await apex.post("/v1/signup/owner", { fullName: "Tunde Bello", email: "tunde@oyogrammar.test", password: "correct horse battery" });
+      expect(res.status).toBe(200);
+      const code = codeFrom((await waitForMail(fresh, "tunde@oyogrammar.test", "signup_code")).text)!;
+      expect((await apex.post("/v1/signup/verify-email", { code })).status).toBe(200);
+      res = await apex.post("/v1/signup/complete", { subdomain: "oyogrammar" });
+      expect(res.status).toBe(201);
+      const { school } = (await res.json()) as { school: { id: string } };
+
+      const { academicSessions, terms, asc } = await import("@brillianda/db");
+      const rows = await withSchool(fresh.db, school.id, async (tx) => ({
+        sessions: await tx.select().from(academicSessions),
+        terms: await tx.select().from(terms).orderBy(asc(terms.position)),
+      }));
+      expect(rows.sessions).toEqual([
+        expect.objectContaining({ startYear: 2027, name: "2027/2028", startsOn: "2027-09-13", endsOn: "2028-07-21", isCurrent: true, confirmedAt: null }),
+      ]);
+      expect(rows.terms.map((t) => [t.position, t.name, t.startsOn, t.endsOn])).toEqual([
+        [1, "First Term", "2027-09-13", "2027-12-17"],
+        [2, "Second Term", "2028-01-10", "2028-04-07"],
+        [3, "Third Term", "2028-05-01", "2028-07-21"],
+      ]);
+    } finally {
+      await fresh.t.close();
+    }
+  });
+
+  it("defaults the session to the current one when signup doesn't say", async () => {
+    const fresh = await createHarness();
+    try {
+      const apex = browser(fresh, APEX);
+      const res = await apex.post("/v1/signup/school", schoolStep);
+      const { defaultSessionStart } = await import("@brillianda/core");
+      expect(await res.json()).toMatchObject({ school: { sessionStart: defaultSessionStart(new Date()) } });
+    } finally {
+      await fresh.t.close();
+    }
+  });
+});

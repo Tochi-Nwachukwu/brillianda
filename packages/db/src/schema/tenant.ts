@@ -9,7 +9,7 @@
  * Checklist for a new school table: see .claude/skills/brillianda-tenancy/SKILL.md.
  */
 import { sql } from "drizzle-orm";
-import { foreignKey, index, jsonb, pgEnum, pgTable, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, foreignKey, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { citext } from "./columns.js";
 import { backupRead, createdAt, id, platformAccess, schoolIsolation, updatedAt } from "./columns.js";
 import { schools, users } from "./platform.js";
@@ -143,6 +143,73 @@ export const invitations = pgTable(
       .on(t.schoolId, t.email)
       .where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
     index("invitations_school_created_idx").on(t.schoolId, t.createdAt.desc()),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/**
+ * A school year, e.g. 2026/2027 (plan: "Academic calendar"). Signup creates the first one with
+ * suggested dates and confirmedAt null; the setup checklist's calendar step is done once an owner
+ * or admin saves it. One current session per school.
+ */
+export const academicSessions = pgTable(
+  "academic_sessions",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    /** The year it starts in: 2026 for 2026/2027. */
+    startYear: integer().notNull(),
+    name: text().notNull(),
+    startsOn: date({ mode: "string" }).notNull(),
+    endsOn: date({ mode: "string" }).notNull(),
+    isCurrent: boolean().notNull().default(false),
+    /** Null while the dates are only suggestions. */
+    confirmedAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("academic_sessions_school_id_id_key").on(t.schoolId, t.id),
+    unique("academic_sessions_school_year_key").on(t.schoolId, t.startYear),
+    uniqueIndex("academic_sessions_one_current_idx").on(t.schoolId).where(sql`${t.isCurrent}`),
+    check("academic_sessions_dates_check", sql`${t.endsOn} > ${t.startsOn}`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** Two or three terms per session, in order. Renamed freely (First Term, Autumn Term, ...). */
+export const terms = pgTable(
+  "terms",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    sessionId: uuid().notNull(),
+    name: text().notNull(),
+    /** 1, 2 or 3. */
+    position: smallint().notNull(),
+    startsOn: date({ mode: "string" }).notNull(),
+    endsOn: date({ mode: "string" }).notNull(),
+    isCurrent: boolean().notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("terms_school_id_id_key").on(t.schoolId, t.id),
+    unique("terms_session_position_key").on(t.schoolId, t.sessionId, t.position),
+    foreignKey({
+      name: "terms_session_fk",
+      columns: [t.schoolId, t.sessionId],
+      foreignColumns: [academicSessions.schoolId, academicSessions.id],
+    }).onDelete("cascade"),
+    uniqueIndex("terms_one_current_idx").on(t.schoolId).where(sql`${t.isCurrent}`),
+    check("terms_position_check", sql`${t.position} between 1 and 3`),
+    check("terms_dates_check", sql`${t.endsOn} > ${t.startsOn}`),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],

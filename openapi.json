@@ -304,13 +304,17 @@
                   "string",
                   "null"
                 ]
+              },
+              "sessionStart": {
+                "$ref": "#/components/schemas/SessionStart"
               }
             },
             "required": [
               "name",
               "levelsOffered",
               "state",
-              "phone"
+              "phone",
+              "sessionStart"
             ]
           },
           "owner": {
@@ -375,6 +379,28 @@
           "resendAvailableInSec",
           "suggestedSubdomains",
           "expiresAt"
+        ]
+      },
+      "SessionStart": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "month": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "year": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2100
+          }
+        },
+        "required": [
+          "month",
+          "year"
         ]
       },
       "SignupSchoolStep": {
@@ -442,6 +468,16 @@
           "phone": {
             "type": "string",
             "maxLength": 32
+          },
+          "sessionStart": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionStart"
+              },
+              {
+                "description": "When the school's year starts, e.g. { month: 9, year: 2026 }. Omitted: September of the current session"
+              }
+            ]
           }
         },
         "required": [
@@ -817,6 +853,40 @@
         },
         "required": [
           "token"
+        ]
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin"
+            ]
+          },
+          "joinedAt": {
+            "type": "string",
+            "description": "When they gained access to this school (ISO 8601)"
+          }
+        },
+        "required": [
+          "userId",
+          "fullName",
+          "email",
+          "role",
+          "joinedAt"
         ]
       }
     },
@@ -2096,6 +2166,111 @@
           },
           "422": {
             "description": "New account needs fullName and password",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/members": {
+      "get": {
+        "tags": [
+          "members"
+        ],
+        "summary": "Everyone who helps run this school: the owner first, then admins by when they joined",
+        "responses": {
+          "200": {
+            "description": "Members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Member"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/members/{userId}": {
+      "delete": {
+        "tags": [
+          "members"
+        ],
+        "summary": "Remove an admin from this school (owner only). Their sessions here end immediately",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only the owner can remove admins, and the owner can't be removed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
             "content": {
               "application/problem+json": {
                 "schema": {
