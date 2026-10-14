@@ -19,6 +19,8 @@ export interface AppConfig {
   onVercel?: boolean;
   /** Port the BROWSER uses (frontend), for links in emails. Unset in production (443). */
   publicPort?: number;
+  /** Where trial requests are emailed; unset means stored only. */
+  trialNotifyEmail?: string;
 }
 
 /** Everything a request handler may use. Built once in server.ts (or per test). */

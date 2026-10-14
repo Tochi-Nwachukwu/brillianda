@@ -4,17 +4,16 @@
  *   GET /v1/setup          the checklist: which steps are done, and whether it is hidden
  *   PUT /v1/setup/hidden   hide or show the checklist on Home
  *   GET /v1/home           counts and the latest changes
- *
- * Steps whose tables arrive in later phases (subjects, students) report not done
- * and count 0 until then; the response shape does not change when they arrive.
+
  */
-import { auditLog, count, desc, eq, invitations, isNotNull, schoolMembers, schools, sql, users } from "@brillianda/db";
+import { and, auditLog, count, desc, eq, invitations, isNotNull, isNull, schoolMembers, schools, sql, students, users } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "../context.js";
 import { problemContent } from "../lib/errors.js";
 import { schoolRoute } from "../school-route.js";
 import { currentSession } from "./calendar.js";
 import { classCounts } from "./classes.js";
+import { subjectCounts } from "./subjects.js";
 
 export const homeRoutes = new OpenAPIHono<AppEnv>();
 
@@ -71,13 +70,15 @@ homeRoutes.openapi(
       const [members] = await tx.select({ n: count() }).from(schoolMembers).where(eq(schoolMembers.status, "active"));
       const [invited] = await tx.select({ n: count() }).from(invitations);
       const classes = await classCounts(tx);
+      const subjects = await subjectCounts(tx);
+      const [enrolled] = await tx.select({ n: count() }).from(students).where(isNull(students.deletedAt));
       const done: Record<(typeof STEPS)[number], boolean> = {
         branding: row?.settings?.brandingSaved === true || row?.brandColor != null || row?.logoKey != null,
         calendar: session.confirmed,
         classes: classes.levels > 0,
         arms: classes.classes > 0,
-        subjects: false,
-        students: false,
+        subjects: subjects.links > 0,
+        students: (enrolled?.n ?? 0) > 0,
         admins: (members?.n ?? 0) > 1 || (invited?.n ?? 0) > 0,
       };
       return { items: STEPS.map((id) => ({ id, done: done[id] })), hidden: row?.settings?.setupChecklistHidden === true };
@@ -119,6 +120,8 @@ homeRoutes.openapi(
     const data = await schoolRoute(c, {}, async ({ tx }) => {
       const [members] = await tx.select({ n: count() }).from(schoolMembers).where(eq(schoolMembers.status, "active"));
       const classes = await classCounts(tx);
+      const subjects = await subjectCounts(tx);
+      const [active] = await tx.select({ n: count() }).from(students).where(and(isNull(students.deletedAt), eq(students.status, "active")));
       const recent = await tx
         .select({ id: auditLog.id, at: auditLog.createdAt, who: users.fullName, what: auditLog.summary })
         .from(auditLog)
@@ -127,10 +130,10 @@ homeRoutes.openapi(
         .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
         .limit(6);
       return {
-        students: 0,
+        students: active?.n ?? 0,
         classes: classes.classes,
         arms: classes.armNames,
-        subjects: 0,
+        subjects: subjects.subjects,
         admins: members?.n ?? 0,
         recent: recent.map((r) => ({ id: r.id, at: r.at.toISOString(), who: r.who ?? "Someone", what: r.what! })),
       };

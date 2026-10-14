@@ -158,3 +158,40 @@ Shapes are the fake's `ClassStructure`, `ClassLevel`, `ArmName` and `ClassArm`. 
 Name and code clashes are 422 with a pointer (`#/name`, `#/code`), so they land under the field.
 Refusals that aren't about one field (has students, stale screen, already set up) are 409 with the
 same sentence the fake returns in `detail`.
+
+**14 October 2026** (the rest of v1: batches 7, 8, 9, branding, change history, trial requests)
+
+Every v1 function in `docs/data-contract.md` now has an endpoint. All are on the school's address,
+owners and admins, unless noted.
+
+| Frontend function | Endpoint | Notes |
+|---|---|---|
+| `getSubjectsSetup` | `GET /v1/subjects` | The catalogue is served from here (the API holds the same 57 entries) |
+| `addSubjects` | `POST /v1/subjects` `{ catalogueIds, custom[] }` → 201 `{ added }` | Catalogue subjects attach to their default classes; already-added ones are skipped |
+| `renameSubject` | `PATCH /v1/subjects/{id}` `{ name, code }` | |
+| `removeSubject` | `DELETE /v1/subjects/{id}` | |
+| `setSubjectLink` | `PUT /v1/subjects/{id}/levels/{levelId}` `{ kind }` | `kind: null` unticks |
+| `setSubjectDepartment` | `PUT /v1/subjects/{id}/department` `{ department }` | |
+| `listStudents` | `GET /v1/students` | `gender` is lowercase (`male`, `female`); it's accepted in any case |
+| `getStudent` | `GET /v1/students/{id}` | No `parentAccess` or `attendance` yet: those belong to the after-v1 parents and register work |
+| `addStudent` / `updateStudent` | `POST /v1/students` → 201 `{ id, admissionNo, fullName }` / `PUT /v1/students/{id}` | Body is `studentSchema`'s fields |
+| `moveStudents` | `POST /v1/students/move` `{ studentIds, armId }` → `{ moved }` | |
+| `setStudentsStatus` | `POST /v1/students/status` `{ studentIds, status }` → `{ changed }` | |
+| `deleteStudent` | `DELETE /v1/students/{id}` | Soft |
+| `findGuardian` | `GET /v1/guardians?phone=` → `{ guardian: GuardianMatch \| null }` | |
+| `getAdmissionSettings` / `setAdmissionFormat` | `GET` / `PUT /v1/admission-numbers` `{ pattern, digits }` | |
+| `getImportSetup` | `GET /v1/imports/setup` | Batch `at` is ISO 8601 |
+| `checkImport` | `POST /v1/imports/check` `{ rows, armId }` → `{ rows: CheckedRow[] }` | Same `checkRows` as yours; genders come back lowercase |
+| `commitImport` | `POST /v1/imports` `{ rows, armId, update, fileName }` → 201 `ImportResult` | Up to 5,000 rows, 4 MB |
+| `undoImport` | `POST /v1/imports/{id}/undo` → `{ removed }` | |
+| `saveImportMapping` | `PUT /v1/imports/mapping` `{ mapping }` | |
+| `listChanges` | `GET /v1/changes?who=&search=&from=&to=&studentId=&limit=` | `at` is ISO 8601 |
+| history CSV | `GET /v1/changes/export?…` | Same filters; you can proxy it instead of building the CSV |
+| `updateBranding` | `PATCH /v1/school/branding` `{ name, brandColor }` → `PublicSchool` | Owner only |
+| `uploadLogo` | `PUT /v1/school/logo`, multipart, one file `logo` → `PublicSchool` | Owner only. PNG, JPEG or WebP, ≤ 300 KB, ≤ 512 px |
+| `removeLogo` | `DELETE /v1/school/logo` → `PublicSchool` | Owner only |
+| `requestTrial` | `POST /v1/trial-requests` (main site, no session) → 202 | Honeypot `website` accepted silently |
+
+**Logos** are served from the school's own address: `logoUrl` is now a relative path,
+`/api/v1/school/logo?v=…`, which your `proxy.ts` already forwards. No storage host is needed in your
+Content Security Policy (`docs/decisions.md` #6).

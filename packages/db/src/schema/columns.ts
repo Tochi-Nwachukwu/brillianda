@@ -14,6 +14,11 @@ export const appRole = pgRole(ROLE_APP).existing();
 /** NOLOGIN role that owns the few SECURITY DEFINER functions which must read across schools. */
 export const platformRole = pgRole(ROLE_PLATFORM).existing();
 
+/** Raw bytes (small files such as a school's logo). */
+export const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
+
 /** Case-insensitive text (emails, subdomains). Requires the citext extension (migration 0000). */
 export const citext = customType<{ data: string }>({
   dataType: () => "citext",

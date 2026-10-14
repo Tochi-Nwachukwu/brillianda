@@ -3,3 +3,8 @@ export * from "./host.js";
 export * from "./uuid.js";
 export * from "./nigeria.js";
 export * from "./calendar.js";
+export * from "./subjects.js";
+export * from "./catalogue.js";
+export * from "./admission.js";
+export * from "./students.js";
+export * from "./studentImport.js";

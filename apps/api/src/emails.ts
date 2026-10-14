@@ -35,6 +35,13 @@ export const emails = {
       "Your school's address is below. Bookmark it, and add it to your phone's home screen.",
     ], { label: "Open your school", url }),
 
+  trialRequested: (to: string, r: { schoolName: string; contactName: string; role: string; email: string; phone: string; studentCount: number; state: string | null; message: string | null }) =>
+    message(to, "trial_request", `Trial request: ${r.schoolName}`, "New trial request", [
+      `${r.contactName} (${r.role}) at ${r.schoolName}${r.state ? `, ${r.state}` : ""}, about ${r.studentCount} students.`,
+      `Email: ${r.email}. Phone: ${r.phone}.`,
+      ...(r.message ? [`Message: ${r.message}`] : []),
+    ]),
+
   findMySchool: (to: string, schools: { name: string; url: string }[]) =>
     message(to, "find_school", "Your Brillianda schools", "Your schools", [
       "Here are the schools this email can sign in to:",

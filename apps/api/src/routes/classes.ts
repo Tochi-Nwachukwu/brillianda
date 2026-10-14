@@ -32,7 +32,9 @@ import {
   lt,
   ne,
   schools,
+  enrolments,
   sql,
+  students,
   type Tx,
 } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
@@ -159,12 +161,67 @@ const IdParam = z.object({ id: Id });
 
 // ── Reads ───────────────────────────────────────────────────────────────────────────────────────
 
+/** Students (not deleted) in each class arm: removal rules refuse while a class has any. */
+export async function studentCounts(tx: Tx, classArmIds: string[]): Promise<Map<string, number>> {
+  if (!classArmIds.length) return new Map();
+  const rows = await tx
+    .select({ classArmId: students.classArmId, n: count() })
+    .from(students)
+    .where(and(inArray(students.classArmId, classArmIds), isNull(students.deletedAt)))
+    .groupBy(students.classArmId);
+  return new Map(rows.map((r) => [r.classArmId, r.n]));
+}
+
 /**
- * Students in each class arm. Students arrive in Phase 4; until then every class is empty, and the
- * removal rules below ("not while it has students") already call this.
+ * Class arms that have ever held a student: current students (soft-deleted ones too) or a class
+ * history entry. Those can't be deleted, only archived, so past records keep their class.
  */
-async function studentCounts(_tx: Tx, _classArmIds: string[]): Promise<Map<string, number>> {
-  return new Map();
+export async function classArmsWithHistory(tx: Tx, classArmIds: string[]): Promise<Set<string>> {
+  if (!classArmIds.length) return new Set();
+  const now = await tx.selectDistinct({ id: students.classArmId }).from(students).where(inArray(students.classArmId, classArmIds));
+  const past = await tx.selectDistinct({ id: enrolments.classArmId }).from(enrolments).where(inArray(enrolments.classArmId, classArmIds));
+  return new Set([...now, ...past].map((r) => r.id));
+}
+
+/** "JSS 1 Anthurium", or just "JSS 1" when the class has one arm (frontend's armLabel). */
+export const armLabel = (levelName: string, armName: string, armsInLevel: number) => (armsInLevel > 1 ? `${levelName} ${armName}` : levelName);
+/** The phone chip: "JSS1 ANT", or "JSS1" (frontend's armChip). */
+export const armChip = (levelShort: string, code: string, armsInLevel: number) => (armsInLevel > 1 ? `${levelShort} ${code}` : levelShort);
+
+export interface ArmOption {
+  id: string;
+  label: string;
+  chip: string;
+  levelId: string;
+  levelName: string;
+  levelPosition: number;
+}
+
+/**
+ * Classes a student can sit in (open levels and arms), youngest first, labelled for pickers.
+ * With `all`, archived ones too (for labelling a student's past classes).
+ */
+export async function armOptions(tx: Tx, opts: { all?: boolean } = {}): Promise<ArmOption[]> {
+  const rows = await tx
+    .select({ arm: classArms, level: classLevels, name: arms })
+    .from(classArms)
+    .innerJoin(classLevels, and(eq(classLevels.schoolId, classArms.schoolId), eq(classLevels.id, classArms.classLevelId)))
+    .innerJoin(arms, and(eq(arms.schoolId, classArms.schoolId), eq(arms.id, classArms.armId)))
+    .orderBy(asc(classLevels.position), asc(arms.position));
+  const open = rows.filter((r) => opts.all || (r.arm.archivedAt === null && r.level.archivedAt === null));
+  const perLevel = new Map<string, number>();
+  for (const r of open) perLevel.set(r.level.id, (perLevel.get(r.level.id) ?? 0) + 1);
+  return open.map((r) => {
+    const n = perLevel.get(r.level.id) ?? 1;
+    return {
+      id: r.arm.id,
+      label: armLabel(r.level.name, r.name.name, n),
+      chip: armChip(r.level.shortName, r.name.code, n),
+      levelId: r.level.id,
+      levelName: r.level.name,
+      levelPosition: r.level.position,
+    };
+  });
 }
 
 export async function classStructure(tx: Tx, schoolId: string): Promise<z.infer<typeof ClassStructureSchema>> {
@@ -411,6 +468,9 @@ classRoutes.openapi(
       const counts = await studentCounts(tx, rows.map((r) => r.id));
       const students = [...counts.values()].reduce((a, b) => a + b, 0);
       if (students) throw new ApiError("conflict", `${level.name} has ${plural(students, "student")}. Move them first, or archive the class instead.`);
+      if ((await classArmsWithHistory(tx, rows.map((r) => r.id))).size) {
+        throw new ApiError("conflict", `Students have been in ${level.name} before, so it keeps their history. Archive it instead.`);
+      }
       await tx.delete(classArms).where(eq(classArms.classLevelId, id));
       await tx.delete(classLevels).where(eq(classLevels.id, id));
       audit({ action: "class_level.removed", entity: "class_level", entityId: id, changes: { name: level.name }, summary: `Removed ${level.name}` });
@@ -568,6 +628,7 @@ classRoutes.openapi(
       if (students) throw new ApiError("conflict", `${label} has ${plural(students, "student")}. Move them first, or archive it instead.`);
       const [{ n } = { n: 0 }] = await tx.select({ n: count() }).from(classArms).where(eq(classArms.classLevelId, level.id));
       if (n <= 1) throw new ApiError("conflict", `Every class needs at least one arm. Remove ${level.name} instead.`);
+      if ((await classArmsWithHistory(tx, [id])).size) throw new ApiError("conflict", `Students have been in ${label} before, so it keeps their history. Archive it instead.`);
       await tx.delete(classArms).where(eq(classArms.id, id));
       audit({ action: "class_arm.removed", entity: "class_arm", entityId: id, changes: { level: level.name, arm: name.name }, summary: `Removed ${label}` });
     });
@@ -640,6 +701,11 @@ classRoutes.openapi(
           if (!rows.some((r) => r.classLevelId === levelId && r.armId === key)) additions.push({ levelId, key });
         }
       }
+
+      const leaving = [...removals, ...rows.filter((r) => dropped.some((d) => d.id === r.armId))];
+      const history = await classArmsWithHistory(tx, leaving.map((r) => r.id));
+      const withHistory = leaving.find((r) => history.has(r.id));
+      if (withHistory) throw new ApiError("conflict", `Students have been in ${labelOf(withHistory)} before, so it keeps their history. Archive it from the class instead.`);
 
       // Everything checks out: apply it. Dropped and removed ones go first, so their names and
       // codes are free; kept names then move aside (names and codes are unique, and a save may

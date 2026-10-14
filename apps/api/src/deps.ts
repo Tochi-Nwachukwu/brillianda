@@ -35,6 +35,7 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
       allowSchoolQueryParam: env.ALLOW_SCHOOL_QUERY_PARAM,
       secureCookies: env.PUBLIC_PROTOCOL === "https",
       ...(env.PUBLIC_PORT ? { publicPort: env.PUBLIC_PORT } : {}),
+      ...(env.TRIAL_NOTIFY_EMAIL ? { trialNotifyEmail: env.TRIAL_NOTIFY_EMAIL } : {}),
     },
   };
 }

@@ -24,6 +24,9 @@ const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * reach the validator as {} and come back as a confusing "validation_failed".
  * Upload routes (multipart) will opt out when they exist.
  */
+/** The only route that takes a file: the school's logo, as multipart/form-data. */
+const MULTIPART_PATHS = new Set(["/v1/school/logo"]);
+
 export const requireJsonBody = () =>
   createMiddleware<AppEnv>(async (c, next) => {
     if (BODY_METHODS.has(c.req.method)) {
@@ -35,7 +38,8 @@ export const requireJsonBody = () =>
         contentType !== undefined || (length !== undefined && length !== "0") || c.req.header("transfer-encoding") !== undefined;
       if (hasBody) {
         const type = (contentType ?? "").split(";")[0]!.trim().toLowerCase();
-        if (type !== "application/json") {
+        const multipartOk = type === "multipart/form-data" && MULTIPART_PATHS.has(c.req.path);
+        if (type !== "application/json" && !multipartOk) {
           throw new ApiError("unsupported_media_type", "Send the body as JSON with Content-Type: application/json.", {
             headers: { "Accept-Post": "application/json", "Accept-Patch": "application/json" },
           });

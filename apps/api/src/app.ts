@@ -15,6 +15,12 @@ import { memberRoutes } from "./routes/members.js";
 import { calendarRoutes } from "./routes/calendar.js";
 import { homeRoutes } from "./routes/home.js";
 import { classRoutes } from "./routes/classes.js";
+import { subjectRoutes } from "./routes/subjects.js";
+import { studentRoutes } from "./routes/students.js";
+import { changeRoutes } from "./routes/changes.js";
+import { importRoutes } from "./routes/imports.js";
+import { brandingRoutes } from "./routes/branding.js";
+import { trialRoutes } from "./routes/trials.js";
 import { schoolRoutes } from "./routes/school.js";
 import { sessionRoutes } from "./routes/session.js";
 import { signupRoutes } from "./routes/signup.js";
@@ -79,16 +85,31 @@ export function createApp(deps: AppDeps) {
     await next();
     if (!c.res.headers.has("Cache-Control")) c.res.headers.set("Cache-Control", "no-store");
   });
-  // Uploads get their own route-level limits later; JSON bodies never need more than this.
-  app.use(
-    "/v1/*",
-    bodyLimit({
-      maxSize: 256 * 1024,
-      onError: () => {
-        throw new ApiError("payload_too_large", "Request bodies are limited to 256 KB.");
-      },
-    }),
-  );
+  // JSON bodies never need more than 256 KB, except a whole student list being imported (5,000
+  // rows fit in 4 MB; Vercel itself refuses bodies over 4.5 MB).
+  const bigBody = bodyLimit({
+    maxSize: 4 * 1024 * 1024,
+    onError: () => {
+      throw new ApiError("payload_too_large", "An import can send at most 4 MB. Split the list into smaller files.");
+    },
+  });
+  const smallBody = bodyLimit({
+    maxSize: 256 * 1024,
+    onError: () => {
+      throw new ApiError("payload_too_large", "Request bodies are limited to 256 KB.");
+    },
+  });
+  const logoBody = bodyLimit({
+    maxSize: 400 * 1024,
+    onError: () => {
+      throw new ApiError("payload_too_large", "A logo can be at most 300 KB.");
+    },
+  });
+  app.use("/v1/*", (c, next) => {
+    if (c.req.path === "/v1/imports" || c.req.path === "/v1/imports/check") return bigBody(c, next);
+    if (c.req.path === "/v1/school/logo") return logoBody(c, next);
+    return smallBody(c, next);
+  });
   app.use("/v1/*", requireJsonBody());
   app.use("/v1/*", csrf());
 
@@ -102,6 +123,12 @@ export function createApp(deps: AppDeps) {
   app.route("/", calendarRoutes);
   app.route("/", homeRoutes);
   app.route("/", classRoutes);
+  app.route("/", subjectRoutes);
+  app.route("/", studentRoutes);
+  app.route("/", changeRoutes);
+  app.route("/", importRoutes);
+  app.route("/", brandingRoutes);
+  app.route("/", trialRoutes);
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",
@@ -155,6 +182,22 @@ export function createApp(deps: AppDeps) {
       return problemResponse(c, "service_unavailable", "We could not send the email just now. Try again in a minute.", {
         headers: { "retry-after": "60" },
       });
+    }
+    // A uniqueness or reference rule enforced by Postgres that a handler's own check didn't catch
+    // (usually two requests racing). Nothing was written: the transaction rolled back.
+    const pg = (err as { cause?: { code?: string; constraint?: string } }).cause;
+    if (pg?.code === "23505") {
+      deps.logger.warn("unique violation", { constraint: pg.constraint, requestId: c.get("requestId"), path: c.req.path });
+      if (pg.constraint === "students_school_admission_idx") {
+        return problemResponse(c, "validation_failed", "Another student has this admission number.", {
+          extensions: { errors: [{ pointer: "#/admissionNo", detail: "Already used by another student", code: "taken" }] },
+        });
+      }
+      return problemResponse(c, "conflict", "Something with the same name or number was just saved. Reload and try again.");
+    }
+    if (pg?.code === "23503") {
+      deps.logger.warn("reference violation", { constraint: pg.constraint, requestId: c.get("requestId"), path: c.req.path });
+      return problemResponse(c, "conflict", "This is still used by other records, so it can’t be removed. Archive it instead.");
     }
     deps.logger.error("unhandled error", { err, requestId: c.get("requestId"), path: c.req.path, method: c.req.method });
     return problemResponse(c, "internal", "Quote the requestId if you report this.");

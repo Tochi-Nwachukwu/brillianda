@@ -5,13 +5,16 @@ import { requireSchool } from "../school-route.js";
 
 export const schoolRoutes = new OpenAPIHono<AppEnv>();
 
+/** Where browsers fetch a school's logo: through the school's own address, versioned by its hash. */
+export const logoUrl = (logoKey: string | null) => (logoKey ? `/api/v1/school/logo?v=${logoKey.slice(0, 16)}` : null);
+
 export const PublicSchoolSchema = z
   .object({
     id: z.string().uuid(),
     name: z.string(),
     subdomain: z.string(),
     brandColor: z.string().nullable(),
-    logoUrl: z.string().url().nullable(),
+    logoUrl: z.string().nullable().openapi({ description: "Relative to the school's own address, e.g. /api/v1/school/logo?v=…; null without a logo" }),
   })
   .openapi("PublicSchool");
 
@@ -39,7 +42,7 @@ schoolRoutes.openapi(
         name: school.name,
         subdomain: school.subdomain,
         brandColor: school.brandColor,
-        logoUrl: null, // signed URL once object storage lands (Phase 1 branding)
+        logoUrl: logoUrl(school.logoKey),
       },
       200,
     );

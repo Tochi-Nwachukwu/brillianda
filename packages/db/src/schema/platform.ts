@@ -131,3 +131,31 @@ export const signupDrafts = pgTable(
   },
   (t) => [index("signup_drafts_expires_idx").on(t.expiresAt), index("signup_drafts_email_idx").on(t.ownerEmail)],
 );
+
+export const trialStatus = pgEnum("trial_status", ["new", "contacted", "converted", "declined"]);
+
+/**
+ * "Request a trial" from the marketing site. Before any school exists, so a platform table; only
+ * the Brillianda team reads it (the console, later).
+ */
+export const trialRequests = pgTable(
+  "trial_requests",
+  {
+    id: id(),
+    schoolName: text().notNull(),
+    contactName: text().notNull(),
+    role: text().notNull(),
+    email: citext().notNull(),
+    phone: text().notNull(),
+    studentCount: integer().notNull(),
+    state: text(),
+    interests: text().array().notNull().default(sql`'{}'::text[]`),
+    message: text(),
+    status: trialStatus().notNull().default("new"),
+    teamNote: text(),
+    ip: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("trial_requests_created_idx").on(t.createdAt.desc()), index("trial_requests_status_idx").on(t.status)],
+);

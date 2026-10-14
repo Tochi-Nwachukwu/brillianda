@@ -31,7 +31,7 @@
               "string",
               "null"
             ],
-            "format": "uri"
+            "description": "Relative to the school's own address, e.g. /api/v1/school/logo?v=…; null without a logo"
           }
         },
         "required": [
@@ -1511,6 +1511,1514 @@
         "required": [
           "names",
           "levels"
+        ]
+      },
+      "SubjectsSetup": {
+        "type": "object",
+        "properties": {
+          "subjects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Subject"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubjectLink"
+            }
+          },
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "key": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "short": {
+                  "type": "string"
+                },
+                "section": {
+                  "type": "string",
+                  "enum": [
+                    "preschool",
+                    "primary",
+                    "junior",
+                    "senior"
+                  ]
+                },
+                "position": {
+                  "type": "integer"
+                },
+                "archived": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "key",
+                "name",
+                "short",
+                "section",
+                "position",
+                "archived"
+              ]
+            }
+          },
+          "catalogue": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogueEntry"
+            }
+          },
+          "bands": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "lowerPrimary",
+                "upperPrimary",
+                "junior",
+                "senior"
+              ]
+            },
+            "description": "The NERDC bands the school's classes fall in"
+          }
+        },
+        "required": [
+          "subjects",
+          "links",
+          "levels",
+          "catalogue",
+          "bands"
+        ]
+      },
+      "Subject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "catalogueId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string",
+            "enum": [
+              "nerdc2025",
+              "legacy",
+              "custom"
+            ]
+          },
+          "catalogueName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The catalogue's name when the school renamed it, else null"
+          }
+        },
+        "required": [
+          "id",
+          "catalogueId",
+          "name",
+          "code",
+          "tag",
+          "catalogueName"
+        ]
+      },
+      "SubjectLink": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "compulsory",
+              "elective"
+            ]
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "science",
+              "arts",
+              "commercial",
+              null
+            ]
+          }
+        },
+        "required": [
+          "subjectId",
+          "levelId",
+          "kind",
+          "department"
+        ]
+      },
+      "CatalogueEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string",
+            "enum": [
+              "nerdc2025",
+              "legacy"
+            ]
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "band": {
+                  "type": "string",
+                  "enum": [
+                    "lowerPrimary",
+                    "upperPrimary",
+                    "junior",
+                    "senior"
+                  ]
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "core",
+                    "choice",
+                    "optional",
+                    "science",
+                    "humanities",
+                    "business"
+                  ]
+                }
+              },
+              "required": [
+                "band",
+                "role"
+              ]
+            }
+          },
+          "set": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "tag",
+          "offers"
+        ]
+      },
+      "AddSubjects": {
+        "type": "object",
+        "properties": {
+          "catalogueIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 100
+          },
+          "custom": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 5,
+                  "pattern": "^[A-Za-z0-9]+$"
+                }
+              },
+              "required": [
+                "name",
+                "code"
+              ]
+            },
+            "maxItems": 50
+          }
+        },
+        "required": [
+          "catalogueIds",
+          "custom"
+        ]
+      },
+      "SubjectChange": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5,
+            "pattern": "^[A-Za-z0-9]+$"
+          }
+        },
+        "required": [
+          "name",
+          "code"
+        ]
+      },
+      "SubjectLinkChange": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "compulsory",
+              "elective",
+              null
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "SubjectDepartment": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "science",
+              "arts",
+              "commercial",
+              null
+            ]
+          }
+        },
+        "required": [
+          "department"
+        ]
+      },
+      "StudentsList": {
+        "type": "object",
+        "properties": {
+          "students": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StudentRow"
+            }
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArmOption"
+            }
+          },
+          "nextAdmissionNo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "students",
+          "arms",
+          "nextAdmissionNo"
+        ]
+      },
+      "StudentRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "admissionNo": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "withdrawn",
+              "transferred",
+              "graduated"
+            ]
+          },
+          "armId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "ISO day, or \"\" when unknown"
+          },
+          "guardianName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "guardianPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "admissionNo",
+          "gender",
+          "status",
+          "armId",
+          "dateOfBirth",
+          "guardianName",
+          "guardianPhone"
+        ]
+      },
+      "ArmOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "chip": {
+            "type": "string"
+          },
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelName": {
+            "type": "string"
+          },
+          "levelPosition": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "chip",
+          "levelId",
+          "levelName",
+          "levelPosition"
+        ]
+      },
+      "StudentDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/StudentRow"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "firstName": {
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              },
+              "otherNames": {
+                "type": "string"
+              },
+              "admissionDate": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "stateOfOrigin": {
+                "type": "string"
+              },
+              "guardian": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "email": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "siblings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "fullName": {
+                          "type": "string"
+                        },
+                        "armLabel": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "fullName",
+                        "armLabel"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "phone",
+                  "email",
+                  "siblings"
+                ]
+              },
+              "classHistory": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "armLabel": {
+                      "type": "string"
+                    },
+                    "from": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "armLabel",
+                    "from"
+                  ]
+                }
+              },
+              "changes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "at": {
+                      "type": "string"
+                    },
+                    "who": {
+                      "type": "string"
+                    },
+                    "what": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "at",
+                    "who",
+                    "what"
+                  ]
+                },
+                "description": "Changes to this student, newest first"
+              }
+            },
+            "required": [
+              "firstName",
+              "lastName",
+              "otherNames",
+              "admissionDate",
+              "address",
+              "stateOfOrigin",
+              "guardian",
+              "classHistory",
+              "changes"
+            ]
+          }
+        ]
+      },
+      "GuardianMatch": {
+        "type": "object",
+        "properties": {
+          "guardian": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "children": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "First names"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "phone",
+              "children"
+            ]
+          }
+        },
+        "required": [
+          "guardian"
+        ]
+      },
+      "StudentInput": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "pattern": "^[\\p{L}\\p{M}][\\p{L}\\p{M}' ’-]*$/u"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "pattern": "^[\\p{L}\\p{M}][\\p{L}\\p{M}' ’-]*$/u"
+          },
+          "otherNames": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "string",
+                "maxLength": 60,
+                "pattern": "^[\\p{L}\\p{M}][\\p{L}\\p{M}' ’-]*$/u"
+              }
+            ],
+            "default": ""
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female"
+            ]
+          },
+          "armId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dateOfBirth": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              }
+            ],
+            "default": ""
+          },
+          "admissionNo": {
+            "type": "string",
+            "maxLength": 30,
+            "default": ""
+          },
+          "admissionDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              }
+            ],
+            "default": ""
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 200,
+            "default": ""
+          },
+          "stateOfOrigin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "Abia",
+                  "Adamawa",
+                  "Akwa Ibom",
+                  "Anambra",
+                  "Bauchi",
+                  "Bayelsa",
+                  "Benue",
+                  "Borno",
+                  "Cross River",
+                  "Delta",
+                  "Ebonyi",
+                  "Edo",
+                  "Ekiti",
+                  "Enugu",
+                  "FCT",
+                  "Gombe",
+                  "Imo",
+                  "Jigawa",
+                  "Kaduna",
+                  "Kano",
+                  "Katsina",
+                  "Kebbi",
+                  "Kogi",
+                  "Kwara",
+                  "Lagos",
+                  "Nasarawa",
+                  "Niger",
+                  "Ogun",
+                  "Ondo",
+                  "Osun",
+                  "Oyo",
+                  "Plateau",
+                  "Rivers",
+                  "Sokoto",
+                  "Taraba",
+                  "Yobe",
+                  "Zamfara"
+                ]
+              }
+            ],
+            "default": ""
+          },
+          "guardianId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "string",
+                "format": "uuid"
+              }
+            ],
+            "default": ""
+          },
+          "guardianName": {
+            "type": "string",
+            "maxLength": 120,
+            "default": ""
+          },
+          "guardianPhone": {
+            "type": "string",
+            "default": ""
+          },
+          "guardianEmail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "string",
+                "format": "email"
+              }
+            ],
+            "default": ""
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "gender",
+          "armId"
+        ]
+      },
+      "MoveStudents": {
+        "type": "object",
+        "properties": {
+          "studentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 5000
+          },
+          "armId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "studentIds",
+          "armId"
+        ]
+      },
+      "StudentStatusChange": {
+        "type": "object",
+        "properties": {
+          "studentIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 5000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "withdrawn",
+              "transferred",
+              "graduated"
+            ]
+          }
+        },
+        "required": [
+          "studentIds",
+          "status"
+        ]
+      },
+      "AdmissionSettings": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "digits": {
+            "type": "integer"
+          },
+          "next": {
+            "type": "integer"
+          },
+          "preview": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pattern",
+          "digits",
+          "next",
+          "preview"
+        ]
+      },
+      "AdmissionFormat": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "digits": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pattern",
+          "digits"
+        ]
+      },
+      "ChangeLog": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "at": {
+                  "type": "string"
+                },
+                "who": {
+                  "type": "string"
+                },
+                "what": {
+                  "type": "string"
+                },
+                "student": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "at",
+                "who",
+                "what",
+                "student"
+              ]
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "How many match, before the limit"
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Everyone who appears in the history, for the filter"
+          },
+          "student": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "description": "The filtered student, when studentId is given"
+          }
+        },
+        "required": [
+          "entries",
+          "total",
+          "people",
+          "student"
+        ]
+      },
+      "ImportSetup": {
+        "type": "object",
+        "properties": {
+          "schoolName": {
+            "type": "string"
+          },
+          "levels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "short": {
+                  "type": "string"
+                },
+                "aliases": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "short",
+                "aliases"
+              ]
+            }
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "levelId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "levelId",
+                "name",
+                "code"
+              ]
+            }
+          },
+          "existing": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "admissionNo": {
+                  "type": "string"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "dateOfBirth": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "admissionNo",
+                "fullName",
+                "dateOfBirth"
+              ]
+            }
+          },
+          "savedMapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "batches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportBatchSummary"
+            }
+          }
+        },
+        "required": [
+          "schoolName",
+          "levels",
+          "arms",
+          "existing",
+          "savedMapping",
+          "batches"
+        ]
+      },
+      "ImportBatchSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string"
+          },
+          "by": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "created": {
+            "type": "integer"
+          },
+          "updated": {
+            "type": "integer"
+          },
+          "undoable": {
+            "type": "boolean"
+          },
+          "undone": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "by",
+          "fileName",
+          "created",
+          "updated",
+          "undoable",
+          "undone"
+        ]
+      },
+      "CheckedRow": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "fix",
+              "duplicate"
+            ]
+          },
+          "problems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "column": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "suggestion": {
+                  "type": "string"
+                },
+                "blocking": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "column",
+                "message",
+                "blocking"
+              ]
+            }
+          },
+          "existingId": {
+            "type": "string"
+          },
+          "student": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "index",
+          "status",
+          "problems"
+        ]
+      },
+      "ImportCheck": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportRawRow"
+            },
+            "maxItems": 5000
+          },
+          "armId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "default": null,
+            "description": "Importing from a class page: every row goes to this class"
+          }
+        },
+        "required": [
+          "rows"
+        ]
+      },
+      "ImportRawRow": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "lastName": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "otherNames": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "gender": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "className": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "armName": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "admissionNo": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "admissionDate": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "guardianName": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "guardianPhone": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "guardianEmail": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "stateOfOrigin": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "fullName": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "description": "Cells by column id (firstName, lastName, gender, className, …), as mapped in the browser"
+      },
+      "ImportMapping": {
+        "type": "object",
+        "properties": {
+          "mapping": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "firstName",
+                "lastName",
+                "otherNames",
+                "gender",
+                "dateOfBirth",
+                "className",
+                "armName",
+                "admissionNo",
+                "admissionDate",
+                "guardianName",
+                "guardianPhone",
+                "guardianEmail",
+                "address",
+                "stateOfOrigin",
+                "fullName"
+              ]
+            }
+          }
+        },
+        "required": [
+          "mapping"
+        ]
+      },
+      "ImportResult": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created": {
+            "type": "integer"
+          },
+          "updated": {
+            "type": "integer"
+          },
+          "skipped": {
+            "type": "integer"
+          },
+          "notImported": {
+            "type": "integer",
+            "description": "Rows that still need fixing"
+          },
+          "newStudents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "armLabel": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "fullName",
+                "armLabel"
+              ]
+            }
+          }
+        },
+        "required": [
+          "batchId",
+          "created",
+          "updated",
+          "skipped",
+          "notImported",
+          "newStudents"
+        ]
+      },
+      "ImportCommit": {
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportRawRow"
+            },
+            "maxItems": 5000
+          },
+          "armId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "default": null,
+            "description": "Importing from a class page: every row goes to this class"
+          },
+          "update": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maxItems": 5000,
+            "default": [],
+            "description": "Indexes of duplicate rows to update instead of skip"
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "rows",
+          "fileName"
+        ]
+      },
+      "Branding": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "brandColor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "brandColor"
+        ]
+      },
+      "TrialRequest": {
+        "type": "object",
+        "properties": {
+          "schoolName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "contactName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "studentCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999999
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 60
+            },
+            "maxItems": 20,
+            "default": []
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "website": {
+            "type": "string",
+            "maxLength": 500,
+            "default": "",
+            "description": "Honeypot: leave empty"
+          },
+          "turnstileToken": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [
+          "schoolName",
+          "contactName",
+          "role",
+          "email",
+          "phone",
+          "studentCount"
         ]
       }
     },
@@ -3921,6 +5429,1928 @@
           },
           "422": {
             "description": "A field needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subjects": {
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "The school's subjects, which classes take them, its levels, the catalogue and the bands it runs",
+        "responses": {
+          "200": {
+            "description": "Subjects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectsSetup"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such subject or class here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Add subjects: catalogue ones (attached to their default classes) and the school's own (attached nowhere)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSubjects"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "added": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "added"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such subject or class here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A code or name is already used by one of the school's subjects",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subjects/{id}": {
+      "patch": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Rename a subject and its code. A catalogue subject stays linked to its entry",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such subject or class here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Another subject has this name or code",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Remove a subject and its links to classes",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such subject or class here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subjects/{id}/levels/{levelId}": {
+      "put": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Attach a subject to a class as compulsory or elective, or detach it (kind null)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "levelId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectLinkChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such subject or class here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subjects/{id}/department": {
+      "put": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "The department a subject's senior electives belong to (null for none)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectDepartment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such subject or class here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Every student not deleted (by name), the classes they can sit in, and the next admission number",
+        "responses": {
+          "200": {
+            "description": "Students",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentsList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Add a student. A blank admission number takes the school's next one",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "admissionNo": {
+                      "type": "string"
+                    },
+                    "fullName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "admissionNo",
+                    "fullName"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing, e.g. the admission number is taken",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students/{id}": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "One student: details, guardian with siblings, classes over time and changes",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Student",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Edit a student. A new class is added to the class history",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Delete a student added by mistake. Soft: the record stays, hidden. Leaving the school is a status instead",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/guardians": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "A guardian already on file with this phone number, so a sibling can share them",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            },
+            "required": true,
+            "name": "phone",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The match, or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardianMatch"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students/move": {
+      "post": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Move several students to one class",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveStudents"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Moved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "moved": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "moved"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That class isn't open",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students/status": {
+      "post": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Change several students' status: active, suspended, withdrawn, transferred or graduated",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudentStatusChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "changed": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "changed"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admission-numbers": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "The school's admission number format, its next number and a preview",
+        "responses": {
+          "200": {
+            "description": "Settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdmissionSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Set the format: {YEAR} is the session's first year, {NUMBER} the running count padded to `digits`",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdmissionFormat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdmissionSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The pattern can't be used",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/changes": {
+      "get": {
+        "tags": [
+          "changes"
+        ],
+        "summary": "The change history, filtered on the server, newest first",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 120,
+              "description": "A person's name, as listed in `people`"
+            },
+            "required": false,
+            "description": "A person's name, as listed in `people`",
+            "name": "who",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Every word must appear in who, what or the student's name; accents ignored"
+            },
+            "required": false,
+            "description": "Every word must appear in who, what or the student's name; accents ignored",
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "First day, Lagos time, included"
+            },
+            "required": false,
+            "description": "First day, Lagos time, included",
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Last day, Lagos time, included"
+            },
+            "required": false,
+            "description": "Last day, Lagos time, included",
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "studentId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Default 50, at most 1,000"
+            },
+            "required": false,
+            "description": "Default 50, at most 1,000",
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Changes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangeLog"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/changes/export": {
+      "get": {
+        "tags": [
+          "changes"
+        ],
+        "summary": "The change history as CSV, same filters (up to 1,000 lines). Cells are escaped so a spreadsheet never runs one as a formula",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 120,
+              "description": "A person's name, as listed in `people`"
+            },
+            "required": false,
+            "description": "A person's name, as listed in `people`",
+            "name": "who",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Every word must appear in who, what or the student's name; accents ignored"
+            },
+            "required": false,
+            "description": "Every word must appear in who, what or the student's name; accents ignored",
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "First day, Lagos time, included"
+            },
+            "required": false,
+            "description": "First day, Lagos time, included",
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Last day, Lagos time, included"
+            },
+            "required": false,
+            "description": "Last day, Lagos time, included",
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "studentId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/imports/setup": {
+      "get": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "What the import page needs: classes and arms to match, existing students, the saved mapping and the last 5 imports",
+        "responses": {
+          "200": {
+            "description": "Setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportSetup"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/imports/check": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Check every row with the same rules as the browser (never trusting the browser's own check)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCheck"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Each row: ready, fix or duplicate, with problems",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CheckedRow"
+                      }
+                    }
+                  },
+                  "required": [
+                    "rows"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That class isn't open",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/imports/mapping": {
+      "put": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Remember which column each heading (lower case) was, to offer it first next time",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportMapping"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/imports": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Write the ready rows (checked again here) under one batch, in chunks of 500. Duplicates listed in `update` are updated, the rest skipped",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCommit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Imported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "That class isn't open",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/imports/{id}/undo": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Remove a batch's new students (soft delete), within 24 hours, if nobody has edited them since",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Undone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "removed"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already undone, too old, or edited since",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/school/branding": {
+      "patch": {
+        "tags": [
+          "school"
+        ],
+        "summary": "Change the school's name and brand colour (owner only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Branding"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The school as everyone now sees it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSchool"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only the school owner can change the school’s name, colour and logo",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/school/logo": {
+      "put": {
+        "tags": [
+          "school"
+        ],
+        "summary": "Upload the logo (owner only): multipart/form-data, one file named `logo`, PNG, JPEG or WebP, at most 300 KB and 512 px",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The school as everyone now sees it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSchool"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only the school owner can change the school’s name, colour and logo",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Larger than 300 KB",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Not a usable image",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "school"
+        ],
+        "summary": "Remove the logo (owner only)",
+        "responses": {
+          "200": {
+            "description": "The school as everyone now sees it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSchool"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only the school owner can change the school’s name, colour and logo",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "school"
+        ],
+        "summary": "The school's logo (public). With ?v= matching the current version it is cached for a year",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No logo, or no active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/trial-requests": {
+      "post": {
+        "tags": [
+          "site"
+        ],
+        "summary": "The marketing site's trial form (main site only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrialRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Received",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bot check failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Only on the main site",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
             "content": {
               "application/problem+json": {
                 "schema": {

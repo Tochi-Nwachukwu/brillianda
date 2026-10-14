@@ -29,6 +29,8 @@ const EnvSchema = z.object({
   MAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   MAIL_FROM: z.string().default("Brillianda <no-reply@brillianda.com>"),
   RESEND_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
+  /** Where trial requests from the marketing site are emailed. Unset: stored only. */
+  TRIAL_NOTIFY_EMAIL: z.string().email().optional().or(z.literal("").transform(() => undefined)),
   TURNSTILE_SECRET_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
   UPSTASH_REDIS_REST_URL: z.string().url().optional().or(z.literal("").transform(() => undefined)),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional().or(z.literal("").transform(() => undefined)),
