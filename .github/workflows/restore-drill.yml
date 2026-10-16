@@ -18,6 +18,10 @@ permissions:
 
 jobs:
   drill:
+    # Off until production: set the repository variable BACKUPS_ENABLED=true (Settings → Secrets and
+    # variables → Actions → Variables). Until then scheduled runs are skipped, not failed. A manual
+    # run always goes ahead, so the setup can be tested first.
+    if: vars.BACKUPS_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     # Holds the age PRIVATE key. Protect this environment with required reviewers.

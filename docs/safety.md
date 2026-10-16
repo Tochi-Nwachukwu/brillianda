@@ -102,3 +102,5 @@ is the better first choice whenever Neon is reachable.
 - [ ] Deploy secrets: `NEON_API_KEY`, `NEON_PROJECT_ID`, `DATABASE_OWNER_URL` for the migrate step.
 - [ ] Branch protection on `main` and `staging`: pull request required, CI `check` and `security` must pass, no force pushes.
 - [ ] Run **Nightly backup** once by hand (Actions → Run workflow), then **Restore drill**.
+- [ ] Turn the schedules on: repository variable `BACKUPS_ENABLED` = `true`. Until it is set, the
+      nightly and monthly runs are skipped (no failure emails); manual runs still go ahead.
