@@ -4,7 +4,9 @@
  *   1. Every migration passes the guard (no unmarked destructive or security-weakening SQL).
  *   2. The journal and the .sql files agree (nothing orphaned, nothing missing).
  *   3. With BASE_REF set (CI: origin/main), no existing migration was edited, renamed or deleted.
- *      Once a migration has shipped it is history: fix forward with a new migration.
+ *      Once a migration has shipped it is history: fix forward with a new migration. Changes to
+ *      whole-line comments only (e.g. a `-- safety: allow` note) are accepted: they can't change
+ *      what a database ran.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -37,6 +39,19 @@ if (whens.some((w, i) => i > 0 && w <= whens[i - 1]!)) {
   problems.push("meta/_journal.json timestamps are not increasing; drizzle would skip a migration");
 }
 
+/** True when the file differs from the base only in whole-line `--` comments and blank lines. */
+function commentsOnlyChanged(mergeBase: string, path: string): boolean {
+  const code = (sql: string) =>
+    sql
+      .split("\n")
+      .filter((l) => !/^\s*--(?!>)/.test(l) && l.trim() !== "")
+      .map((l) => l.trimEnd())
+      .join("\n");
+  const before = execFileSync("git", ["show", `${mergeBase}:${path}`], { encoding: "utf8" });
+  const after = execFileSync("git", ["show", `HEAD:${path}`], { encoding: "utf8" });
+  return code(before) === code(after);
+}
+
 // 3. History is append-only
 const base = process.env.BASE_REF;
 if (base) {
@@ -44,10 +59,15 @@ if (base) {
   const diff = execFileSync("git", ["diff", "--name-status", "--find-renames", `${base}...HEAD`, "--", folder], {
     encoding: "utf8",
   });
+  const mergeBase = execFileSync("git", ["merge-base", base, "HEAD"], { encoding: "utf8" }).trim();
   for (const line of diff.split("\n").filter(Boolean)) {
     const [status, ...paths] = line.split("\t");
     const path = paths.at(-1) ?? "";
     if (!path.endsWith(".sql")) continue;
+    if (status === "M" && commentsOnlyChanged(mergeBase, path)) {
+      console.log(`${path}: only comments changed since ${base}, accepted.`);
+      continue;
+    }
     if (status !== "A") {
       problems.push(`${path} was ${status === "D" ? "deleted" : status?.startsWith("R") ? "renamed" : "edited"} after it shipped. Add a new migration instead.`);
     }
