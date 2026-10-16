@@ -1,24 +1,28 @@
+# Dependency updates, kept quiet: once a month, at most one pull request per kind.
+# Everything for npm arrives together in one PR, and GitHub Actions in another. CI runs on each,
+# so a green PR is safe to merge; a red one usually means a major version needs a code change.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "07:00"
       timezone: Africa/Lagos
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
     groups:
-      # Patch/minor bumps arrive as one PR; majors get their own so they are reviewed.
-      minor-and-patch:
-        update-types: [minor, patch]
+      all-npm:
+        patterns: ["*"]
     labels: [dependencies]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "07:00"
       timezone: Africa/Lagos
+    open-pull-requests-limit: 1
+    groups:
+      all-actions:
+        patterns: ["*"]
     labels: [dependencies]
