@@ -73,22 +73,7 @@ export async function seedTestSchool(base: AppDeps, opts: SeedOptions): Promise<
   });
 
   // The rest through the API itself, signed in as the owner, with nothing sent anywhere.
-  const deps: AppDeps = { ...base, mailer: new MemoryMailer(), rateLimiter: new MemoryRateLimiter(), config: { ...base.config, secureCookies: false, protocol: "https", frontendUrl: undefined } };
-  const app = createApp(deps);
-  const host = `${opts.subdomain}.${deps.config.rootDomain}`;
-  const { token } = await db.transaction(async (tx) => {
-    await scopeToSchool(tx, schoolId);
-    return createSession(tx, deps.secret, { schoolId, userId: ownerId });
-  });
-  const call = async (method: string, path: string, body?: unknown) => {
-    const res = await app.request(path, {
-      method,
-      headers: { host, origin: `https://${host}`, cookie: `bd_session=${token}`, ...(body !== undefined ? { "content-type": "application/json" } : {}) },
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
-    if (res.status >= 400) throw new Error(`${method} ${path} → ${res.status}: ${await res.text()}`);
-    return res.status === 204 ? null : res.json();
-  };
+  const call = await apiAs(base, opts.subdomain, schoolId, ownerId);
 
   await call("PUT", "/v1/session", { startYear, terms: defaultTerms(startYear) });
   const levels = [
@@ -116,4 +101,87 @@ export async function seedTestSchool(base: AppDeps, opts: SeedOptions): Promise<
   }
 
   return { schoolId, owner, admin, students: FIRST.length };
+}
+
+/** Calls this app in-process as one member of a school, with nothing sent anywhere. */
+async function apiAs(base: AppDeps, subdomain: string, schoolId: string, userId: string) {
+  const { db } = base;
+  const deps: AppDeps = { ...base, mailer: new MemoryMailer(), rateLimiter: new MemoryRateLimiter(), config: { ...base.config, secureCookies: false, protocol: "https", frontendUrl: undefined } };
+  const app = createApp(deps);
+  const host = `${subdomain}.${deps.config.rootDomain}`;
+  const { token } = await db.transaction(async (tx) => {
+    await scopeToSchool(tx, schoolId);
+    return createSession(tx, deps.secret, { schoolId, userId });
+  });
+  return async (method: string, path: string, body?: unknown) => {
+    const res = await app.request(path, {
+      method,
+      headers: { host, origin: `https://${host}`, cookie: `bd_session=${token}`, ...(body !== undefined ? { "content-type": "application/json" } : {}) },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+    if (res.status >= 400) throw new Error(`${method} ${path} → ${res.status}: ${await res.text()}`);
+    return res.status === 204 ? null : res.json();
+  };
+}
+
+export interface TeacherSeedOptions {
+  subdomain: string;
+  formTeacherEmail: string;
+  subjectTeacherEmail: string;
+}
+
+export interface TeacherSeedResult {
+  formTeacher: { email: string; password: string; formClass: string; subjects: string[] };
+  subjectTeacher: { email: string; password: string; subjects: string[] };
+}
+
+/**
+ * Two teachers for an existing test school (C1): a form teacher of its first class who also
+ * teaches Mathematics in the first two classes, and a subject-only teacher of English in the
+ * first four. Their accounts are made as an accepted invitation would; the assignments through the
+ * API as the school's owner, so they show in the change history.
+ */
+export async function seedTestTeachers(base: AppDeps, opts: TeacherSeedOptions): Promise<TeacherSeedResult> {
+  const { db } = base;
+  const [school] = await db.select({ id: schools.id, ownerId: schools.ownerUserId }).from(schools).where(eq(schools.subdomain, opts.subdomain));
+  if (!school) throw new Error(`There is no school at "${opts.subdomain}". Run seed:test-school first.`);
+  for (const email of [opts.formTeacherEmail, opts.subjectTeacherEmail]) {
+    const [taken] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
+    if (taken) throw new Error(`${email} already has a Brillianda account. Use another email.`);
+  }
+  const form = { email: opts.formTeacherEmail, password: password() };
+  const subject = { email: opts.subjectTeacherEmail, password: password() };
+  const [formId, subjectId] = await db.transaction(async (tx) => {
+    const ids: string[] = [];
+    for (const [who, fullName] of [[form, "Test Form Teacher"], [subject, "Test Subject Teacher"]] as const) {
+      const [u] = await tx
+        .insert(users)
+        .values({ email: who.email, fullName, passwordHash: await hashPassword(who.password), emailVerifiedAt: new Date() })
+        .returning({ id: users.id });
+      ids.push(u!.id);
+    }
+    await scopeToSchool(tx, school.id);
+    await tx.insert(schoolMembers).values(ids.map((userId) => ({ schoolId: school.id, userId, role: "teacher" as const, invitedBy: school.ownerId, createdBy: school.ownerId, updatedBy: school.ownerId })));
+    await tx.insert(auditLog).values(
+      ids.map((userId) => ({ schoolId: school.id, actorUserId: userId, action: "member.joined", entity: "user", entityId: userId, changes: { via: "seed", role: "teacher" }, summary: "Joined as a teacher"})),
+    );
+    return ids;
+  });
+
+  const call = await apiAs(base, opts.subdomain, school.id, school.ownerId);
+  const page = (await call("GET", "/v1/teachers")) as { arms: { id: string; label: string }[]; subjects: { id: string; name: string }[] };
+  if (page.arms.length < 2) throw new Error(`"${opts.subdomain}" needs at least two classes.`);
+  const subjectNamed = (name: string) => page.subjects.find((s) => s.name.toLowerCase().startsWith(name)) ?? page.subjects[0];
+  const maths = subjectNamed("mathematics");
+  const english = subjectNamed("english");
+  if (!maths || !english) throw new Error(`"${opts.subdomain}" has no subjects yet.`);
+  const [first, second] = page.arms;
+  await call("PUT", `/v1/arms/${first!.id}/form-teacher`, { userId: formId });
+  await call("PUT", `/v1/teachers/${formId}/subject-classes`, [first!, second!].map((a) => ({ armId: a.id, subjectId: maths.id })));
+  const englishArms = page.arms.slice(0, 4);
+  await call("PUT", `/v1/teachers/${subjectId}/subject-classes`, englishArms.map((a) => ({ armId: a.id, subjectId: english.id })));
+  return {
+    formTeacher: { ...form, formClass: first!.label, subjects: [first!, second!].map((a) => `${maths.name}, ${a.label}`) },
+    subjectTeacher: { ...subject, subjects: englishArms.map((a) => `${english.name}, ${a.label}`) },
+  };
 }

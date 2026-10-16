@@ -244,3 +244,38 @@ Content Security Policy (`docs/decisions.md` #6).
 - Your proxy sends `x-forwarded-host` = the browser's real host (`greenfield.staging.brillianda.com`
   or `staging.brillianda.com`) — the same as production, just a different root.
 - `/s/<school>/` and `?school=` keep working on staging for now.
+
+**16 October 2026, C1 + B2** (teachers and the daily register)
+
+A third role, `teacher`. `GET /v1/me` and `GET /v1/me/schools` return `role: "teacher"`; send
+teachers to their own screens. **Every other existing endpoint answers 403 to a teacher.**
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `inviteTeacher` | `POST /v1/invitations` `{ email, fullName, role: "teacher" }` → 201 `Invitation` | owner, admin | Admins may invite teachers only. Inviting an email that has an open admin invite answers 409 to an admin. The email says "as a teacher". Lookup and accept work as for admins (`role` in the lookup is `teacher`) |
+| `getTeachersPage` | `GET /v1/teachers` → `TeachersPage` | owner, admin | Active teachers by name, then open invites (`status: "invited"`, `id` = the invitation id, `invitedAt` in ms, `fullName` empty if none was given). Subject class `label` is `"Mathematics, JSS 1 Gold"`, as in your fake |
+| `removeTeacher` | `DELETE /v1/teachers/{id}` → 204 | owner, admin | A user id removes the teacher (signed out at once, their classes freed, registers keep their name); an invitation id cancels the invite. 404 otherwise |
+| `setFormTeacher` | `PUT /v1/arms/{armId}/form-teacher` `{ userId \| null }` → 204 | owner, admin | One per class; replaces the last. 422 `#/userId` if not a teacher here |
+| `setSubjectClasses` | `PUT /v1/teachers/{id}/subject-classes` `[{ armId, subjectId }]` → 204 | owner, admin | The whole list; a class taken here leaves its last teacher. 409 if a class or subject is gone |
+| `getRegister` | `GET /v1/arms/{armId}/register?date=` → `Register` | owner, admin, that class's form teacher | Default day: the latest school day. `taken.at` / `updatedAt` in ms. Students: active ones, by surname. 403 for another teacher |
+| `saveRegister` | `PUT /v1/arms/{armId}/register` `{ date, marks: [{ studentId, mark, note? }] }` → `{ present, absent }` | same | 422 `#/date` with your `registerDayProblem` wording; 422 `#/marks` if not every student is marked once; 409 if a student isn't in the class any more (reload). Late counts as present |
+| `getTeacherHome` | `GET /v1/me/teaching` → `TeacherHome` | anyone on the staff | |
+| `getSubjectClass` | `GET /v1/arms/{armId}/subjects/{subjectId}/students` → `SubjectClass` | that subject's teacher, owner, admin | 403 for another teacher |
+| `getRegistersToday` | `GET /v1/registers/today` → `RegistersToday` | owner, admin | `total` counts classes with at least one active student |
+
+Changed:
+
+- `GET /v1/members` lists the owner and admins only; `DELETE /v1/members/{userId}` answers 404 for a
+  teacher (use `DELETE /v1/teachers/{id}`).
+- `GET /v1/invitations` lists open **admin** invitations only; teacher invites are on the Teachers page.
+- The setup checklist's "admins" step and Home's `admins` count ignore teachers.
+- The rules in `packages/core/src/attendance.ts` are copied verbatim into the API's core
+  (`termOf`, `isSchoolDay`, `registerDayProblem`, `schoolDaysSoFar`, `latestSchoolDay`,
+  `attendanceSummary`). Days follow the school's saved calendar, or your `defaultTerms` until it
+  is saved, as in your fake.
+
+**Testing:** `pnpm --filter @brillianda/api seed:test-teachers -- fecheck` adds a form teacher
+(form class JSS 1 Gold; Mathematics in the first two classes) and a subject-only teacher
+(English in the first four) to `fecheck`. Their passwords are printed once and sent privately.
+
+Not yet: attendance and parent access on the student page (B3) come with parents (C2).

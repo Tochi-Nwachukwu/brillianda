@@ -4,7 +4,7 @@ import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 import type { AppEnv } from "../context.js";
 import { meBody, MeSchema } from "../auth-helpers.js";
 import { problemContent } from "../lib/errors.js";
-import { clearSessionCookie, readSessionToken, requireSchool, schoolRoute } from "../school-route.js";
+import { ANY_MEMBER, clearSessionCookie, readSessionToken, requireSchool, schoolRoute } from "../school-route.js";
 
 export const sessionRoutes = new OpenAPIHono<AppEnv>();
 
@@ -27,7 +27,7 @@ sessionRoutes.openapi(
     },
   }),
   async (c) => {
-    const me = await schoolRoute(c, {}, async ({ auth, school }) => meBody(auth.user, auth.membership, school));
+    const me = await schoolRoute(c, { roles: ANY_MEMBER }, async ({ auth, school }) => meBody(auth.user, auth.membership, school));
     c.header("Cache-Control", "no-store");
     return c.json(me, 200);
   },

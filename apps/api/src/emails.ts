@@ -69,7 +69,9 @@ export const emails = {
   invitation: (to: string, schoolName: string, inviterName: string, role: string, url: string, inviteeName?: string | null) =>
     message(to, "invitation", `${inviterName} invited you to ${schoolName}`, `Join ${schoolName} on Brillianda`, [
       ...(inviteeName ? [`Hello ${inviteeName.split(/\s+/)[0]},`] : []),
-      `${inviterName} invited you to help run ${schoolName} as ${role === "owner" ? "an owner" : "an admin"}.`,
+      role === "teacher"
+        ? `${inviterName} invited you to join ${schoolName} on Brillianda as a teacher, to take your class registers.`
+        : `${inviterName} invited you to help run ${schoolName} as ${role === "owner" ? "an owner" : "an admin"}.`,
       "The invitation expires in 7 days.",
     ], { label: "Accept invitation", url }),
 };

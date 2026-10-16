@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { seedTestSchool } from "../src/seed-school.js";
+import { seedTestSchool, seedTestTeachers } from "../src/seed-school.js";
 import { browser, schoolHost } from "./flows.js";
 import { createHarness, type Harness } from "./helpers.js";
 
@@ -38,5 +38,21 @@ describe("test school for the frontend team", () => {
   it("refuses to touch a school or an account that already exists", async () => {
     await expect(seedTestSchool(h.deps, { subdomain: "fecheck", name: "x", ownerEmail: "a@x.test", adminEmail: "b@x.test" })).rejects.toThrow(/already exists/);
     await expect(seedTestSchool(h.deps, { subdomain: "fecheck2", name: "x", ownerEmail: "owner@fecheck.test", adminEmail: "b@x.test" })).rejects.toThrow(/already has a Brillianda account/);
+  });
+
+  it("adds a form teacher and a subject teacher to it, who land on their own screens", async () => {
+    const r = await seedTestTeachers(h.deps, { subdomain: "fecheck", formTeacherEmail: "form@fecheck.test", subjectTeacherEmail: "subject@fecheck.test" });
+    expect(r.formTeacher.formClass).toBe("JSS 1 Gold");
+    const form = browser(h, schoolHost("fecheck"));
+    expect(await (await form.post("/v1/auth/login", { email: "form@fecheck.test", password: r.formTeacher.password })).json()).toMatchObject({ membership: { role: "teacher" } });
+    const home = (await (await form.get("/v1/me/teaching")).json()) as { formArms: { label: string }[]; subjects: { label: string }[] };
+    expect(home.formArms.map((a) => a.label)).toEqual(["JSS 1 Gold"]);
+    expect(home.subjects).toHaveLength(2);
+    const subject = browser(h, schoolHost("fecheck"));
+    expect((await subject.post("/v1/auth/login", { email: "subject@fecheck.test", password: r.subjectTeacher.password })).status).toBe(200);
+    const theirs = (await (await subject.get("/v1/me/teaching")).json()) as { formArms: unknown[]; subjects: { subjectName: string }[] };
+    expect(theirs.formArms).toEqual([]);
+    expect(theirs.subjects).toHaveLength(4);
+    await expect(seedTestTeachers(h.deps, { subdomain: "nowhere", formTeacherEmail: "a@x.test", subjectTeacherEmail: "b@x.test" })).rejects.toThrow(/no school/);
   });
 });

@@ -1,8 +1,9 @@
 /**
- * Admin invitations (owner only), on the school's own address.
+ * Invitations, on the school's own address.
  *
- *   POST   /v1/invitations           invite an email as admin (replaces an open invite for it)
- *   GET    /v1/invitations           open invitations
+ *   POST   /v1/invitations           invite an email: as an admin (owner only) or a teacher (owner or
+ *                                    admin). Replaces an open invite for that email
+ *   GET    /v1/invitations           open admin invitations (owner only; teachers: GET /v1/teachers)
  *   DELETE /v1/invitations/{id}      revoke
  *   GET    /v1/invitations/lookup    (no session) what does this link invite me to?
  *   POST   /v1/invitations/accept    (no session) accept: creates or links the account, signs in
@@ -10,7 +11,7 @@
  * Tokens are looked up inside withSchool, so a link only works at the school that sent it.
  */
 import { generateToken, hashPassword } from "@brillianda/auth";
-import { and, auditLog, desc, eq, gt, invitations, isNull, schoolMembers, users, withSchool, type Tx } from "@brillianda/db";
+import { and, auditLog, desc, eq, gt, invitations, isNull, ne, schoolMembers, users, withSchool, type Tx } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { EmailSchema, meBody, MeSchema, PasswordSchema, startSession, TokenSchema } from "../auth-helpers.js";
@@ -32,7 +33,7 @@ const InvitationSchema = z
     id: z.string().uuid(),
     email: z.string().email(),
     fullName: z.string().nullable().openapi({ description: "The invitee's name, if the owner gave one" }),
-    role: z.enum(["owner", "admin"]),
+    role: z.enum(["owner", "admin", "teacher"]),
     invitedBy: z.string().nullable().openapi({ description: "Inviter's name" }),
     createdAt: z.string(),
     expiresAt: z.string(),
@@ -78,11 +79,15 @@ invitationRoutes.openapi(
     method: "post",
     path: "/v1/invitations",
     tags: ["invitations"],
-    summary: "Invite someone to help run this school as an admin (owner only)",
-    request: { body: json(z.object({ email: EmailSchema, fullName: InviteeName, role: z.literal("admin").default("admin") }).openapi("InviteRequest")) },
+    summary: "Invite someone as an admin (owner only) or a teacher (owner or admin)",
+    request: { body: json(z.object({
+            email: EmailSchema,
+            fullName: InviteeName,
+            role: z.enum(["admin", "teacher"], { message: "Choose admin or teacher" }).default("admin"),
+          }).openapi("InviteRequest")) },
     responses: {
       201: { description: "Invitation sent", content: { "application/json": { schema: InvitationSchema } } },
-      409: problemContent("Already a member"),
+      409: problemContent("Already a member, or already invited as an admin"),
       ...ownerErrors,
     },
   }),
@@ -91,7 +96,8 @@ invitationRoutes.openapi(
     const fullName = givenName || null;
     const { mailer, config } = c.get("deps");
     const token = generateToken();
-    const result = await schoolRoute(c, { roles: ["owner"], userRateLimit: RATE_RULES.invitePerUser }, async ({ tx, school, auth, audit }) => {
+    const allowed = role === "teacher" ? (["owner", "admin"] as const) : (["owner"] as const);
+    const result = await schoolRoute(c, { roles: allowed, userRateLimit: RATE_RULES.invitePerUser }, async ({ tx, school, auth, audit }) => {
       const [member] = await tx
         .select({ id: schoolMembers.id })
         .from(schoolMembers)
@@ -99,6 +105,16 @@ invitationRoutes.openapi(
         .where(eq(users.email, email))
         .limit(1);
       if (member) throw new ApiError("conflict", `${email} is already a member of ${school.name}.`);
+
+      // An admin inviting a teacher can't quietly replace the owner's open admin invitation.
+      if (auth.membership.role !== "owner") {
+        const [open] = await tx
+          .select({ role: invitations.role })
+          .from(invitations)
+          .where(and(eq(invitations.email, email), openInvite()))
+          .limit(1);
+        if (open && open.role !== "teacher") throw new ApiError("conflict", `${email} is already invited as an admin.`);
+      }
 
       // One open invitation per email: a re-invite replaces the old link.
       await tx
@@ -119,7 +135,7 @@ invitationRoutes.openapi(
           updatedBy: auth.user.id,
         })
         .returning();
-      audit({ action: "invitation.created", entity: "invitation", entityId: inv!.id, changes: { email, fullName, role }, summary: `Invited ${fullName ? `${fullName} (${email})` : email} as an admin` });
+      audit({ action: "invitation.created", entity: "invitation", entityId: inv!.id, changes: { email, fullName, role }, summary: `Invited ${fullName ? `${fullName} (${email})` : email} as ${role === "teacher" ? "a teacher" : "an admin"}` });
       return { inv: inv!, school, inviter: auth.user.fullName };
     });
     await mailer.send(
@@ -145,7 +161,7 @@ invitationRoutes.openapi(
     method: "get",
     path: "/v1/invitations",
     tags: ["invitations"],
-    summary: "Open invitations (owner only)",
+    summary: "Open admin invitations (owner only). Teacher invitations are on GET /v1/teachers",
     responses: {
       200: { description: "Open invitations, newest first", content: { "application/json": { schema: z.object({ data: z.array(InvitationSchema) }) } } },
       ...ownerErrors,
@@ -157,7 +173,7 @@ invitationRoutes.openapi(
         .select({ inv: invitations, inviter: users.fullName })
         .from(invitations)
         .leftJoin(users, eq(users.id, invitations.invitedBy))
-        .where(openInvite())
+        .where(and(openInvite(), ne(invitations.role, "teacher")))
         .orderBy(desc(invitations.createdAt))
         .limit(200);
       return rows.map(({ inv, inviter }) => ({
@@ -202,7 +218,7 @@ const LookupSchema = z
   .object({
     email: z.string().email(),
     fullName: z.string().nullable().openapi({ description: "The name the owner gave, to greet them and prefill the name field" }),
-    role: z.enum(["owner", "admin"]),
+    role: z.enum(["owner", "admin", "teacher"]),
     school: z.object({ name: z.string(), subdomain: z.string() }),
     invitedBy: z.string().nullable(),
     existingAccount: z.boolean().openapi({ description: "true: just accept. false: also send fullName and password" }),
@@ -310,7 +326,7 @@ invitationRoutes.openapi(
         schoolId: school.id,
         actorUserId: user!.id,
         action: "member.joined",
-        summary: "Joined as an admin",
+        summary: membership.role === "teacher" ? "Joined as a teacher" : "Joined as an admin",
         entity: "school_member",
         entityId: membership.id,
         changes: { email: inv.email, role: membership.role, invitationId: inv.id },

@@ -35,7 +35,7 @@ export const MeSchema = z
       fullName: z.string(),
       emailVerified: z.boolean(),
     }),
-    membership: z.object({ role: z.enum(["owner", "admin"]) }),
+    membership: z.object({ role: z.enum(["owner", "admin", "teacher"]).openapi({ description: "teacher: show the teacher screens (Today, Register, My subjects); everything else is refused" }) }),
     school: z.object({ id: z.string().uuid(), name: z.string(), subdomain: z.string() }),
   })
   .openapi("Me");

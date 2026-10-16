@@ -193,8 +193,10 @@
                 "type": "string",
                 "enum": [
                   "owner",
-                  "admin"
-                ]
+                  "admin",
+                  "teacher"
+                ],
+                "description": "teacher: show the teacher screens (Today, Register, My subjects); everything else is refused"
               }
             },
             "required": [
@@ -698,7 +700,8 @@
                   "type": "string",
                   "enum": [
                     "owner",
-                    "admin"
+                    "admin",
+                    "teacher"
                   ]
                 },
                 "url": {
@@ -746,7 +749,8 @@
             "type": "string",
             "enum": [
               "owner",
-              "admin"
+              "admin",
+              "teacher"
             ]
           },
           "invitedBy": {
@@ -790,7 +794,8 @@
           "role": {
             "type": "string",
             "enum": [
-              "admin"
+              "admin",
+              "teacher"
             ],
             "default": "admin"
           }
@@ -817,7 +822,8 @@
             "type": "string",
             "enum": [
               "owner",
-              "admin"
+              "admin",
+              "teacher"
             ]
           },
           "school": {
@@ -2535,6 +2541,537 @@
           "student"
         ]
       },
+      "TeachersPage": {
+        "type": "object",
+        "properties": {
+          "teachers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeacherSummary"
+            },
+            "description": "Teachers by name, then open invites"
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "formTeacherId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "formTeacherId"
+              ]
+            }
+          },
+          "subjects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "code"
+              ]
+            }
+          }
+        },
+        "required": [
+          "teachers",
+          "arms",
+          "subjects"
+        ]
+      },
+      "TeacherSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The user id; for an open invite, the invitation id"
+          },
+          "fullName": {
+            "type": "string",
+            "description": "Empty for an invite sent without a name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "invited"
+            ]
+          },
+          "invitedAt": {
+            "type": "integer",
+            "description": "Invites only: when it was sent (ms since epoch)"
+          },
+          "formArms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "armId",
+                "label"
+              ]
+            }
+          },
+          "subjectClasses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "subjectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string",
+                  "example": "Mathematics, JSS 1 Gold"
+                }
+              },
+              "required": [
+                "armId",
+                "subjectId",
+                "label"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "email",
+          "status",
+          "formArms",
+          "subjectClasses"
+        ]
+      },
+      "FormTeacher": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "SubjectClasses": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "armId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "subjectId": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "armId",
+            "subjectId"
+          ]
+        },
+        "maxItems": 200,
+        "description": "The teacher's whole list. A class taken here leaves its last teacher"
+      },
+      "Register": {
+        "type": "object",
+        "properties": {
+          "armId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-14"
+          },
+          "problem": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why this day can't be marked (a weekend, outside this term); null if it can"
+          },
+          "taken": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "by": {
+                "type": "string"
+              },
+              "at": {
+                "type": "integer",
+                "description": "ms since epoch"
+              },
+              "updatedBy": {
+                "type": "string"
+              },
+              "updatedAt": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "by",
+              "at"
+            ]
+          },
+          "students": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "admissionNo": {
+                  "type": "string"
+                },
+                "mark": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "present",
+                    "late",
+                    "absent",
+                    null
+                  ]
+                },
+                "note": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "fullName",
+                "admissionNo",
+                "mark",
+                "note"
+              ]
+            }
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "taken": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "date",
+                "taken"
+              ]
+            },
+            "description": "This term's school days so far, newest first"
+          }
+        },
+        "required": [
+          "armId",
+          "armLabel",
+          "date",
+          "problem",
+          "taken",
+          "students",
+          "days"
+        ]
+      },
+      "RegisterSaved": {
+        "type": "object",
+        "properties": {
+          "present": {
+            "type": "integer",
+            "description": "Late counts as present"
+          },
+          "absent": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "present",
+          "absent"
+        ]
+      },
+      "SaveRegister": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "studentId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "mark": {
+                  "type": "string",
+                  "enum": [
+                    "present",
+                    "late",
+                    "absent"
+                  ]
+                },
+                "note": {
+                  "type": "string",
+                  "maxLength": 120
+                }
+              },
+              "required": [
+                "studentId",
+                "mark"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "date",
+          "marks"
+        ]
+      },
+      "TeacherHome": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "today": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Today, when it's a school day; null at weekends and in breaks"
+          },
+          "formArms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "students": {
+                  "type": "integer"
+                },
+                "takenToday": {
+                  "type": "boolean"
+                },
+                "takenThisTerm": {
+                  "type": "integer"
+                },
+                "daysThisTerm": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "armId",
+                "label",
+                "students",
+                "takenToday",
+                "takenThisTerm",
+                "daysThisTerm"
+              ]
+            }
+          },
+          "subjects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "subjectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "subjectName": {
+                  "type": "string"
+                },
+                "students": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "armId",
+                "subjectId",
+                "label",
+                "subjectName",
+                "students"
+              ]
+            }
+          }
+        },
+        "required": [
+          "fullName",
+          "today",
+          "formArms",
+          "subjects"
+        ]
+      },
+      "SubjectClass": {
+        "type": "object",
+        "properties": {
+          "armLabel": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "students": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "admissionNo": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "fullName",
+                "admissionNo"
+              ]
+            }
+          }
+        },
+        "required": [
+          "armLabel",
+          "subjectName",
+          "students"
+        ]
+      },
+      "RegistersToday": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Today on a school day; null at weekends and in breaks"
+          },
+          "taken": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Classes with at least one active student"
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "armId",
+                "label"
+              ]
+            }
+          }
+        },
+        "required": [
+          "date",
+          "taken",
+          "total",
+          "missing"
+        ]
+      },
       "ImportSetup": {
         "type": "object",
         "properties": {
@@ -4042,7 +4579,7 @@
         "tags": [
           "invitations"
         ],
-        "summary": "Invite someone to help run this school as an admin (owner only)",
+        "summary": "Invite someone as an admin (owner only) or a teacher (owner or admin)",
         "requestBody": {
           "required": true,
           "content": {
@@ -4095,7 +4632,7 @@
             }
           },
           "409": {
-            "description": "Already a member",
+            "description": "Already a member, or already invited as an admin",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -4110,7 +4647,7 @@
         "tags": [
           "invitations"
         ],
-        "summary": "Open invitations (owner only)",
+        "summary": "Open admin invitations (owner only). Teacher invitations are on GET /v1/teachers",
         "responses": {
           "200": {
             "description": "Open invitations, newest first",
@@ -6717,6 +7254,587 @@
           },
           "404": {
             "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/teachers": {
+      "get": {
+        "tags": [
+          "teachers"
+        ],
+        "summary": "The Teachers page: teachers and open invites with what they teach, every class with its form teacher, the subjects",
+        "responses": {
+          "200": {
+            "description": "Teachers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeachersPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/teachers/{id}": {
+      "delete": {
+        "tags": [
+          "teachers"
+        ],
+        "summary": "Remove a teacher (their classes are freed; registers they took keep their name), or cancel a teacher invite",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/form-teacher": {
+      "put": {
+        "tags": [
+          "teachers"
+        ],
+        "summary": "Set a class's form teacher (replacing the last), or null for none",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormTeacher"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Not a teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/teachers/{id}/subject-classes": {
+      "put": {
+        "tags": [
+          "teachers"
+        ],
+        "summary": "Set a teacher's whole list of subject classes. Each class's subject has one teacher, so this takes it from anyone else",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubjectClasses"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A class or subject isn't here any more",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/register": {
+      "get": {
+        "tags": [
+          "registers"
+        ],
+        "summary": "One class's register for a day (default: the latest school day), with this term's days. Admins, or the class's form teacher",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "required": false,
+            "name": "date",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Register",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Register"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "registers"
+        ],
+        "summary": "Save a class's register: every student present, late or absent, on a school day this term up to today",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveRegister"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterSaved"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The class changed while marking: reload and mark again",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The day can't be marked, or not every student is marked",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/teaching": {
+      "get": {
+        "tags": [
+          "teachers"
+        ],
+        "summary": "A teacher's home: their form classes (taken today? days taken this term) and subject classes",
+        "responses": {
+          "200": {
+            "description": "Teacher home",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeacherHome"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/subjects/{subjectId}/students": {
+      "get": {
+        "tags": [
+          "teachers"
+        ],
+        "summary": "The students in one subject class. Its teacher, or owners and admins",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subject class",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubjectClass"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/registers/today": {
+      "get": {
+        "tags": [
+          "registers"
+        ],
+        "summary": "Home's register card: today's registers in, and which classes are missing",
+        "responses": {
+          "200": {
+            "description": "Today",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistersToday"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, subject or teacher here",
             "content": {
               "application/problem+json": {
                 "schema": {

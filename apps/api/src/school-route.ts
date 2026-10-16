@@ -21,7 +21,10 @@ import { errors } from "./lib/errors.js";
 import { RATE_RULES, type RateRule } from "./lib/rate-limit.js";
 import type { ResolvedSchool } from "./lib/school-directory.js";
 
-export type Role = "owner" | "admin";
+export const ROLES = ["owner", "admin", "teacher"] as const;
+export type Role = (typeof ROLES)[number];
+/** Anyone with access to the school: for "who am I" style reads. */
+export const ANY_MEMBER: readonly Role[] = ROLES;
 
 export interface AuditEntry {
   action: string;
@@ -99,6 +102,7 @@ export async function schoolRoute<T>(
     const auth = await validateSession(tx, deps.secret, token);
     if (!auth) throw errors.unauthenticated();
 
+    // Default: the people who run the school. Teachers only reach routes that name them.
     const roles = options.roles ?? ["owner", "admin"];
     if (!roles.includes(auth.membership.role)) throw errors.forbidden();
     if (options.userRateLimit) await enforceRateLimit(c, options.userRateLimit, auth.user.id);

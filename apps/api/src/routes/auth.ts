@@ -32,7 +32,7 @@ import { ApiError, problemContent } from "../lib/errors.js";
 import { RATE_RULES } from "../lib/rate-limit.js";
 import type { ResolvedSchool } from "../lib/school-directory.js";
 import { schoolUrl } from "../lib/urls.js";
-import { enforceRateLimit, requireSchool, schoolRoute } from "../school-route.js";
+import { ANY_MEMBER, enforceRateLimit, requireSchool, schoolRoute } from "../school-route.js";
 
 export const authRoutes = new OpenAPIHono<AppEnv>();
 
@@ -43,7 +43,7 @@ const ip = (c: Context<AppEnv>) => c.get("clientIp") ?? "unknown";
 
 interface ActiveMember {
   user: { id: string; email: string; fullName: string; emailVerifiedAt: Date | null; passwordHash: string | null };
-  membership: { id: string; role: "owner" | "admin" };
+  membership: { id: string; role: "owner" | "admin" | "teacher" };
 }
 
 /** The user, if they are active AND an active member of this school. Runs inside withSchool. */
@@ -324,7 +324,7 @@ const MySchoolsSchema = z
         id: z.string().uuid(),
         name: z.string(),
         subdomain: z.string(),
-        role: z.enum(["owner", "admin"]),
+        role: z.enum(["owner", "admin", "teacher"]),
         url: z.string().url(),
         current: z.boolean(),
       }),
@@ -346,7 +346,7 @@ authRoutes.openapi(
   }),
   async (c) => {
     const { config, db } = c.get("deps");
-    const data = await schoolRoute(c, {}, async ({ auth, school }) => {
+    const data = await schoolRoute(c, { roles: ANY_MEMBER }, async ({ auth, school }) => {
       const list = await listUserSchools(db, auth.user.id);
       return list.map((s) => ({
         id: s.schoolId,

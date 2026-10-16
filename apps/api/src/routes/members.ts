@@ -1,13 +1,13 @@
 /**
  * The people who run a school, on its own address.
  *
- *   GET    /v1/members              owner and admins: everyone with access here
+ *   GET    /v1/members              owner and admins: the owner and admins (teachers: GET /v1/teachers)
  *   DELETE /v1/members/{userId}     owner only: remove an admin; their sessions here end at once
  *
  * Open invitations are separate (GET /v1/invitations). Removing someone only removes them from
  * this school; their Brillianda account and any other schools are untouched.
  */
-import { asc, eq, schoolMembers, sql, users } from "@brillianda/db";
+import { and, asc, eq, ne, schoolMembers, sql, users } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "../context.js";
 import { ApiError, problemContent } from "../lib/errors.js";
@@ -53,10 +53,10 @@ memberRoutes.openapi(
         })
         .from(schoolMembers)
         .innerJoin(users, eq(users.id, schoolMembers.userId))
-        .where(eq(schoolMembers.status, "active"))
+        .where(and(eq(schoolMembers.status, "active"), ne(schoolMembers.role, "teacher")))
         .orderBy(sql`${schoolMembers.role} = 'owner' desc`, asc(schoolMembers.createdAt))
         .limit(500);
-      return rows.map((r) => ({ ...r, joinedAt: r.joinedAt.toISOString() }));
+      return rows.map((r) => ({ ...r, role: r.role as "owner" | "admin", joinedAt: r.joinedAt.toISOString() }));
     });
     return c.json({ data }, 200);
   },
@@ -84,7 +84,7 @@ memberRoutes.openapi(
         .innerJoin(users, eq(users.id, schoolMembers.userId))
         .where(eq(schoolMembers.userId, userId))
         .limit(1);
-      if (!member) throw new ApiError("not_found", "That person isn't a member of this school.");
+      if (!member || member.role === "teacher") throw new ApiError("not_found", "That person isn't an admin of this school. Teachers are removed from the Teachers page.");
       if (member.role === "owner") throw new ApiError("forbidden", "The owner can't be removed. Transfer ownership first.");
 
       // Their sessions at this school go with the membership (sessions_membership_fk cascades).

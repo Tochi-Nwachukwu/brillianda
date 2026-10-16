@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { academicSessions, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
+import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, registerMarks, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -59,6 +59,10 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
     await tx.insert(schoolLogos).values({ schoolId, contentType: "image/png", bytes: Buffer.from([137, 80, 78, 71]), sha256: "x", width: 1, height: 1 });
     const [subject] = await tx.insert(schoolSubjects).values({ schoolId, catalogueId: "mathematics", name: "Mathematics", code: "MTH", position: 0 }).returning({ id: schoolSubjects.id });
     await tx.insert(classLevelSubjects).values({ schoolId, classLevelId: level!.id, schoolSubjectId: subject!.id, kind: "compulsory" });
+    await tx.insert(armFormTeachers).values({ schoolId, classArmId: classArm!.id, userId: ownerId });
+    await tx.insert(subjectTeachers).values({ schoolId, classArmId: classArm!.id, schoolSubjectId: subject!.id, userId: ownerId });
+    const [register] = await tx.insert(registers).values({ schoolId, classArmId: classArm!.id, day: "2026-09-14", takenBy: ownerId }).returning({ id: registers.id });
+    await tx.insert(registerMarks).values({ schoolId, registerId: register!.id, studentId: student!.id, mark: "present" });
   });
 
   return { schoolId, ownerId, sessionId };

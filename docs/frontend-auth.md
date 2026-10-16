@@ -83,7 +83,7 @@ The codes you'll meet in auth:
 | `validation_failed` | 422 | Field messages under the fields |
 | `invalid_credentials` | 401 | "Check the email and password, or reset your password." The same answer for a wrong password, an unknown email, or someone from another school, on purpose |
 | `unauthenticated` | 401 | Not signed in here: go to this school's sign-in page |
-| `forbidden` | 403 | Signed in, but the role can't do this |
+| `forbidden` | 403 | Signed in, but the role can't do this (a teacher on an admin screen, say) |
 | `verification_failed` | 400 | Wrong signup code; `detail` says how many tries are left or to send a new one |
 | `link_invalid` | 410 | The emailed link expired or was used: offer to send a new one |
 | `signup_incomplete` | 409 | An earlier signup step is missing; `nextStep` says which |
@@ -145,6 +145,9 @@ app and the sign-in page.
 }
 ```
 
+`membership.role` is `owner`, `admin` or `teacher`. Teachers get their own screens (Today,
+Register, My subjects); every owner and admin endpoint answers them 403.
+
 `GET /v1/school` (no session needed) gives the name, colour and `logoUrl` for the sign-in page.
 
 ### Password
@@ -187,7 +190,8 @@ signed in. Each `url` is that school's address; they sign in there separately.
 
 ## 6. Invitations (school address)
 
-Owner side (owner only):
+Owner side (owner only; admins may invite teachers, `role: "teacher"`, see the C1 notes in
+`docs/frontend-integration.md`):
 
 | Call | Body | Returns |
 |---|---|---|

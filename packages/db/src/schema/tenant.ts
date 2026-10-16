@@ -19,7 +19,8 @@ const schoolId = () =>
     .notNull()
     .references(() => schools.id, { onDelete: "cascade" });
 
-export const memberRole = pgEnum("member_role", ["owner", "admin"]);
+/** owner and admin run the school; teacher takes registers and (later) enters scores (C1). */
+export const memberRole = pgEnum("member_role", ["owner", "admin", "teacher"]);
 export const memberStatus = pgEnum("member_status", ["active", "suspended"]);
 
 export const schoolMembers = pgTable(
@@ -560,6 +561,118 @@ export const schoolLogos = pgTable(
   (t) => [
     unique("school_logos_school_id_id_key").on(t.schoolId, t.id),
     unique("school_logos_one_per_school_key").on(t.schoolId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/**
+ * An arm's form teacher (C1): one per arm, so setting a new one replaces the old. The composite
+ * key to school_members means a teacher removed from the school leaves every arm at once.
+ */
+export const armFormTeachers = pgTable(
+  "arm_form_teachers",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    classArmId: uuid().notNull(),
+    userId: uuid().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("arm_form_teachers_school_id_id_key").on(t.schoolId, t.id),
+    unique("arm_form_teachers_one_per_arm_key").on(t.schoolId, t.classArmId),
+    foreignKey({ name: "arm_form_teachers_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }).onDelete("cascade"),
+    foreignKey({ name: "arm_form_teachers_member_fk", columns: [t.schoolId, t.userId], foreignColumns: [schoolMembers.schoolId, schoolMembers.userId] }).onDelete("cascade"),
+    index("arm_form_teachers_user_idx").on(t.schoolId, t.userId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** Who teaches a subject in an arm (C1): one teacher per subject per arm. */
+export const subjectTeachers = pgTable(
+  "subject_teachers",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    classArmId: uuid().notNull(),
+    schoolSubjectId: uuid().notNull(),
+    userId: uuid().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("subject_teachers_school_id_id_key").on(t.schoolId, t.id),
+    unique("subject_teachers_one_per_class_key").on(t.schoolId, t.classArmId, t.schoolSubjectId),
+    foreignKey({ name: "subject_teachers_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }).onDelete("cascade"),
+    foreignKey({ name: "subject_teachers_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
+    foreignKey({ name: "subject_teachers_member_fk", columns: [t.schoolId, t.userId], foreignColumns: [schoolMembers.schoolId, schoolMembers.userId] }).onDelete("cascade"),
+    index("subject_teachers_user_idx").on(t.schoolId, t.userId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+export const registerMark = pgEnum("register_mark", ["present", "late", "absent"]);
+
+/**
+ * One arm's register for one school day (C1). Who took it and who last changed it point at users,
+ * not memberships, so a teacher's name stays on the registers they took after they leave.
+ */
+export const registers = pgTable(
+  "registers",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    classArmId: uuid().notNull(),
+    day: date({ mode: "string" }).notNull(),
+    takenBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    takenAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    changedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    changedAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("registers_school_id_id_key").on(t.schoolId, t.id),
+    unique("registers_arm_day_key").on(t.schoolId, t.classArmId, t.day),
+    foreignKey({ name: "registers_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
+    index("registers_school_day_idx").on(t.schoolId, t.day),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** One student's mark on one register. Notes stay with the school (parents never see them). */
+export const registerMarks = pgTable(
+  "register_marks",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    registerId: uuid().notNull(),
+    studentId: uuid().notNull(),
+    mark: registerMark().notNull(),
+    note: text().notNull().default(""),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("register_marks_school_id_id_key").on(t.schoolId, t.id),
+    unique("register_marks_one_per_student_key").on(t.schoolId, t.registerId, t.studentId),
+    foreignKey({ name: "register_marks_register_fk", columns: [t.schoolId, t.registerId], foreignColumns: [registers.schoolId, registers.id] }).onDelete("cascade"),
+    foreignKey({ name: "register_marks_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }),
+    index("register_marks_student_idx").on(t.schoolId, t.studentId),
+    check("register_marks_note_length_check", sql`char_length(${t.note}) <= 120`),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],
