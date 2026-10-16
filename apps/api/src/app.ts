@@ -79,7 +79,17 @@ export function createApp(deps: AppDeps) {
     },
     xFrameOptions: "DENY",
   });
-  app.use("*", (c, next) => (showDocs && c.req.path === "/docs" ? docsHeaders(c, next) : strictHeaders(c, next)));
+  // The staging outbox page needs its own inline styles and nothing else.
+  const outboxHeaders = secureHeaders({
+    contentSecurityPolicy: { defaultSrc: ["'none'"], styleSrc: ["'unsafe-inline'"], formAction: ["'self'"], frameAncestors: ["'none'"] },
+    xFrameOptions: "DENY",
+    referrerPolicy: "no-referrer",
+  });
+  app.use("*", (c, next) => {
+    if (showDocs && c.req.path === "/docs") return docsHeaders(c, next);
+    if (deps.config.outboxKey && c.req.path === "/dev/outbox") return outboxHeaders(c, next);
+    return strictHeaders(c, next);
+  });
   // No compression here: the frontend's edge compresses what reaches browsers, and API↔edge
   // traffic stays inside one region. Compressing twice only burns CPU.
   app.use("*", async (c, next) => {

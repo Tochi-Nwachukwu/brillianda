@@ -104,6 +104,11 @@ x-brillianda-outbox-key: <sent privately>
 Each email comes with `code` (the 6-digit code, if any) and `links` pulled out. The route doesn't
 exist in production.
 
+**For testers, in a browser:** open
+`https://api-rouge-nine-18.vercel.app/dev/outbox?key=<the key>` (add `&to=you@example.com` to filter).
+It lists the last 20 emails with codes in large type and links you can click, and refreshes every 10
+seconds. Bookmark it while testing.
+
 ## Pages the API's emails and responses link to
 
 The API builds these links; the frontend must serve these paths on each school's address:

@@ -77,6 +77,24 @@ describe("staging outbox and links", () => {
     expect(emails[0]!.links).toEqual([expect.stringMatching(/^https:\/\/brillianda-web\.vercel\.app\/s\/fecheck\/invite\?token=/)]);
   });
 
+  it("shows a page a tester can open in a browser: codes big, links clickable, nothing injected", async () => {
+    const res = await app.request(`/dev/outbox?key=${KEY}&to=tochi@frontend.test`, { headers: { host: APEX } });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toMatch(/^text\/html/);
+    expect(res.headers.get("content-security-policy")).toContain("default-src 'none'");
+    const html = await res.text();
+    expect(html).toMatch(/<p class="code">\d{6}<\/p>/);
+    expect(html).toContain('<meta http-equiv="refresh" content="10">');
+    expect(html).not.toContain("<script");
+
+    const all = await (await app.request(`/dev/outbox?key=${KEY}`, { headers: { host: APEX } })).text();
+    expect(all).toMatch(/href="https:\/\/brillianda-web\.vercel\.app\/s\/fecheck\/invite\?token=[A-Za-z0-9_-]+"/);
+    const hostile = await (await app.request(`/dev/outbox?key=${KEY}&to=%22%3E%3Cscript%3Ealert(1)%3C/script%3E`, { headers: { host: APEX } })).text();
+    expect(hostile).not.toContain("<script>alert(1)");
+    expect((await app.request("/dev/outbox?key=nope", { headers: { host: APEX } })).status).toBe(404);
+    expect((await h.app.request(`/dev/outbox?key=${KEY}`, { headers: { host: APEX } })).status).toBe(404);
+  });
+
   it("is invisible without the key, and absent when switched off", async () => {
     expect((await outbox("", "wrong-key-wrong-key-wrong-key-00")).status).toBe(404);
     expect((await app.request("/v1/dev/outbox", { headers: { host: APEX } })).status).toBe(404);
