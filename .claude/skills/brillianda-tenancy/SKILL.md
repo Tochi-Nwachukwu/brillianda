@@ -31,7 +31,7 @@ In `packages/db/src/schema/tenant.ts`:
       `foreignKey({ columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] })`
       so a row can never point at another school's record
 - [ ] Indexes lead with `school_id`
-- [ ] `schoolIsolation(t.schoolId)` in the extra-config array, and `.enableRLS()` on the table
+- [ ] `schoolIsolation(t.schoolId)` and `backupRead()` in the extra-config array, and `.enableRLS()` on the table
 - [ ] Soft delete (`deletedAt`) or `archivedAt` instead of hard deletes where the plan says so
 
 Then:
@@ -41,7 +41,8 @@ Then:
       `ALTER TABLE <table> FORCE ROW LEVEL SECURITY;` plus any REVOKEs (e.g. append-only)
 - [ ] Add a row for the table in `packages/db/test/fixtures.ts` `seedSchool()` so the isolation suite
       checks it (the suite discovers tables automatically and fails on an empty one)
-- [ ] `pnpm check` — `rls-coverage.test.ts` fails if RLS, FORCE, the policy or `unique (school_id, id)` is missing
+- [ ] `pnpm check` — `rls-coverage.test.ts` fails if RLS, FORCE, either policy or `unique (school_id, id)` is missing
+- [ ] Changing an existing table? Follow expand → migrate → contract in `docs/safety.md`
 
 ## Checklist: a school-scoped route
 

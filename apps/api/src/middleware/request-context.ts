@@ -35,6 +35,9 @@ export const requestContext = (deps: AppDeps) =>
     c.set("host", host);
 
     let target: HostTarget = resolveHost(host, deps.config.rootDomain);
+    // The API's own addresses (api.staging.brillianda.com, its vercel.app name) act as the main
+    // site when called directly, e.g. from /docs or Postman. Never a school.
+    if (target.kind === "unknown" && deps.config.apiHosts?.includes(normaliseHost(host))) target = { kind: "apex" };
     // Preview deployments only: there are no school subdomains, so ?school= picks one.
     const queryParam = c.req.query("school");
     if (deps.config.allowSchoolQueryParam && queryParam && validateSubdomain(queryParam).ok) {
@@ -45,6 +48,8 @@ export const requestContext = (deps: AppDeps) =>
     let clientIp: string | null = null;
     if (trusted) {
       clientIp = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || null;
+    } else if (deps.config.onVercel) {
+      clientIp = c.req.header("x-real-ip")?.trim() || null;
     } else {
       try {
         clientIp = getConnInfo(c).remote.address ?? null;

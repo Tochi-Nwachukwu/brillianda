@@ -6,7 +6,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { ROLE_APP, ROLE_OWNER, ROLE_PLATFORM } from "./schema/columns.js";
+import { ROLE_APP, ROLE_BACKUP, ROLE_OWNER, ROLE_PLATFORM } from "./schema/columns.js";
 
 export const MIGRATIONS_FOLDER = fileURLToPath(new URL("../migrations", import.meta.url));
 
@@ -17,6 +17,8 @@ export interface BootstrapOptions {
   dbName: string;
   ownerPassword: string;
   appPassword: string;
+  /** When set, brillianda_backup can log in (for the nightly pg_dump). Otherwise it stays NOLOGIN. */
+  backupPassword?: string;
 }
 
 /** Builds a connection URL for another role/database on the same server as `baseUrl`. */
@@ -44,6 +46,7 @@ async function withClient<T>(url: string, run: (client: pg.Client) => Promise<T>
  *   brillianda_owner     LOGIN. Owns the database and every table. Runs migrations. Never used by the API.
  *   brillianda_app       LOGIN. What the API connects as. No SUPERUSER, no BYPASSRLS, owns nothing.
  *   brillianda_platform  NOLOGIN. Owns the SECURITY DEFINER functions that read across schools.
+ *   brillianda_backup    Read-only. LOGIN only when a backup password is given. Used by pg_dump.
  */
 export async function bootstrapCluster(opts: BootstrapOptions): Promise<void> {
   if (!IDENT.test(opts.dbName)) throw new Error(`Invalid database name: ${opts.dbName}`);
@@ -85,6 +88,10 @@ async function bootstrapLocked(client: pg.Client, opts: BootstrapOptions): Promi
     await ensureRole(ROLE_OWNER, `LOGIN NOINHERIT ${safe}`, opts.ownerPassword);
     await ensureRole(ROLE_APP, `LOGIN NOINHERIT ${safe}`, opts.appPassword);
     await ensureRole(ROLE_PLATFORM, `NOLOGIN ${safe}`);
+    await ensureRole(ROLE_BACKUP, `NOLOGIN NOINHERIT ${safe}`);
+    if (opts.backupPassword) {
+      await client.query(`ALTER ROLE ${ROLE_BACKUP} WITH LOGIN PASSWORD ${lit(opts.backupPassword)}`);
+    }
 
     // The owner must be able to hand function ownership to the platform role (ALTER FUNCTION
     // ... OWNER TO), but must NOT inherit its cross-school read policies.
@@ -117,7 +124,7 @@ async function bootstrapLocked(client: pg.Client, opts: BootstrapOptions): Promi
     await client.query(`SET ROLE ${ROLE_OWNER}`);
     try {
       await client.query(`REVOKE ALL ON DATABASE ${opts.dbName} FROM PUBLIC`);
-      await client.query(`GRANT CONNECT ON DATABASE ${opts.dbName} TO ${ROLE_APP}`);
+      await client.query(`GRANT CONNECT ON DATABASE ${opts.dbName} TO ${ROLE_APP}, ${ROLE_BACKUP}`);
     } finally {
       await client.query("RESET ROLE");
     }

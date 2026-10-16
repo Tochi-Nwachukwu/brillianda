@@ -9,6 +9,24 @@ export {
   schoolMembers,
   sessions,
   auditLog,
+  signupDrafts,
+  invitations,
+  academicSessions,
+  terms,
+  classLevels,
+  arms,
+  classArms,
+  schoolSubjects,
+  classLevelSubjects,
+  importBatches,
+  guardians,
+  students,
+  studentGuardians,
+  enrolments,
+  counters,
+  schoolLogos,
+  trialRequests,
+  emailOutbox,
 } from "./schema/index.js";
 // Re-export the query helpers feature code needs, so nothing imports drizzle internals ad hoc.
-export { and, asc, desc, eq, gt, gte, inArray, isNull, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";
+export { and, asc, count, desc, eq, gt, gte, inArray, isNull, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";

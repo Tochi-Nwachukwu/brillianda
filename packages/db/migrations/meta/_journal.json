@@ -22,6 +22,125 @@
       "when": 1791387448478,
       "tag": "0002_force_rls_and_platform_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791401370545,
+      "tag": "0003_backup_read_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791403238832,
+      "tag": "0004_signup_and_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791403240136,
+      "tag": "0005_force_rls_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791905244331,
+      "tag": "0006_calendar",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791905247841,
+      "tag": "0007_force_rls_calendar",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791905739735,
+      "tag": "0008_audit_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791906367957,
+      "tag": "0009_classes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791906369573,
+      "tag": "0010_force_rls_classes",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791991755955,
+      "tag": "0011_subjects",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791991757409,
+      "tag": "0012_force_rls_subjects",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791991997050,
+      "tag": "0013_students",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791992010098,
+      "tag": "0014_force_rls_students",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791992558998,
+      "tag": "0015_branding_and_trials",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791992560313,
+      "tag": "0016_force_rls_logos",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791993062005,
+      "tag": "0017_revoke_student_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792140254846,
+      "tag": "0018_email_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792162125337,
+      "tag": "0019_invitation_full_name",
+      "breakpoints": true
     }
   ]
 }

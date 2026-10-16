@@ -28,8 +28,19 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | Phase | Scope | State |
 |---|---|---|
 | 0 Foundations | Monorepo, roles, forced RLS, `withSchool`, `schoolRoute`, auth primitives, isolation gate, CI | ✅ |
-| 1 Signup and tenancy | Subdomain check, 4-step signup, email code, provisioning, handover, login, Find my school, invites | next |
-| 2–5 | Calendar/classes/arms, subjects, students, hardening | planned |
+| 1 Signup and tenancy | Subdomain check, 4-step signup, email code, provisioning, handover, login, magic link, password reset, Find my school, invites | ✅ API (email: Resend, `MAIL_PROVIDER=resend`; console locally) |
+| SSO | SAML/OIDC + SCIM per school, provider chosen later (`docs/decisions.md` #4) | after Phase 1 |
+| 2 Calendar, classes, arms | First session at signup, members, calendar, checklist, Home summary, classes and arms | ✅ |
+| 3 Subjects | Catalogue, school subjects, class links, departments | ✅ |
+| 4 Students | Students, guardians, admission numbers, class history, import with undo, change history | ✅ |
+| 5 Hardening | Branding and logos ✅, trial requests ✅; speed, security review, production setup | in progress |
+
+## Email
+
+`MAIL_PROVIDER=console` prints every email in the terminal (or Vercel's logs). `MAIL_PROVIDER=resend`
+sends through Resend: set `RESEND_API_KEY`. Until a sending domain is verified in Resend,
+`MAIL_FROM="Brillianda <onboarding@resend.dev>"` works but delivers **only to the Resend account's own
+email**; any other recipient makes the API answer `503 service_unavailable`. Production refuses that test sender.
 
 ## Production database setup
 

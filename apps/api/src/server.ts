@@ -1,12 +1,12 @@
 import { closeDatabase } from "@brillianda/db";
 import { serve } from "@hono/node-server";
-import { createApp } from "./app.js";
+import { createServer } from "./entry.js";
 import { buildDeps } from "./deps.js";
 import { loadEnv } from "./env.js";
 
 const env = loadEnv();
 const deps = buildDeps(env);
-const app = createApp(deps);
+const app = createServer(deps);
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   deps.logger.info("api listening", { port: info.port, rootDomain: env.ROOT_DOMAIN });

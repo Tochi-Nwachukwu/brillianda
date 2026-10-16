@@ -18,7 +18,10 @@
     "db:migrate": "pnpm --filter @brillianda/db migrate",
     "db:seed": "pnpm --filter @brillianda/api seed",
     "db:reset": "pnpm --filter @brillianda/db reset && pnpm db:seed",
-    "check": "pnpm typecheck && pnpm lint && pnpm test"
+    "check": "pnpm typecheck && pnpm lint && pnpm db:check && pnpm test",
+    "db:check": "pnpm --filter @brillianda/db check-migrations",
+    "db:verify-restore": "pnpm --filter @brillianda/db verify-restore",
+    "db:plan": "pnpm --filter @brillianda/db migrate --plan"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

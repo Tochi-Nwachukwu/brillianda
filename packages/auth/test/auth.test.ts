@@ -214,3 +214,12 @@ import { eq } from "@brillianda/db";
 function eqMember(id: string) {
   return eq(schoolMembers.userId, id);
 }
+
+describe("resend cooldown after use", () => {
+  it("does not hold back a new code once the last one was redeemed", async () => {
+    const { code } = await issueCode(db, secret, "email_verification", { identifier: "used@owner.test" });
+    expect(await codeResendWaitMs(db, "email_verification", "used@owner.test")).toBeGreaterThan(0);
+    await verifyCode(db, secret, "email_verification", "used@owner.test", code);
+    expect(await codeResendWaitMs(db, "email_verification", "used@owner.test")).toBe(0);
+  });
+});

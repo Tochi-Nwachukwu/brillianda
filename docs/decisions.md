@@ -50,3 +50,46 @@ member of `brillianda_platform` (to hand it function ownership), so a `TO brilli
 policy would have let the owner role read every school. The platform policies use
 `current_user = 'brillianda_platform'` instead, which only matches inside its SECURITY DEFINER
 functions. Verified by `isolation.test.ts` ("subjects the owner role to the policies too").
+
+## 4. Enterprise SSO (SAML/OIDC) and SCIM: its own phase, provider decided later (Oct 7, 2026)
+
+Brillianda is enterprise-focused, so schools will ask for SAML SSO and SCIM provisioning.
+Decided:
+- **Our auth stays the session authority.** SSO only replaces how identity is proven; after the
+  school's IdP confirms someone we mint the usual school-bound session. SCIM is another way
+  members are created and deactivated (deactivation revokes sessions everywhere).
+- **Phase 1 ships password signup/login first.** SSO is its own phase right after it.
+- **The protocol provider is chosen when the first enterprise school needs it**, behind a
+  provider-agnostic adapter. Options weighed: WorkOS (managed, ~$125/connection/month each for
+  SSO and SCIM per a Jul 2026 third-party summary, US-hosted), Ory Polis (ex-BoxyHQ SAML Jackson,
+  Apache-2.0, self-hosted), or in-house (node-saml + own SCIM 2.0; SAML is the risky part).
+- **SSO phase scope:** verified school email domains (DNS TXT), per-school SSO connections with an
+  "SSO required" switch, directory (SCIM) connections with group→role mapping, external identity
+  links per member, email-first login routing, and an owner break-glass login (password + 2FA).
+- Better Auth was never installed; it remains out (its organisation model fights per-tenant SSO).
+
+## 5. The subject catalogue lives in code, not a table (14 October 2026)
+
+**Plan:** a read-only `subject_catalog` table, changed only by seed migrations.
+
+**Instead:** the catalogue is `packages/core/src/catalogue.ts`, the same list the frontend uses.
+`school_subjects.catalogue_id` holds an entry's stable id; the API checks ids against the list.
+
+**Why:** a seed migration and a code change are reviewed and shipped the same way, and both sides
+reading one list means the frontend's pre-ticks and the API's default links can't drift. The cost
+is no database foreign key to the catalogue, which the API's own check covers. Moving it into a
+table later is a seed migration plus a foreign key, with no API change.
+
+## 6. School logos live in Postgres, not object storage (14 October 2026)
+
+**Plan:** logos in private object storage, served through short-lived signed URLs.
+
+**Instead:** a `school_logos` table (one row per school, at most 300 KB, PNG, JPEG or WebP, at
+most 512 px), served by `GET /v1/school/logo` on the school's own address. The URL carries the
+image's hash (`?v=…`), so browsers cache it for a year and a new logo is a new URL.
+
+**Why:** a logo is public (the sign-in page shows it) and tiny, so signed URLs protect nothing,
+and it saves choosing, paying for and securing a storage provider before v1. The frontend's
+Content Security Policy needs no extra host. **Student photos are different**: thousands of them
+per school would bloat the database and backups, so they go to object storage (Cloudflare R2
+suggested) when that feature is built, and logos can move with them.

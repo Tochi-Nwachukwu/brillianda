@@ -12,5 +12,6 @@ await bootstrapCluster({
   dbName: process.env.DB_NAME ?? "brillianda",
   ownerPassword: requireEnv("DB_OWNER_PASSWORD"),
   appPassword: requireEnv("DB_APP_PASSWORD"),
+  ...(process.env.DB_BACKUP_PASSWORD ? { backupPassword: process.env.DB_BACKUP_PASSWORD } : {}),
 });
 console.log("Roles and database ready.");

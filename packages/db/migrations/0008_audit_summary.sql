@@ -1,0 +1,2 @@
+ALTER TABLE "audit_log" ADD COLUMN "summary" text;--> statement-breakpoint
+CREATE INDEX "audit_log_school_changes_idx" ON "audit_log" USING btree ("school_id","created_at" DESC NULLS LAST) WHERE "audit_log"."summary" IS NOT NULL;

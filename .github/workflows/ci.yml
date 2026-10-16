@@ -9,10 +9,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17-alpine
@@ -28,8 +31,13 @@ jobs:
       TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
       DB_OWNER_PASSWORD: owner_ci_password
       DB_APP_PASSWORD: app_ci_password
+      DB_BACKUP_PASSWORD: backup_ci_password
+      # The backup round-trip test must run in CI, never skip.
+      REQUIRE_PG_TOOLS: "1"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the migration check compares against the base branch
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -37,12 +45,34 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
+      - name: Install pg_dump/pg_restore 17 (backup round-trip test)
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
       - name: Typecheck
         run: pnpm typecheck
       - name: Lint
         run: pnpm lint
 
-      # Includes the Phase 0 gate: the two-school isolation suite and the RLS coverage check.
+      # No unmarked destructive or security-weakening SQL; shipped migrations never edited.
+      - name: Migration safety
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            BASE_REF="${{ github.event.before }}"
+          else
+            BASE_REF="$(git rev-list --max-parents=0 HEAD | tail -1)"
+          fi
+          BASE_REF="$BASE_REF" pnpm db:check
+
+      # Phase 0 gate (two-school isolation, RLS coverage) + migrations + backup round trip.
       - name: Test (against real Postgres with production roles)
         run: pnpm test
 
@@ -58,3 +88,23 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # scan the whole history, not just this commit
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Known vulnerabilities in production dependencies
+        run: pnpm audit --prod --audit-level=high

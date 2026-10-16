@@ -19,7 +19,7 @@ export const csrf = () =>
     const origin = c.req.header("origin") ?? originOf(c.req.header("referer"));
 
     if (!origin || origin.toLowerCase() !== expected) {
-      throw new ApiError(403, "csrf_rejected", "This request did not come from this school's site.");
+      throw new ApiError("csrf_rejected", "State-changing requests need an Origin header matching this school's address.");
     }
     return next();
   });

@@ -3,7 +3,7 @@
  * The API reads them directly (e.g. school lookup by subdomain, user by email).
  */
 import { sql } from "drizzle-orm";
-import { check, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { citext, createdAt, id, updatedAt } from "./columns.js";
 
 export const userStatus = pgEnum("user_status", ["active", "disabled"]);
@@ -93,4 +93,89 @@ export const verificationTokens = pgTable(
       .where(sql`${t.consumedAt} IS NULL`),
     index("verification_tokens_expires_idx").on(t.expiresAt),
   ],
+);
+
+export const signupStatus = pgEnum("signup_status", ["open", "completed"]);
+
+/**
+ * A school signup in progress (plan: "each step saves as it goes"). Lives before any school
+ * exists, so it is a platform table. The browser holds a random token in a host-only cookie on
+ * the apex; only its HMAC is stored. Drafts expire after 7 days.
+ */
+export const signupDrafts = pgTable(
+  "signup_drafts",
+  {
+    id: id(),
+    tokenHash: text().notNull().unique(),
+    status: signupStatus().notNull().default("open"),
+    schoolName: text(),
+    levelsOffered: text().array(),
+    state: text(),
+    schoolPhone: text(),
+    /** "When does your school year start?" (month 1-12, year). Null on drafts started before it was asked. */
+    sessionStartMonth: smallint(),
+    sessionStartYear: smallint(),
+    ownerFullName: text(),
+    ownerEmail: citext(),
+    ownerPhone: text(),
+    /** Argon2id hash of the password chosen in step 2. Never the password itself. */
+    ownerPasswordHash: text(),
+    emailVerifiedAt: timestamp({ withTimezone: true }),
+    /** Set when the verified email already has a Brillianda account (second campus, etc.). */
+    existingUserId: uuid().references(() => users.id, { onDelete: "set null" }),
+    completedSchoolId: uuid().references(() => schools.id, { onDelete: "set null" }),
+    ip: text(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("signup_drafts_expires_idx").on(t.expiresAt), index("signup_drafts_email_idx").on(t.ownerEmail)],
+);
+
+export const trialStatus = pgEnum("trial_status", ["new", "contacted", "converted", "declined"]);
+
+/**
+ * "Request a trial" from the marketing site. Before any school exists, so a platform table; only
+ * the Brillianda team reads it (the console, later).
+ */
+export const trialRequests = pgTable(
+  "trial_requests",
+  {
+    id: id(),
+    schoolName: text().notNull(),
+    contactName: text().notNull(),
+    role: text().notNull(),
+    email: citext().notNull(),
+    phone: text().notNull(),
+    studentCount: integer().notNull(),
+    state: text(),
+    interests: text().array().notNull().default(sql`'{}'::text[]`),
+    message: text(),
+    status: trialStatus().notNull().default("new"),
+    teamNote: text(),
+    ip: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("trial_requests_created_idx").on(t.createdAt.desc()), index("trial_requests_status_idx").on(t.status)],
+);
+
+/**
+ * Staging only: a copy of every email the API sends, so testers can read codes and links when the
+ * email provider can't reach them (Resend's test sender only delivers to its account owner). The
+ * API refuses to start in production with the outbox switched on. Rows older than 7 days are pruned.
+ */
+export const emailOutbox = pgTable(
+  "email_outbox",
+  {
+    id: id(),
+    to: citext().notNull(),
+    tag: text().notNull(),
+    subject: text().notNull(),
+    text: text().notNull(),
+    html: text().notNull(),
+    delivered: boolean(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("email_outbox_to_created_idx").on(t.to, t.createdAt.desc()), index("email_outbox_created_idx").on(t.createdAt)],
 );
