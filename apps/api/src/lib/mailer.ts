@@ -5,6 +5,7 @@
  *   ResendMailer   staging / production (MAIL_PROVIDER=resend)
  *   Another provider later (Postmark / SES / ZeptoMail) is one more class with the same interface.
  */
+import { emailOutbox, eq, lt, type Database } from "@brillianda/db";
 import type { Logger } from "./logger.js";
 
 export interface EmailMessage {
@@ -122,3 +123,32 @@ export class ResendMailer implements Mailer {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Staging only (MAIL_OUTBOX_KEY): keeps a copy of every email in the email_outbox table, then
+ * tries the real provider. If the provider refuses (Resend's test sender only reaches its own
+ * account), the flow carries on: testers read the code or link from GET /v1/dev/outbox instead.
+ */
+export class OutboxMailer implements Mailer {
+  constructor(
+    private readonly db: Database,
+    private readonly inner: Mailer,
+    private readonly logger: Logger,
+  ) {}
+
+  async send(m: EmailMessage): Promise<void> {
+    const [row] = await this.db
+      .insert(emailOutbox)
+      .values({ to: m.to.toLowerCase(), tag: m.tag, subject: m.subject, text: m.text, html: m.html })
+      .returning({ id: emailOutbox.id });
+    await this.db.delete(emailOutbox).where(lt(emailOutbox.createdAt, new Date(Date.now() - 7 * 86_400_000)));
+    let delivered = true;
+    try {
+      await this.inner.send(m);
+    } catch (err) {
+      delivered = false;
+      this.logger.warn("email kept in the staging outbox only", { tag: m.tag, reason: (err as Error).message });
+    }
+    await this.db.update(emailOutbox).set({ delivered }).where(eq(emailOutbox.id, row!.id));
+  }
+}

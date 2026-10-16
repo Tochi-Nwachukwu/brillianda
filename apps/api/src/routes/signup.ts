@@ -227,7 +227,7 @@ function stepOf(d: Draft): z.infer<typeof DraftSchema>["step"] {
  * owner to check the dates. The session is named by the year the school said its year starts
  * (the frontend does the same), defaulting to the current one.
  */
-async function createFirstSession(tx: Tx, schoolId: string, userId: string, d: Draft): Promise<void> {
+export async function createFirstSession(tx: Tx, schoolId: string, userId: string, d: Draft): Promise<void> {
   const startYear = d.sessionStartYear ?? defaultSessionStart(new Date()).year;
   const suggested = defaultTerms(startYear);
   const [session] = await tx

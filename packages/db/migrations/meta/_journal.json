@@ -127,6 +127,13 @@
       "when": 1791993062005,
       "tag": "0017_revoke_student_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792140254846,
+      "tag": "0018_email_outbox",
+      "breakpoints": true
     }
   ]
 }

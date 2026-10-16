@@ -29,6 +29,15 @@ const EnvSchema = z.object({
   MAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   MAIL_FROM: z.string().default("Brillianda <no-reply@brillianda.com>"),
   RESEND_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
+  /** Staging: the frontend's address, e.g. https://brillianda-web.vercel.app. Email links go to <it>/s/<school>/…. */
+  FRONTEND_URL: z
+    .string()
+    .url()
+    .transform((v) => v.replace(/\/+$/, ""))
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  /** Staging: every email is also kept in an outbox readable with this key (GET /v1/dev/outbox). */
+  MAIL_OUTBOX_KEY: z.string().min(24, "MAIL_OUTBOX_KEY must be at least 24 characters").optional().or(z.literal("").transform(() => undefined)),
   /** Where trial requests from the marketing site are emailed. Unset: stored only. */
   TRIAL_NOTIFY_EMAIL: z.string().email().optional().or(z.literal("").transform(() => undefined)),
   TURNSTILE_SECRET_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
@@ -52,6 +61,8 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     throw new Error("MAIL_PROVIDER=resend needs RESEND_API_KEY");
   }
   if (env.APP_ENV === "production") {
+    if (env.MAIL_OUTBOX_KEY) throw new Error("MAIL_OUTBOX_KEY is for staging only: production must never keep a readable copy of emails");
+    if (env.FRONTEND_URL) throw new Error("FRONTEND_URL is for staging only: production links use each school's own subdomain");
     if (/@resend\.dev>?\s*$/i.test(env.MAIL_FROM)) {
       throw new Error("MAIL_FROM is Resend's test sender, which only reaches the account owner; use your verified domain in production");
     }

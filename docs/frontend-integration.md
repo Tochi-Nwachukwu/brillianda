@@ -87,6 +87,23 @@ addresses schools by path instead. For `/s/<school>/api/...` (or an `/api/...` c
 With a real domain on staging (`*.staging.brillianda.com`) none of this is needed: forward the host as
 in production. That is the better end state.
 
+**Links in emails on staging.** With `FRONTEND_URL` set on the API (staging only), every link the
+API builds points at your app in the path form: `FRONTEND_URL/s/<school>/auth/handover?token=…`,
+`/s/<school>/auth/magic?token=…`, `/s/<school>/reset-password?token=…`, `/s/<school>/invite?token=…`,
+and `FRONTEND_URL/s/<school>` for a school's home. `handoverUrl` and `school.url` from signup too.
+
+**Reading emails on staging.** Resend only delivers to our own address until a domain is verified.
+Every email the staging API sends is also kept for 7 days, and the flow never stops because the
+provider refused. Read them with:
+
+```
+GET https://api-rouge-nine-18.vercel.app/v1/dev/outbox?to=you@example.com&limit=5
+x-brillianda-outbox-key: <sent privately>
+```
+
+Each email comes with `code` (the 6-digit code, if any) and `links` pulled out. The route doesn't
+exist in production.
+
 ## Pages the API's emails and responses link to
 
 The API builds these links; the frontend must serve these paths on each school's address:
@@ -195,3 +212,12 @@ owners and admins, unless noted.
 **Logos** are served from the school's own address: `logoUrl` is now a relative path,
 `/api/v1/school/logo?v=…`, which your `proxy.ts` already forwards. No storage host is needed in your
 Content Security Policy (`docs/decisions.md` #6).
+
+**16 October 2026** (your "What the front end needs", section A)
+
+- A1: emails no longer stop any flow on staging; read them from `GET /v1/dev/outbox` (above). Links
+  in emails open your pages (`FRONTEND_URL`).
+- A2: a test school, made by `pnpm --filter @brillianda/api seed:test-school`; logins sent privately.
+- A3: production gets its own secret when production exists.
+- A4: `/openapi.json` is generated from the code on every deploy, so it's always current. Changes are
+  also listed here and sent as a note per deploy.

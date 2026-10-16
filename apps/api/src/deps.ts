@@ -4,7 +4,7 @@ import type { AppDeps } from "./context.js";
 import type { Env } from "./env.js";
 import { AllowAllBotCheck, TurnstileBotCheck } from "./lib/bot-check.js";
 import { createLogger, type Logger } from "./lib/logger.js";
-import { ConsoleMailer, ResendMailer } from "./lib/mailer.js";
+import { ConsoleMailer, OutboxMailer, ResendMailer, type Mailer } from "./lib/mailer.js";
 import { MemoryRateLimiter, UpstashRateLimiter } from "./lib/rate-limit.js";
 import { SchoolDirectory } from "./lib/school-directory.js";
 
@@ -17,14 +17,15 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
     env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN
       ? new UpstashRateLimiter(env.UPSTASH_REDIS_REST_URL, env.UPSTASH_REDIS_REST_TOKEN)
       : new MemoryRateLimiter();
+  const provider: Mailer =
+    env.MAIL_PROVIDER === "resend" ? new ResendMailer(env.RESEND_API_KEY!, env.MAIL_FROM, logger) : new ConsoleMailer(logger);
   return {
     db,
     secret: AuthSecret.fromBase64(env.AUTH_SECRET),
     rateLimiter,
     schools: new SchoolDirectory(db),
     logger,
-    mailer:
-      env.MAIL_PROVIDER === "resend" ? new ResendMailer(env.RESEND_API_KEY!, env.MAIL_FROM, logger) : new ConsoleMailer(logger),
+    mailer: env.MAIL_OUTBOX_KEY ? new OutboxMailer(db, provider, logger) : provider,
     botCheck: env.TURNSTILE_SECRET_KEY ? new TurnstileBotCheck(env.TURNSTILE_SECRET_KEY) : new AllowAllBotCheck(),
     config: {
       appEnv: env.APP_ENV,
@@ -36,6 +37,8 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
       secureCookies: env.PUBLIC_PROTOCOL === "https",
       ...(env.PUBLIC_PORT ? { publicPort: env.PUBLIC_PORT } : {}),
       ...(env.TRIAL_NOTIFY_EMAIL ? { trialNotifyEmail: env.TRIAL_NOTIFY_EMAIL } : {}),
+      ...(env.FRONTEND_URL ? { frontendUrl: env.FRONTEND_URL } : {}),
+      ...(env.MAIL_OUTBOX_KEY ? { outboxKey: env.MAIL_OUTBOX_KEY } : {}),
     },
   };
 }

@@ -21,6 +21,7 @@ import { changeRoutes } from "./routes/changes.js";
 import { importRoutes } from "./routes/imports.js";
 import { brandingRoutes } from "./routes/branding.js";
 import { trialRoutes } from "./routes/trials.js";
+import { devRoutes } from "./routes/dev.js";
 import { schoolRoutes } from "./routes/school.js";
 import { sessionRoutes } from "./routes/session.js";
 import { signupRoutes } from "./routes/signup.js";
@@ -129,6 +130,8 @@ export function createApp(deps: AppDeps) {
   app.route("/", importRoutes);
   app.route("/", brandingRoutes);
   app.route("/", trialRoutes);
+  // Staging only: the route doesn't exist at all unless the outbox is switched on.
+  if (deps.config.outboxKey) app.route("/", devRoutes);
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",

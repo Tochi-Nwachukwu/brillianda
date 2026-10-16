@@ -3,7 +3,7 @@
  * The API reads them directly (e.g. school lookup by subdomain, user by email).
  */
 import { sql } from "drizzle-orm";
-import { check, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { citext, createdAt, id, updatedAt } from "./columns.js";
 
 export const userStatus = pgEnum("user_status", ["active", "disabled"]);
@@ -158,4 +158,24 @@ export const trialRequests = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [index("trial_requests_created_idx").on(t.createdAt.desc()), index("trial_requests_status_idx").on(t.status)],
+);
+
+/**
+ * Staging only: a copy of every email the API sends, so testers can read codes and links when the
+ * email provider can't reach them (Resend's test sender only delivers to its account owner). The
+ * API refuses to start in production with the outbox switched on. Rows older than 7 days are pruned.
+ */
+export const emailOutbox = pgTable(
+  "email_outbox",
+  {
+    id: id(),
+    to: citext().notNull(),
+    tag: text().notNull(),
+    subject: text().notNull(),
+    text: text().notNull(),
+    html: text().notNull(),
+    delivered: boolean(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("email_outbox_to_created_idx").on(t.to, t.createdAt.desc()), index("email_outbox_created_idx").on(t.createdAt)],
 );

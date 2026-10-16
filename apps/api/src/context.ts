@@ -21,6 +21,10 @@ export interface AppConfig {
   publicPort?: number;
   /** Where trial requests are emailed; unset means stored only. */
   trialNotifyEmail?: string;
+  /** Staging: the frontend's own address (no trailing slash). Links in emails point there, at /s/<school>/…. */
+  frontendUrl?: string;
+  /** Staging: key for reading the email outbox (GET /v1/dev/outbox). Unset: no outbox. Never in production. */
+  outboxKey?: string;
 }
 
 /** Everything a request handler may use. Built once in server.ts (or per test). */
