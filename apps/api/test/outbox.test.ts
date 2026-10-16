@@ -113,3 +113,18 @@ describe("staging outbox and links", () => {
     expect(loadEnv({ ...env, APP_ENV: "staging", PUBLIC_PROTOCOL: "https", FRONTEND_URL: `${FRONTEND}/`, MAIL_OUTBOX_KEY: KEY }).FRONTEND_URL).toBe(FRONTEND);
   });
 });
+
+describe("the API's own hostnames", () => {
+  it("act as the main site, never a school, and other unknown hosts stay unknown", async () => {
+    const own = createApp({ ...h.deps, config: { ...h.deps.config, apiHosts: ["api.brillianda.test", "api-x.vercel.app"] } });
+    for (const host of ["api.brillianda.test", "API-X.vercel.app"]) {
+      const res = await own.request("/v1/signup/subdomain-check?subdomain=newplace", { headers: { host } });
+      expect(res.status).toBe(200);
+    }
+    expect((await own.request("/v1/me", { headers: { host: "api.brillianda.test" } })).status).not.toBe(200);
+    const stranger = await own.request("/v1/signup/subdomain-check?subdomain=newplace", { headers: { host: "evil.example.com" } });
+    expect(stranger.status).not.toBe(200);
+    const before = await h.app.request("/v1/signup/subdomain-check?subdomain=newplace", { headers: { host: "api.brillianda.test" } });
+    expect(before.status).not.toBe(200);
+  });
+});

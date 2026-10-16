@@ -29,6 +29,8 @@ const EnvSchema = z.object({
   MAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   MAIL_FROM: z.string().default("Brillianda <no-reply@brillianda.com>"),
   RESEND_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
+  /** The API's own hostnames, comma-separated (e.g. api.staging.brillianda.com). On Vercel its own names are added automatically. */
+  API_HOSTNAMES: z.string().optional(),
   /** Staging: the frontend's address, e.g. https://brillianda-web.vercel.app. Email links go to <it>/s/<school>/…. */
   FRONTEND_URL: z
     .string()

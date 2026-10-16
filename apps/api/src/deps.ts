@@ -38,6 +38,14 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
       ...(env.PUBLIC_PORT ? { publicPort: env.PUBLIC_PORT } : {}),
       ...(env.TRIAL_NOTIFY_EMAIL ? { trialNotifyEmail: env.TRIAL_NOTIFY_EMAIL } : {}),
       ...(env.FRONTEND_URL ? { frontendUrl: env.FRONTEND_URL } : {}),
+      apiHosts: [
+        ...(env.API_HOSTNAMES ?? "").split(","),
+        process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "",
+        process.env.VERCEL_URL ?? "",
+        process.env.VERCEL_BRANCH_URL ?? "",
+      ]
+        .map((h) => h.trim().toLowerCase())
+        .filter(Boolean),
       ...(env.MAIL_OUTBOX_KEY ? { outboxKey: env.MAIL_OUTBOX_KEY } : {}),
     },
   };

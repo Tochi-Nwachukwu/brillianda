@@ -226,3 +226,13 @@ Content Security Policy (`docs/decisions.md` #6).
 - A3: production gets its own secret when production exists.
 - A4: `/openapi.json` is generated from the code on every deploy, so it's always current. Changes are
   also listed here and sent as a note per deploy.
+
+**16 October 2026, later** (staging moves to `staging.brillianda.com`)
+
+- Staging addresses become `staging.brillianda.com` (main site), `<school>.staging.brillianda.com`
+  (each school) and `api.staging.brillianda.com` (the API).
+- Once switched, the API sets `ROOT_DOMAIN=staging.brillianda.com` and drops `FRONTEND_URL`, so
+  email links go to `https://<school>.staging.brillianda.com/…` instead of `/s/<school>/…`.
+- Your proxy sends `x-forwarded-host` = the browser's real host (`greenfield.staging.brillianda.com`
+  or `staging.brillianda.com`) — the same as production, just a different root.
+- `/s/<school>/` and `?school=` keep working on staging for now.
