@@ -57,6 +57,38 @@ describe("invitations", () => {
     expect(joined).toHaveLength(1);
   });
 
+  it("carries the invitee's name when the owner gives one, and uses it if they don't retype it", async () => {
+    const res = await owner.post("/v1/invitations", { email: "chidi@maple.test", fullName: "  Chidi   Okeke " });
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({ email: "chidi@maple.test", fullName: "Chidi Okeke" });
+    const mail = await waitForMail(h, "chidi@maple.test", "invitation");
+    expect(mail.text).toContain("Hello Chidi,");
+    const token = tokenFrom(mail.text);
+
+    const list = (await (await owner.get("/v1/invitations")).json()) as { data: { email: string; fullName: string | null }[] };
+    expect(list.data.find((i) => i.email === "chidi@maple.test")?.fullName).toBe("Chidi Okeke");
+
+    const guest = browser(h, schoolHost("maple"));
+    expect(await (await guest.get(`/v1/invitations/lookup?token=${token}`)).json()).toMatchObject({ fullName: "Chidi Okeke", existingAccount: false });
+    const r = await guest.post("/v1/invitations/accept", { token, password: "chidi-password" });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ user: { fullName: "Chidi Okeke" } });
+
+    const summaries = await withSchool(h.db, mapleId, (tx) => tx.select({ s: auditLog.summary }).from(auditLog).where(eq(auditLog.action, "invitation.created")));
+    expect(summaries.map((x) => x.s)).toContain("Invited Chidi Okeke (chidi@maple.test) as an admin");
+  });
+
+  it("the name is optional, and checked when given", async () => {
+    const plain = await owner.post("/v1/invitations", { email: "noname@maple.test" });
+    expect(await plain.json()).toMatchObject({ fullName: null });
+    expect((await waitForMail(h, "noname@maple.test", "invitation")).text).not.toContain("Hello");
+    expect(await (await owner.post("/v1/invitations", { email: "blank@maple.test", fullName: "  " })).json()).toMatchObject({ fullName: null });
+    const short = await owner.post("/v1/invitations", { email: "x@maple.test", fullName: "A" });
+    expect(short.status).toBe(422);
+    expect(((await short.json()) as { errors: { pointer: string }[] }).errors[0]!.pointer).toBe("#/fullName");
+    expect((await owner.post("/v1/invitations", { email: "y@maple.test", fullName: "A".repeat(121) })).status).toBe(422);
+  });
+
   it("only the owner manages invitations", async () => {
     const admin = browser(h, schoolHost("maple"));
     await admin.post("/v1/auth/login", { email: "funmi@maple.test", password: "funmi-password" });

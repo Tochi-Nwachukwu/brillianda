@@ -130,6 +130,8 @@ export const invitations = pgTable(
     id: id(),
     schoolId: schoolId(),
     email: citext().notNull(),
+    /** The invitee's name as the inviter typed it (optional); greets them and labels the open invite. */
+    fullName: text(),
     role: memberRole().notNull(),
     tokenHash: text().notNull().unique(),
     invitedBy: uuid().references(() => users.id, { onDelete: "set null" }),

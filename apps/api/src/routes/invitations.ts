@@ -31,6 +31,7 @@ const InvitationSchema = z
   .object({
     id: z.string().uuid(),
     email: z.string().email(),
+    fullName: z.string().nullable().openapi({ description: "The invitee's name, if the owner gave one" }),
     role: z.enum(["owner", "admin"]),
     invitedBy: z.string().nullable().openapi({ description: "Inviter's name" }),
     createdAt: z.string(),
@@ -44,6 +45,15 @@ const ownerErrors = {
   404: problemContent("No active school here"),
 } as const;
 
+const InviteeName = z
+  .string()
+  .trim()
+  .max(120, "Use at most 120 characters")
+  .transform((v) => v.replace(/\s+/g, " "))
+  .pipe(z.string().refine((v) => v === "" || v.length >= 2, "Enter their full name, or leave it empty"))
+  .optional()
+  .openapi({ description: "Optional. The person's name, to greet them on the invite page and in the email", example: "Ada Obi" });
+
 const openInvite = (now = new Date()) =>
   and(isNull(invitations.acceptedAt), isNull(invitations.revokedAt), gt(invitations.expiresAt, now));
 
@@ -52,6 +62,7 @@ async function findOpenByToken(tx: Tx, c: Context<AppEnv>, token: string) {
     .select({
       id: invitations.id,
       email: invitations.email,
+      fullName: invitations.fullName,
       role: invitations.role,
       inviterName: users.fullName,
     })
@@ -68,7 +79,7 @@ invitationRoutes.openapi(
     path: "/v1/invitations",
     tags: ["invitations"],
     summary: "Invite someone to help run this school as an admin (owner only)",
-    request: { body: json(z.object({ email: EmailSchema, role: z.literal("admin").default("admin") }).openapi("InviteRequest")) },
+    request: { body: json(z.object({ email: EmailSchema, fullName: InviteeName, role: z.literal("admin").default("admin") }).openapi("InviteRequest")) },
     responses: {
       201: { description: "Invitation sent", content: { "application/json": { schema: InvitationSchema } } },
       409: problemContent("Already a member"),
@@ -76,7 +87,8 @@ invitationRoutes.openapi(
     },
   }),
   async (c) => {
-    const { email, role } = c.req.valid("json");
+    const { email, role, fullName: givenName } = c.req.valid("json");
+    const fullName = givenName || null;
     const { mailer, config } = c.get("deps");
     const token = generateToken();
     const result = await schoolRoute(c, { roles: ["owner"], userRateLimit: RATE_RULES.invitePerUser }, async ({ tx, school, auth, audit }) => {
@@ -98,6 +110,7 @@ invitationRoutes.openapi(
         .values({
           schoolId: school.id,
           email,
+          fullName,
           role,
           tokenHash: inviteHash(c, token),
           invitedBy: auth.user.id,
@@ -106,16 +119,17 @@ invitationRoutes.openapi(
           updatedBy: auth.user.id,
         })
         .returning();
-      audit({ action: "invitation.created", entity: "invitation", entityId: inv!.id, changes: { email, role }, summary: `Invited ${email} as an admin` });
+      audit({ action: "invitation.created", entity: "invitation", entityId: inv!.id, changes: { email, fullName, role }, summary: `Invited ${fullName ? `${fullName} (${email})` : email} as an admin` });
       return { inv: inv!, school, inviter: auth.user.fullName };
     });
     await mailer.send(
-      emails.invitation(email, result.school.name, result.inviter, role, schoolUrl(config, result.school.subdomain, `/invite?token=${token}`)),
+      emails.invitation(email, result.school.name, result.inviter, role, schoolUrl(config, result.school.subdomain, `/invite?token=${token}`), fullName),
     );
     return c.json(
       {
         id: result.inv.id,
         email: result.inv.email,
+        fullName: result.inv.fullName,
         role: result.inv.role,
         invitedBy: result.inviter,
         createdAt: result.inv.createdAt.toISOString(),
@@ -149,6 +163,7 @@ invitationRoutes.openapi(
       return rows.map(({ inv, inviter }) => ({
         id: inv.id,
         email: inv.email,
+        fullName: inv.fullName,
         role: inv.role,
         invitedBy: inviter,
         createdAt: inv.createdAt.toISOString(),
@@ -186,6 +201,7 @@ invitationRoutes.openapi(
 const LookupSchema = z
   .object({
     email: z.string().email(),
+    fullName: z.string().nullable().openapi({ description: "The name the owner gave, to greet them and prefill the name field" }),
     role: z.enum(["owner", "admin"]),
     school: z.object({ name: z.string(), subdomain: z.string() }),
     invitedBy: z.string().nullable(),
@@ -215,7 +231,7 @@ invitationRoutes.openapi(
     if (!inv) throw new ApiError("link_invalid", "This invitation has expired, was revoked, or was already used. Ask the owner for a new one.");
     const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, inv.email)).limit(1);
     return c.json(
-      { email: inv.email, role: inv.role, school: { name: school.name, subdomain: school.subdomain }, invitedBy: inv.inviterName, existingAccount: !!existing },
+      { email: inv.email, fullName: inv.fullName, role: inv.role, school: { name: school.name, subdomain: school.subdomain }, invitedBy: inv.inviterName, existingAccount: !!existing },
       200,
     );
   },
@@ -226,7 +242,7 @@ invitationRoutes.openapi(
     method: "post",
     path: "/v1/invitations/accept",
     tags: ["invitations"],
-    summary: "Accept an invitation and sign in. New people also send their name and a password",
+    summary: "Accept an invitation and sign in. New people also send a password, and their name unless the invitation has one",
     request: {
       body: json(
         z
@@ -259,14 +275,15 @@ invitationRoutes.openapi(
         .limit(1);
       if (user && user.status !== "active") throw new ApiError("forbidden", "This account is disabled.");
       if (!user) {
+        const name = fullName ?? inv.fullName ?? undefined;
         const missing = [
-          ...(fullName ? [] : [{ pointer: "#/fullName", detail: "Enter your full name", code: "required" }]),
+          ...(name ? [] : [{ pointer: "#/fullName", detail: "Enter your full name", code: "required" }]),
           ...(passwordHash ? [] : [{ pointer: "#/password", detail: "Choose a password of at least 8 characters", code: "required" }]),
         ];
         if (missing.length) throw new ApiError("validation_failed", "New accounts need a name and a password.", { extensions: { errors: missing } });
         [user] = await tx
           .insert(users)
-          .values({ email: inv.email, fullName: fullName!, passwordHash: passwordHash!, emailVerifiedAt: new Date() })
+          .values({ email: inv.email, fullName: name!, passwordHash: passwordHash!, emailVerifiedAt: new Date() })
           .returning({ id: users.id, email: users.email, fullName: users.fullName, emailVerifiedAt: users.emailVerifiedAt, status: users.status });
       } else if (!user.emailVerifiedAt) {
         await tx.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, user.id));

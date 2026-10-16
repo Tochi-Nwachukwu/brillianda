@@ -191,17 +191,18 @@ Owner side (owner only):
 
 | Call | Body | Returns |
 |---|---|---|
-| `POST /v1/invitations` | `{ email }` | 201 `Invitation`; inviting the same email again resends |
+| `POST /v1/invitations` | `{ email, fullName? }` | 201 `Invitation`; inviting the same email again resends |
 | `GET /v1/invitations` | | `{ data: Invitation[] }` (open ones) |
 | `DELETE /v1/invitations/{id}` | | 204 |
 | `GET /v1/members` / `DELETE /v1/members/{userId}` | | Who has access / remove an admin |
 
 Invitee side — the email links to `/s/<school>/invite?token=…`:
 
-1. `GET /v1/invitations/lookup?token=…` → `{ email, role, school, invitedBy, existingAccount }`,
-   or 410 `link_invalid`.
-2. If `existingAccount` is **false**: ask for full name and a password, then
-   `POST /v1/invitations/accept` `{ token, fullName, password }`.
+1. `GET /v1/invitations/lookup?token=…` → `{ email, fullName, role, school, invitedBy, existingAccount }`,
+   or 410 `link_invalid`. `fullName` is the name the owner typed, or `null`: greet them with it.
+2. If `existingAccount` is **false**: ask for a password, and the full name (prefilled with
+   `fullName`), then `POST /v1/invitations/accept` `{ token, fullName, password }`. When the
+   invitation has a name, `fullName` may be left out and that name is used.
    If **true**: just a "Join Greenfield" button, then `POST /v1/invitations/accept` `{ token }`.
 3. 200 `Me`: joined and signed in. Go to Home.
 

@@ -227,6 +227,14 @@ Content Security Policy (`docs/decisions.md` #6).
 - A4: `/openapi.json` is generated from the code on every deploy, so it's always current. Changes are
   also listed here and sent as a note per deploy.
 
+**16 October 2026, B1** (invitations carry a name)
+
+- `POST /v1/invitations` accepts an optional `fullName` (2 to 120 characters; empty means none).
+- `Invitation` (create and list) and `GET /v1/invitations/lookup` return `fullName`, or `null`.
+- The invitation email greets the person by first name when one was given.
+- `POST /v1/invitations/accept`: a new person may leave out `fullName` when the invitation has
+  one; sending it still wins, so they can correct it.
+
 **16 October 2026, later** (staging moves to `staging.brillianda.com`)
 
 - Staging addresses become `staging.brillianda.com` (main site), `<school>.staging.brillianda.com`

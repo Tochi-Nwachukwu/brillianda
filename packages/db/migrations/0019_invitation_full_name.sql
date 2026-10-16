@@ -1,0 +1,1 @@
+ALTER TABLE "invitations" ADD COLUMN "full_name" text;

@@ -134,6 +134,13 @@
       "when": 1792140254846,
       "tag": "0018_email_outbox",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792162125337,
+      "tag": "0019_invitation_full_name",
+      "breakpoints": true
     }
   ]
 }
