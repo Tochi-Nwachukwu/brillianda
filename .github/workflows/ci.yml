@@ -35,7 +35,7 @@ jobs:
       # The backup round-trip test must run in CI, never skip.
       REQUIRE_PG_TOOLS: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # the migration check compares against the base branch
       - uses: pnpm/action-setup@v4
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # scan the whole history, not just this commit
       - name: Secret scan (gitleaks)
