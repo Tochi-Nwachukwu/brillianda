@@ -51,6 +51,7 @@ import type { AppEnv } from "../context.js";
 import { ApiError, problemContent } from "../lib/errors.js";
 import type { ResolvedSchool } from "../lib/school-directory.js";
 import { schoolRoute } from "../school-route.js";
+import { attendanceOf, lagosToday, parentAccessOf, termsOf } from "../lib/attendance.js";
 import { currentSession } from "./calendar.js";
 import { armOptions } from "./classes.js";
 
@@ -100,7 +101,7 @@ const StudentInputSchema = z
 type StudentInput = z.infer<typeof StudentInputSchema>;
 
 /** Today in Lagos (UTC+1, no daylight saving), as an ISO day. */
-export const lagosToday = () => new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
+export { lagosToday };
 
 // ── Output ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -135,8 +136,13 @@ const StudentDetailSchema = StudentRowSchema.extend({
       phone: z.string().nullable(),
       email: z.string().nullable(),
       siblings: z.array(z.object({ id: z.string().uuid(), fullName: z.string(), armLabel: z.string() })),
+      parentAccess: z.enum(["none", "invited", "active"]).openapi({ description: "Whether this guardian uses the parent app" }),
     })
     .nullable(),
+  attendance: z
+    .object({ term: z.string(), days: z.number().int(), present: z.number().int(), late: z.number().int(), absent: z.number().int() })
+    .nullable()
+    .openapi({ description: "This term's register marks (late counts as present); null outside a term" }),
   classHistory: z.array(z.object({ armLabel: z.string(), from: z.string() })),
   changes: z.array(ChangeEntrySchema).openapi({ description: "Changes to this student, newest first" }),
 }).openapi("StudentDetail");
@@ -292,6 +298,8 @@ studentRoutes.openapi(
         .where(and(eq(auditLog.entity, "student"), eq(auditLog.entityId, id), isNotNull(auditLog.summary)))
         .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
         .limit(200);
+      const access = guardian ? (await parentAccessOf(tx, [guardian.id])).get(guardian.id)! : "none";
+      const attendance = (await attendanceOf(tx, [id], await termsOf(tx), lagosToday())).get(id) ?? null;
       return {
         ...toRow(s, guardian),
         firstName: s.firstName,
@@ -300,7 +308,8 @@ studentRoutes.openapi(
         admissionDate: s.admissionDate,
         address: s.address,
         stateOfOrigin: s.stateOfOrigin,
-        guardian: guardian ? { id: guardian.id, name: guardian.fullName, phone: guardian.phone, email: guardian.email, siblings } : null,
+        guardian: guardian ? { id: guardian.id, name: guardian.fullName, phone: guardian.phone, email: guardian.email, siblings, parentAccess: access } : null,
+        attendance,
         classHistory: history.map((e) => ({ armLabel: labels.get(e.classArmId) ?? "A class that was removed", from: e.startedOn })),
         changes: changes.map((x) => ({ id: x.id, at: x.at.toISOString(), who: x.who ?? "Someone", what: x.what! })),
       };

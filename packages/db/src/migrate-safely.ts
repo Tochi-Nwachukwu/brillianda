@@ -51,24 +51,40 @@ export interface SnapshotConfig {
   branchId?: string;
   /** How long to keep the snapshot. */
   keepDays: number;
+  /**
+   * How many pre-migrate snapshots to keep, this one included (default 3). Older ones are deleted
+   * first, because Neon caps branches per project (10 on the free plan).
+   */
+  keepCount?: number;
 }
+
+const SNAPSHOT_PREFIX = "pre-migrate-";
 
 /** Creates an instant copy-on-write Neon branch of the current state. Returns its name. */
 export async function createNeonSnapshot(cfg: SnapshotConfig, label: string): Promise<string> {
   const api = `https://console.neon.tech/api/v2/projects/${encodeURIComponent(cfg.projectId)}`;
   const headers = { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${cfg.apiKey}` };
 
-  let parentId = cfg.branchId;
-  if (!parentId) {
-    const res = await fetch(`${api}/branches`, { headers });
-    if (!res.ok) throw new Error(`Neon: listing branches failed (${res.status}) ${await res.text()}`);
-    const body = (await res.json()) as { branches: { id: string; default?: boolean; primary?: boolean }[] };
-    parentId = body.branches.find((b) => b.default ?? b.primary)?.id;
-    if (!parentId) throw new Error("Neon: no default branch found; set NEON_BRANCH_ID");
+  const res = await fetch(`${api}/branches`, { headers });
+  if (!res.ok) throw new Error(`Neon: listing branches failed (${res.status}) ${await res.text()}`);
+  const body = (await res.json()) as { branches: { id: string; name?: string; created_at?: string; default?: boolean; primary?: boolean }[] };
+  const parentId = cfg.branchId ?? body.branches.find((b) => b.default ?? b.primary)?.id;
+  if (!parentId) throw new Error("Neon: no default branch found; set NEON_BRANCH_ID");
+
+  // Make room: drop our own oldest snapshots so that, with this one, at most keepCount remain.
+  // Only branches this tool created (by name) are ever touched, never the database's own branch.
+  const keep = Math.max(1, cfg.keepCount ?? 3);
+  const old = body.branches
+    .filter((b) => b.name?.startsWith(SNAPSHOT_PREFIX) && b.id !== parentId && !(b.default ?? b.primary))
+    .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
+  for (const b of old.slice(0, Math.max(0, old.length - (keep - 1)))) {
+    const del = await fetch(`${api}/branches/${encodeURIComponent(b.id)}`, { method: "DELETE", headers });
+    if (!del.ok) throw new Error(`Neon: deleting old snapshot ${b.name} failed (${del.status}) ${await del.text()}`);
+    console.log(`Deleted old snapshot ${b.name}`);
   }
 
   const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const name = `pre-migrate-${stamp}-${label}`.slice(0, 120);
+  const name = `${SNAPSHOT_PREFIX}${stamp}-${label}`.slice(0, 120);
   const created = await fetch(`${api}/branches`, {
     method: "POST",
     headers,

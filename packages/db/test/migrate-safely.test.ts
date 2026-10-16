@@ -120,6 +120,28 @@ describe("migrateSafely", () => {
     expect(await appliedCount(t.ownerUrl)).toBe(total);
   });
 
+  it("makes room under Neon's branch cap by deleting only its own oldest snapshots", async () => {
+    const t = await freshDb();
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
+      calls.push(`${init?.method ?? "GET"} ${url.replace("https://console.neon.tech/api/v2/projects/proj-1", "")}`);
+      if (!init?.method)
+        return Response.json({
+          branches: [
+            { id: "br-main", name: "main", default: true, created_at: "2026-01-01T00:00:00Z" },
+            { id: "br-dev", name: "dev", created_at: "2026-01-02T00:00:00Z" },
+            { id: "br-s3", name: "pre-migrate-2026-10-16-c", created_at: "2026-10-16T12:00:00Z" },
+            { id: "br-s1", name: "pre-migrate-2026-10-14-a", created_at: "2026-10-14T12:00:00Z" },
+            { id: "br-s2", name: "pre-migrate-2026-10-15-b", created_at: "2026-10-15T12:00:00Z" },
+          ],
+        });
+      return Response.json({ branch: { id: "br-snap" } });
+    });
+    await migrateSafely({ ownerUrl: t.ownerUrl, location: "remote", snapshot: { apiKey: "k", projectId: "proj-1", keepDays: 14, keepCount: 2 }, log: quiet });
+    expect(calls).toEqual(["GET /branches", "DELETE /branches/br-s1", "DELETE /branches/br-s2", "POST /branches", "PATCH /branches/br-snap"]);
+    expect(await appliedCount(t.ownerUrl)).toBe(total);
+  });
+
   it("applies nothing when the snapshot fails", async () => {
     const t = await freshDb();
     vi.stubGlobal("fetch", async () => new Response("quota exceeded", { status: 402 }));

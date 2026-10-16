@@ -43,7 +43,7 @@ const ip = (c: Context<AppEnv>) => c.get("clientIp") ?? "unknown";
 
 interface ActiveMember {
   user: { id: string; email: string; fullName: string; emailVerifiedAt: Date | null; passwordHash: string | null };
-  membership: { id: string; role: "owner" | "admin" | "teacher" };
+  membership: { id: string; role: "owner" | "admin" | "teacher" | "parent" };
 }
 
 /** The user, if they are active AND an active member of this school. Runs inside withSchool. */
@@ -324,7 +324,7 @@ const MySchoolsSchema = z
         id: z.string().uuid(),
         name: z.string(),
         subdomain: z.string(),
-        role: z.enum(["owner", "admin", "teacher"]),
+        role: z.enum(["owner", "admin", "teacher", "parent"]),
         url: z.string().url(),
         current: z.boolean(),
       }),

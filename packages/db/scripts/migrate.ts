@@ -30,6 +30,7 @@ try {
             projectId,
             ...(process.env.NEON_BRANCH_ID ? { branchId: process.env.NEON_BRANCH_ID } : {}),
             keepDays: Number(process.env.SNAPSHOT_KEEP_DAYS ?? 14),
+            keepCount: Number(process.env.SNAPSHOT_KEEP_COUNT ?? 3),
           },
         }
       : {}),

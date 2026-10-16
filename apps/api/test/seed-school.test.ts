@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { seedTestSchool, seedTestTeachers } from "../src/seed-school.js";
+import { seedTestParent, seedTestSchool, seedTestTeachers } from "../src/seed-school.js";
 import { browser, schoolHost } from "./flows.js";
 import { createHarness, type Harness } from "./helpers.js";
 
@@ -54,5 +54,14 @@ describe("test school for the frontend team", () => {
     expect(theirs.formArms).toEqual([]);
     expect(theirs.subjects).toHaveLength(4);
     await expect(seedTestTeachers(h.deps, { subdomain: "nowhere", formTeacherEmail: "a@x.test", subjectTeacherEmail: "b@x.test" })).rejects.toThrow(/no school/);
+  });
+
+  it("adds a parent who follows the Okafor siblings", async () => {
+    const r = await seedTestParent(h.deps, { subdomain: "fecheck", email: "parent@fecheck.test" });
+    expect(r.children).toEqual(["Chiamaka Okafor", "Tobi Okafor"]);
+    const parent = browser(h, schoolHost("fecheck"));
+    expect(await (await parent.post("/v1/auth/login", { email: "parent@fecheck.test", password: r.password })).json()).toMatchObject({ membership: { role: "parent" } });
+    const home = (await (await parent.get("/v1/me/children")).json()) as { children: { fullName: string }[] };
+    expect(home.children.map((k) => k.fullName).sort()).toEqual(["Chiamaka Okafor", "Tobi Okafor"]);
   });
 });

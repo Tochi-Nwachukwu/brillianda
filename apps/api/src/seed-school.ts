@@ -9,7 +9,7 @@
 import { randomBytes } from "node:crypto";
 import { createSession, hashPassword } from "@brillianda/auth";
 import { CATALOGUE, defaultTerms, preTicked } from "@brillianda/core";
-import { auditLog, eq, schoolMembers, schools, scopeToSchool, users } from "@brillianda/db";
+import { and, auditLog, eq, guardians, parentLinks, schoolMembers, schools, scopeToSchool, studentGuardians, students, users } from "@brillianda/db";
 import { createApp } from "./app.js";
 import type { AppDeps } from "./context.js";
 import { MemoryMailer } from "./lib/mailer.js";
@@ -184,4 +184,44 @@ export async function seedTestTeachers(base: AppDeps, opts: TeacherSeedOptions):
     formTeacher: { ...form, formClass: first!.label, subjects: [first!, second!].map((a) => `${maths.name}, ${a.label}`) },
     subjectTeacher: { ...subject, subjects: englishArms.map((a) => `${english.name}, ${a.label}`) },
   };
+}
+
+export interface ParentSeedResult {
+  email: string;
+  password: string;
+  guardian: string;
+  children: string[];
+}
+
+/**
+ * A parent for an existing test school (C2): the account of the guardian of the Okafor siblings
+ * (seed:test-school), made as an accepted parent invitation would. Falls back to the first
+ * guardian on file.
+ */
+export async function seedTestParent(base: AppDeps, opts: { subdomain: string; email: string }): Promise<ParentSeedResult> {
+  const { db } = base;
+  const [school] = await db.select({ id: schools.id, ownerId: schools.ownerUserId }).from(schools).where(eq(schools.subdomain, opts.subdomain));
+  if (!school) throw new Error(`There is no school at "${opts.subdomain}". Run seed:test-school first.`);
+  const [taken] = await db.select({ id: users.id }).from(users).where(eq(users.email, opts.email));
+  if (taken) throw new Error(`${opts.email} already has a Brillianda account. Use another email.`);
+  const parent = { email: opts.email, password: password() };
+  return db.transaction(async (tx) => {
+    await scopeToSchool(tx, school.id);
+    const rows = await tx
+      .select({ guardianId: guardians.id, guardianName: guardians.fullName, firstName: students.firstName, lastName: students.lastName, otherNames: students.otherNames })
+      .from(guardians)
+      .innerJoin(studentGuardians, and(eq(studentGuardians.schoolId, guardians.schoolId), eq(studentGuardians.guardianId, guardians.id)))
+      .innerJoin(students, and(eq(students.schoolId, studentGuardians.schoolId), eq(students.id, studentGuardians.studentId)));
+    if (!rows.length) throw new Error(`"${opts.subdomain}" has no students with guardians yet.`);
+    const okafor = rows.find((r) => r.lastName === "Okafor") ?? rows[0]!;
+    const kids = rows.filter((r) => r.guardianId === okafor.guardianId).map((r) => `${r.firstName} ${r.lastName}`);
+    const [u] = await tx
+      .insert(users)
+      .values({ email: parent.email, fullName: okafor.guardianName, passwordHash: await hashPassword(parent.password), emailVerifiedAt: new Date() })
+      .returning({ id: users.id });
+    await tx.insert(schoolMembers).values({ schoolId: school.id, userId: u!.id, role: "parent", invitedBy: school.ownerId, createdBy: school.ownerId, updatedBy: school.ownerId });
+    await tx.insert(parentLinks).values({ schoolId: school.id, guardianId: okafor.guardianId, userId: u!.id, createdBy: school.ownerId, updatedBy: school.ownerId });
+    await tx.insert(auditLog).values({ schoolId: school.id, actorUserId: u!.id, action: "member.joined", entity: "user", entityId: u!.id, changes: { via: "seed", role: "parent" }, summary: "Joined the parent app" });
+    return { ...parent, guardian: okafor.guardianName, children: kids };
+  });
 }

@@ -145,8 +145,8 @@ app and the sign-in page.
 }
 ```
 
-`membership.role` is `owner`, `admin` or `teacher`. Teachers get their own screens (Today,
-Register, My subjects); every owner and admin endpoint answers them 403.
+`membership.role` is `owner`, `admin`, `teacher` or `parent`. Teachers get their own screens (Today,
+Register, My subjects) and parents My children; every owner and admin endpoint answers them 403.
 
 `GET /v1/school` (no session needed) gives the name, colour and `logoUrl` for the sign-in page.
 

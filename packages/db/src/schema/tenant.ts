@@ -19,8 +19,11 @@ const schoolId = () =>
     .notNull()
     .references(() => schools.id, { onDelete: "cascade" });
 
-/** owner and admin run the school; teacher takes registers and (later) enters scores (C1). */
-export const memberRole = pgEnum("member_role", ["owner", "admin", "teacher"]);
+/**
+ * owner and admin run the school; teacher takes registers and (later) enters scores (C1); parent
+ * follows their own children, through a guardian record (C2, parent_links).
+ */
+export const memberRole = pgEnum("member_role", ["owner", "admin", "teacher", "parent"]);
 export const memberStatus = pgEnum("member_status", ["active", "suspended"]);
 
 export const schoolMembers = pgTable(
@@ -134,6 +137,8 @@ export const invitations = pgTable(
     /** The invitee's name as the inviter typed it (optional); greets them and labels the open invite. */
     fullName: text(),
     role: memberRole().notNull(),
+    /** Parent invitations only: the guardian record the account will follow. */
+    guardianId: uuid(),
     tokenHash: text().notNull().unique(),
     invitedBy: uuid().references(() => users.id, { onDelete: "set null" }),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
@@ -152,6 +157,9 @@ export const invitations = pgTable(
       .on(t.schoolId, t.email)
       .where(sql`${t.acceptedAt} IS NULL AND ${t.revokedAt} IS NULL`),
     index("invitations_school_created_idx").on(t.schoolId, t.createdAt.desc()),
+    index("invitations_school_guardian_idx").on(t.schoolId, t.guardianId),
+    // role::text: the new enum value can't be used in the migration that adds it (one transaction).
+    check("invitations_parent_guardian_check", sql`(${t.role}::text = 'parent') = (${t.guardianId} IS NOT NULL)`),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],
@@ -673,6 +681,33 @@ export const registerMarks = pgTable(
     foreignKey({ name: "register_marks_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }),
     index("register_marks_student_idx").on(t.schoolId, t.studentId),
     check("register_marks_note_length_check", sql`char_length(${t.note}) <= 120`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/**
+ * A parent's account follows a guardian record (C2): they see that guardian's children and nobody
+ * else's. Composite keys mean the link goes when the membership or the guardian does.
+ */
+export const parentLinks = pgTable(
+  "parent_links",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    guardianId: uuid().notNull(),
+    userId: uuid().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("parent_links_school_id_id_key").on(t.schoolId, t.id),
+    unique("parent_links_pair_key").on(t.schoolId, t.guardianId, t.userId),
+    foreignKey({ name: "parent_links_guardian_fk", columns: [t.schoolId, t.guardianId], foreignColumns: [guardians.schoolId, guardians.id] }).onDelete("cascade"),
+    foreignKey({ name: "parent_links_member_fk", columns: [t.schoolId, t.userId], foreignColumns: [schoolMembers.schoolId, schoolMembers.userId] }).onDelete("cascade"),
+    index("parent_links_user_idx").on(t.schoolId, t.userId),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],

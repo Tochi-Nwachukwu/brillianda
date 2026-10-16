@@ -11,7 +11,7 @@
  * Tokens are looked up inside withSchool, so a link only works at the school that sent it.
  */
 import { generateToken, hashPassword } from "@brillianda/auth";
-import { and, auditLog, desc, eq, gt, invitations, isNull, ne, schoolMembers, users, withSchool, type Tx } from "@brillianda/db";
+import { and, auditLog, desc, eq, gt, guardians, inArray, invitations, isNull, parentLinks, schoolMembers, users, withSchool, type Tx } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { EmailSchema, meBody, MeSchema, PasswordSchema, startSession, TokenSchema } from "../auth-helpers.js";
@@ -33,7 +33,7 @@ const InvitationSchema = z
     id: z.string().uuid(),
     email: z.string().email(),
     fullName: z.string().nullable().openapi({ description: "The invitee's name, if the owner gave one" }),
-    role: z.enum(["owner", "admin", "teacher"]),
+    role: z.enum(["owner", "admin", "teacher", "parent"]),
     invitedBy: z.string().nullable().openapi({ description: "Inviter's name" }),
     createdAt: z.string(),
     expiresAt: z.string(),
@@ -65,6 +65,7 @@ async function findOpenByToken(tx: Tx, c: Context<AppEnv>, token: string) {
       email: invitations.email,
       fullName: invitations.fullName,
       role: invitations.role,
+      guardianId: invitations.guardianId,
       inviterName: users.fullName,
     })
     .from(invitations)
@@ -106,14 +107,15 @@ invitationRoutes.openapi(
         .limit(1);
       if (member) throw new ApiError("conflict", `${email} is already a member of ${school.name}.`);
 
-      // An admin inviting a teacher can't quietly replace the owner's open admin invitation.
-      if (auth.membership.role !== "owner") {
-        const [open] = await tx
-          .select({ role: invitations.role })
-          .from(invitations)
-          .where(and(eq(invitations.email, email), openInvite()))
-          .limit(1);
-        if (open && open.role !== "teacher") throw new ApiError("conflict", `${email} is already invited as an admin.`);
+      // An admin inviting a teacher can't quietly replace the owner's open admin invitation, and
+      // nobody replaces a parent's open invitation with a staff one by accident.
+      const [open] = await tx
+        .select({ role: invitations.role })
+        .from(invitations)
+        .where(and(eq(invitations.email, email), openInvite()))
+        .limit(1);
+      if (open && open.role !== role && (open.role === "parent" || auth.membership.role !== "owner")) {
+        throw new ApiError("conflict", `${email} is already invited as ${open.role === "admin" ? "an admin" : `a ${open.role}`}.`);
       }
 
       // One open invitation per email: a re-invite replaces the old link.
@@ -173,7 +175,7 @@ invitationRoutes.openapi(
         .select({ inv: invitations, inviter: users.fullName })
         .from(invitations)
         .leftJoin(users, eq(users.id, invitations.invitedBy))
-        .where(and(openInvite(), ne(invitations.role, "teacher")))
+        .where(and(openInvite(), inArray(invitations.role, ["owner", "admin"])))
         .orderBy(desc(invitations.createdAt))
         .limit(200);
       return rows.map(({ inv, inviter }) => ({
@@ -218,7 +220,7 @@ const LookupSchema = z
   .object({
     email: z.string().email(),
     fullName: z.string().nullable().openapi({ description: "The name the owner gave, to greet them and prefill the name field" }),
-    role: z.enum(["owner", "admin", "teacher"]),
+    role: z.enum(["owner", "admin", "teacher", "parent"]),
     school: z.object({ name: z.string(), subdomain: z.string() }),
     invitedBy: z.string().nullable(),
     existingAccount: z.boolean().openapi({ description: "true: just accept. false: also send fullName and password" }),
@@ -314,6 +316,17 @@ invitationRoutes.openapi(
       const membership =
         member ??
         (await tx.select({ id: schoolMembers.id, role: schoolMembers.role }).from(schoolMembers).where(eq(schoolMembers.userId, user!.id)).limit(1))[0]!;
+      if (membership.role !== inv.role) {
+        throw new ApiError("conflict", `This account is already ${membership.role === "admin" || membership.role === "owner" ? "an admin" : `a ${membership.role}`} here, so it can’t join again as ${inv.role === "admin" ? "an admin" : `a ${inv.role}`}.`);
+      }
+      if (inv.role === "parent") {
+        const [guardian] = await tx.select({ id: guardians.id }).from(guardians).where(eq(guardians.id, inv.guardianId!)).limit(1);
+        if (!guardian) throw new ApiError("link_invalid", "This invitation is for a family record that was removed. Ask the school for a new one.");
+        await tx
+          .insert(parentLinks)
+          .values({ schoolId: school.id, guardianId: guardian.id, userId: user!.id, createdBy: user!.id, updatedBy: user!.id })
+          .onConflictDoNothing({ target: [parentLinks.schoolId, parentLinks.guardianId, parentLinks.userId] });
+      }
 
       const accepted = await tx
         .update(invitations)
@@ -326,7 +339,7 @@ invitationRoutes.openapi(
         schoolId: school.id,
         actorUserId: user!.id,
         action: "member.joined",
-        summary: membership.role === "teacher" ? "Joined as a teacher" : "Joined as an admin",
+        summary: { teacher: "Joined as a teacher", parent: "Joined the parent app", admin: "Joined as an admin", owner: "Joined as an admin" }[membership.role],
         entity: "school_member",
         entityId: membership.id,
         changes: { email: inv.email, role: membership.role, invitationId: inv.id },

@@ -6,7 +6,7 @@
  *   GET /v1/home           counts and the latest changes
 
  */
-import { and, auditLog, count, desc, eq, invitations, isNotNull, isNull, ne, schoolMembers, schools, sql, students, users } from "@brillianda/db";
+import { and, auditLog, count, desc, eq, inArray, invitations, isNotNull, isNull, schoolMembers, schools, sql, students, users } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "../context.js";
 import { problemContent } from "../lib/errors.js";
@@ -67,7 +67,7 @@ homeRoutes.openapi(
         .from(schools)
         .where(eq(schools.id, school.id));
       const session = await currentSession(tx);
-      const [members] = await tx.select({ n: count() }).from(schoolMembers).where(and(eq(schoolMembers.status, "active"), ne(schoolMembers.role, "teacher")));
+      const [members] = await tx.select({ n: count() }).from(schoolMembers).where(and(eq(schoolMembers.status, "active"), inArray(schoolMembers.role, ["owner", "admin"])));
       const [invited] = await tx.select({ n: count() }).from(invitations).where(eq(invitations.role, "admin"));
       const classes = await classCounts(tx);
       const subjects = await subjectCounts(tx);
@@ -118,7 +118,7 @@ homeRoutes.openapi(
   }),
   async (c) => {
     const data = await schoolRoute(c, {}, async ({ tx }) => {
-      const [members] = await tx.select({ n: count() }).from(schoolMembers).where(and(eq(schoolMembers.status, "active"), ne(schoolMembers.role, "teacher")));
+      const [members] = await tx.select({ n: count() }).from(schoolMembers).where(and(eq(schoolMembers.status, "active"), inArray(schoolMembers.role, ["owner", "admin"])));
       const classes = await classCounts(tx);
       const subjects = await subjectCounts(tx);
       const [active] = await tx.select({ n: count() }).from(students).where(and(isNull(students.deletedAt), eq(students.status, "active")));

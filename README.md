@@ -34,6 +34,7 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | 3 Subjects | Catalogue, school subjects, class links, departments | ✅ |
 | 4 Students | Students, guardians, admission numbers, class history, import with undo, change history | ✅ |
 | 6 Teachers and registers (C1) | Teacher role and invitations, form and subject teachers, daily register, teacher home, Home register card | ✅ |
+| 7 Parents (C2, B3) | Parent role and invites from guardian records, Parents page, parent home with attendance, attendance on the student page | ✅ |
 | 5 Hardening | Branding and logos ✅, trial requests ✅; speed, security review, production setup | in progress |
 
 ## Email

@@ -279,3 +279,28 @@ Changed:
 (English in the first four) to `fecheck`. Their passwords are printed once and sent privately.
 
 Not yet: attendance and parent access on the student page (B3) come with parents (C2).
+
+**16 October 2026, C2 + B3** (parents)
+
+A fourth role, `parent`. `GET /v1/me` returns `role: "parent"`; send them to My children. A
+parent's account follows a guardian record, and every parent read is limited to that guardian's
+children. **Every staff endpoint answers 403 to a parent** (and every parent endpoint to staff).
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getParentsPage` | `GET /v1/parents` → `ParentsPage` | owner, admin | Guardians with at least one student, by name |
+| `inviteParent` | `POST /v1/guardians/{id}/invite` → 201 `{ access, resent }` | owner, admin | Uses the email on the record: 422 if none. 409 if they already use the app, if the email belongs to the staff, or if it has another open invitation. Inviting again sends a fresh link (`resent: true`). If the same email already uses the app for another family record, that record is linked at once (`access: "active"`, no email) |
+| `inviteAllParents` | `POST /v1/parents/invite-all` → `{ invited, withoutEmail, skipped, remaining }` | owner, admin | At most 50 per call so the request stays quick: call again while `remaining > 0`. `skipped`: emails that belong to the staff or are shared with another family |
+| `removeParentAccess` | `DELETE /v1/guardians/{id}/access` → 204 | owner, admin | Ends access (signed out at once) or cancels the invite. Records stay |
+| `getParentHome` | `GET /v1/me/children` → `ParentHome` | parent | Active children only. `recent`: the latest ten school days this term, newest first, without notes. `results` is `null` and `pastTerms` empty until results exist (C4–C6) |
+| `getStudent` | `GET /v1/students/{id}` | owner, admin | Gains `attendance` (`AttendanceSummary`, null outside a term) and `guardian.parentAccess` (`none`, `invited`, `active`) |
+
+The invitation email says the school invited them to its parent app and greets them by first name.
+`GET /v1/invitations/lookup` returns `role: "parent"` and the guardian's name as `fullName`; accept
+with just `{ token, password }` (or `{ token }` for an existing account).
+
+Changed: `GET /v1/members` and Home's `admins` count stay owner and admins only; `POST
+/v1/invitations` accepts `admin` and `teacher` only (parents are invited from their guardian record).
+
+**Testing:** `pnpm --filter @brillianda/api seed:test-parent -- fecheck` adds a parent account for
+the Okafor siblings' guardian on `fecheck`. The password is printed once and sent privately.

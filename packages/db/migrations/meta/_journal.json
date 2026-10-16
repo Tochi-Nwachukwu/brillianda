@@ -155,6 +155,20 @@
       "when": 1792167747655,
       "tag": "0021_force_rls_teachers",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792169766851,
+      "tag": "0022_parents",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792169768475,
+      "tag": "0023_force_rls_parents",
+      "breakpoints": true
     }
   ]
 }

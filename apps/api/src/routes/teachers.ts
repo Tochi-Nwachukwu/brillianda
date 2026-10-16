@@ -17,7 +17,7 @@
  *
  * Teachers are invited with POST /v1/invitations { role: "teacher" }.
  */
-import { attendanceSummary, fullName, latestSchoolDay, MARKS, registerDayProblem, schoolDaysSoFar, termOf, type Term } from "@brillianda/core";
+import { attendanceSummary, fullName, latestSchoolDay, MARKS, registerDayProblem, schoolDaysSoFar, termOf } from "@brillianda/core";
 import {
   and,
   armFormTeachers,
@@ -45,9 +45,8 @@ import type { ValidSession } from "@brillianda/auth";
 import type { AppEnv } from "../context.js";
 import { ApiError, problemContent } from "../lib/errors.js";
 import { schoolRoute, type Role } from "../school-route.js";
-import { currentSession } from "./calendar.js";
 import { armOptions, type ArmOption } from "./classes.js";
-import { lagosToday } from "./students.js";
+import { lagosToday, termsOf } from "../lib/attendance.js";
 
 export const teacherRoutes = new OpenAPIHono<AppEnv>();
 
@@ -90,11 +89,6 @@ async function activeCounts(tx: Tx, armIds: string[]): Promise<Map<string, numbe
     .where(and(inArray(students.classArmId, armIds), eq(students.status, "active"), isNull(students.deletedAt)))
     .groupBy(students.classArmId);
   return new Map(rows.map((r) => [r.armId, r.n]));
-}
-
-/** The calendar's terms: the saved ones, or this year's suggestions until the school saves its own. */
-async function termsOf(tx: Tx): Promise<Term[]> {
-  return (await currentSession(tx)).terms;
 }
 
 async function teacherById(tx: Tx, userId: string) {

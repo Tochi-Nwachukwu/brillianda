@@ -194,9 +194,10 @@
                 "enum": [
                   "owner",
                   "admin",
-                  "teacher"
+                  "teacher",
+                  "parent"
                 ],
-                "description": "teacher: show the teacher screens (Today, Register, My subjects); everything else is refused"
+                "description": "teacher: the teacher screens (Today, Register, My subjects); parent: My children. Everything else refuses them"
               }
             },
             "required": [
@@ -701,7 +702,8 @@
                   "enum": [
                     "owner",
                     "admin",
-                    "teacher"
+                    "teacher",
+                    "parent"
                   ]
                 },
                 "url": {
@@ -750,7 +752,8 @@
             "enum": [
               "owner",
               "admin",
-              "teacher"
+              "teacher",
+              "parent"
             ]
           },
           "invitedBy": {
@@ -823,7 +826,8 @@
             "enum": [
               "owner",
               "admin",
-              "teacher"
+              "teacher",
+              "parent"
             ]
           },
           "school": {
@@ -2071,6 +2075,15 @@
                         "armLabel"
                       ]
                     }
+                  },
+                  "parentAccess": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "invited",
+                      "active"
+                    ],
+                    "description": "Whether this guardian uses the parent app"
                   }
                 },
                 "required": [
@@ -2078,8 +2091,40 @@
                   "name",
                   "phone",
                   "email",
-                  "siblings"
+                  "siblings",
+                  "parentAccess"
                 ]
+              },
+              "attendance": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "term": {
+                    "type": "string"
+                  },
+                  "days": {
+                    "type": "integer"
+                  },
+                  "present": {
+                    "type": "integer"
+                  },
+                  "late": {
+                    "type": "integer"
+                  },
+                  "absent": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "term",
+                  "days",
+                  "present",
+                  "late",
+                  "absent"
+                ],
+                "description": "This term's register marks (late counts as present); null outside a term"
               },
               "classHistory": {
                 "type": "array",
@@ -2136,6 +2181,7 @@
               "address",
               "stateOfOrigin",
               "guardian",
+              "attendance",
               "classHistory",
               "changes"
             ]
@@ -3071,6 +3117,265 @@
           "total",
           "missing"
         ]
+      },
+      "ParentsPage": {
+        "type": "object",
+        "properties": {
+          "guardians": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "phone": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "children": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "armLabel": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "fullName",
+                      "armLabel"
+                    ]
+                  }
+                },
+                "access": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "invited",
+                    "active"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "email",
+                "phone",
+                "children",
+                "access"
+              ]
+            }
+          }
+        },
+        "required": [
+          "guardians"
+        ]
+      },
+      "ParentInvited": {
+        "type": "object",
+        "properties": {
+          "access": {
+            "type": "string",
+            "enum": [
+              "invited",
+              "active"
+            ]
+          },
+          "resent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "access",
+          "resent"
+        ]
+      },
+      "ParentsInvited": {
+        "type": "object",
+        "properties": {
+          "invited": {
+            "type": "integer"
+          },
+          "withoutEmail": {
+            "type": "integer",
+            "description": "Guardians not invited because their record has no email"
+          },
+          "skipped": {
+            "type": "integer",
+            "description": "Not invited: their email belongs to the staff, or another family shares it"
+          },
+          "remaining": {
+            "type": "integer",
+            "description": "Still to invite; call again"
+          }
+        },
+        "required": [
+          "invited",
+          "withoutEmail",
+          "skipped",
+          "remaining"
+        ]
+      },
+      "ParentHome": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "schoolDay": {
+            "type": "boolean",
+            "description": "Today is a school day"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "armLabel": {
+                  "type": "string"
+                },
+                "admissionNo": {
+                  "type": "string"
+                },
+                "formTeacher": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "attendance": {
+                  "$ref": "#/components/schemas/AttendanceSummary"
+                },
+                "recent": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "date": {
+                        "type": "string"
+                      },
+                      "mark": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "present",
+                          "late",
+                          "absent",
+                          null
+                        ]
+                      }
+                    },
+                    "required": [
+                      "date",
+                      "mark"
+                    ]
+                  },
+                  "description": "The latest ten school days this term, newest first (no notes)"
+                },
+                "results": {
+                  "type": "null",
+                  "description": "Results come with C4–C6; null until then"
+                },
+                "pastTerms": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "key",
+                      "label"
+                    ]
+                  },
+                  "description": "Empty until results exist"
+                }
+              },
+              "required": [
+                "id",
+                "fullName",
+                "armLabel",
+                "admissionNo",
+                "formTeacher",
+                "attendance",
+                "recent",
+                "results",
+                "pastTerms"
+              ]
+            }
+          }
+        },
+        "required": [
+          "fullName",
+          "schoolDay",
+          "children"
+        ]
+      },
+      "AttendanceSummary": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "term": {
+            "type": "string"
+          },
+          "days": {
+            "type": "integer"
+          },
+          "present": {
+            "type": "integer"
+          },
+          "late": {
+            "type": "integer"
+          },
+          "absent": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "term",
+          "days",
+          "present",
+          "late",
+          "absent"
+        ],
+        "description": "This term's register marks (late counts as present); null outside a term"
       },
       "ImportSetup": {
         "type": "object",
@@ -7835,6 +8140,291 @@
           },
           "404": {
             "description": "No such class, subject or teacher here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/parents": {
+      "get": {
+        "tags": [
+          "parents"
+        ],
+        "summary": "The Parents page: guardians with children here, their email and phone, and parent-app access",
+        "responses": {
+          "200": {
+            "description": "Parents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParentsPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/guardians/{id}/invite": {
+      "post": {
+        "tags": [
+          "parents"
+        ],
+        "summary": "Invite one guardian to the parent app, by the email on their record (a re-invite sends a new link)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Invited (or linked straight away when they already use the parent app for another family)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParentInvited"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already uses the parent app, belongs to the staff, or has another open invitation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No email on file",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/parents/invite-all": {
+      "post": {
+        "tags": [
+          "parents"
+        ],
+        "summary": "Invite every guardian with an email who isn't invited yet (up to 50 per call; call again while remaining > 0)",
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParentsInvited"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/guardians/{id}/access": {
+      "delete": {
+        "tags": [
+          "parents"
+        ],
+        "summary": "End a guardian's parent-app access, or cancel their invite. Their records and their children's stay",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Ended"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/children": {
+      "get": {
+        "tags": [
+          "parents"
+        ],
+        "summary": "A parent's home: each of their children with class, form teacher, this term's attendance and the last ten school days",
+        "responses": {
+          "200": {
+            "description": "Parent home",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ParentHome"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian here",
             "content": {
               "application/problem+json": {
                 "schema": {
