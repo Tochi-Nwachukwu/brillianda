@@ -735,6 +735,9 @@ export const resultsSettings = pgTable(
     components: jsonb().$type<{ id: string; name: string; maxScore: number }[]>().notNull(),
     scale: jsonb().$type<{ minScore: number; grade: string; remark: string; isPass: boolean }[]>().notNull(),
     showPositions: boolean().notNull().default(true),
+    /** Behaviour ratings on report cards (C3): off until the school turns them on. */
+    ratingsEnabled: boolean().notNull().default(false),
+    ratingTraits: text().array().notNull().default(sql`'{}'::text[]`),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     createdBy: uuid(),
@@ -875,6 +878,83 @@ export const unlockRequests = pgTable(
     foreignKey({ name: "unlock_requests_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
     foreignKey({ name: "unlock_requests_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
     check("unlock_requests_reason_check", sql`char_length(${t.reason}) BETWEEN 5 AND 200`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+// ——— Reports (C3) ———
+
+export const remarkKind = pgEnum("remark_kind", ["teacher", "principal"]);
+
+/** The class teacher's or the principal's remark on a student's report card for a term. */
+export const reportRemarks = pgTable(
+  "report_remarks",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    studentId: uuid().notNull(),
+    kind: remarkKind().notNull(),
+    text: text().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("report_remarks_school_id_id_key").on(t.schoolId, t.id),
+    unique("report_remarks_one_key").on(t.schoolId, t.termKey, t.studentId, t.kind),
+    foreignKey({ name: "report_remarks_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }),
+    check("report_remarks_text_check", sql`char_length(${t.text}) BETWEEN 1 AND 300`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** A behaviour rating (1 Poor … 5 Excellent) for one trait, student and term. */
+export const reportRatings = pgTable(
+  "report_ratings",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    studentId: uuid().notNull(),
+    trait: text().notNull(),
+    value: smallint().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("report_ratings_school_id_id_key").on(t.schoolId, t.id),
+    unique("report_ratings_one_key").on(t.schoolId, t.termKey, t.studentId, t.trait),
+    foreignKey({ name: "report_ratings_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }),
+    check("report_ratings_value_check", sql`${t.value} BETWEEN 1 AND 5`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** A class's results published for a term: parents see them from then on (until taken back). */
+export const publishedResults = pgTable(
+  "published_results",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    classArmId: uuid().notNull(),
+    publishedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("published_results_school_id_id_key").on(t.schoolId, t.id),
+    unique("published_results_class_key").on(t.schoolId, t.termKey, t.classArmId),
+    foreignKey({ name: "published_results_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],

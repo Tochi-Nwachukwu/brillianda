@@ -119,7 +119,7 @@ describe("a parent", () => {
     const home = await json<{
       fullName: string;
       schoolDay: boolean;
-      children: { fullName: string; armLabel: string; formTeacher: string | null; attendance: unknown; recent: { date: string; mark: string | null }[]; results: null; pastTerms: unknown[] }[];
+      children: { fullName: string; armLabel: string; formTeacher: string | null; attendance: unknown; recent: { date: string; mark: string | null }[]; results: unknown; pastTerms: unknown[] }[];
     }>(parent.get("/v1/me/children"));
     expect(home.fullName).toBe("Ngozi Okafor");
     expect(home.schoolDay).toBe(true);
@@ -137,7 +137,7 @@ describe("a parent", () => {
     ]);
     expect(JSON.stringify(home)).not.toContain("Private note");
     expect(home.children[1]!.attendance).toEqual({ term: "First Term", days: 0, present: 0, late: 0, absent: 0 });
-    expect(ada.results).toBeNull();
+    expect(ada.results).toEqual({ term: "First Term, 2026/2027", published: false });
   });
 
   it("is refused by every staff screen", async () => {

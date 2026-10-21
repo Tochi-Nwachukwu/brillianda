@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
+import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, reportRemarks, reportRatings, publishedResults, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -71,6 +71,9 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
     await tx.insert(scoreExclusions).values({ ...sheet, studentId: student!.id });
     await tx.insert(sheetCompletions).values(sheet);
     await tx.insert(unlockRequests).values({ ...sheet, reason: "A typo in the exam score" });
+    await tx.insert(reportRemarks).values({ schoolId, termKey: "2026-1", studentId: student!.id, kind: "teacher", text: "A steady term." });
+    await tx.insert(reportRatings).values({ schoolId, termKey: "2026-1", studentId: student!.id, trait: "Neatness", value: 4 });
+    await tx.insert(publishedResults).values({ schoolId, termKey: "2026-1", classArmId: classArm!.id });
   });
 
   return { schoolId, ownerId, sessionId };

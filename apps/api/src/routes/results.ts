@@ -99,7 +99,9 @@ export async function nextTermOf(tx: Tx): Promise<{ name: string; startsOn: stri
 
 export async function settingsOf(tx: Tx) {
   const [row] = await tx.select().from(resultsSettings).limit(1);
-  return row ? { components: row.components as ScoreComponent[], scale: row.scale, showPositions: row.showPositions } : { components: DEFAULT_COMPONENTS, scale: DEFAULT_SCALE, showPositions: true };
+  return row
+    ? { components: row.components as ScoreComponent[], scale: row.scale, showPositions: row.showPositions, ratings: { enabled: row.ratingsEnabled, traits: row.ratingTraits } }
+    : { components: DEFAULT_COMPONENTS, scale: DEFAULT_SCALE, showPositions: true, ratings: { enabled: false, traits: [] as string[] } };
 }
 
 async function requireTerm(tx: Tx): Promise<ResultsTerm> {
@@ -110,19 +112,19 @@ async function requireTerm(tx: Tx): Promise<ResultsTerm> {
 
 // ——— Classes, subjects, students ———
 
-type ArmSubject = { id: string; name: string; kind: "compulsory" | "elective" };
+export type ArmSubject = { id: string; name: string; code: string; kind: "compulsory" | "elective" };
 
 /** The subjects an arm has sheets for: its level's subjects, matching its department in senior classes. */
 export async function subjectsForArm(tx: Tx, armId: string): Promise<ArmSubject[]> {
   const [arm] = await tx.select({ levelId: classArms.classLevelId, department: classArms.department }).from(classArms).where(eq(classArms.id, armId)).limit(1);
   if (!arm) return [];
   const links = await tx
-    .select({ id: schoolSubjects.id, name: schoolSubjects.name, kind: classLevelSubjects.kind, department: classLevelSubjects.department })
+    .select({ id: schoolSubjects.id, name: schoolSubjects.name, code: schoolSubjects.code, kind: classLevelSubjects.kind, department: classLevelSubjects.department })
     .from(classLevelSubjects)
     .innerJoin(schoolSubjects, and(eq(schoolSubjects.schoolId, classLevelSubjects.schoolId), eq(schoolSubjects.id, classLevelSubjects.schoolSubjectId)))
     .where(eq(classLevelSubjects.classLevelId, arm.levelId))
     .orderBy(asc(schoolSubjects.position), asc(schoolSubjects.name));
-  return links.filter((l) => !l.department || !arm.department || l.department === arm.department).map((l) => ({ id: l.id, name: l.name, kind: l.kind }));
+  return links.filter((l) => !l.department || !arm.department || l.department === arm.department).map((l) => ({ id: l.id, name: l.name, code: l.code, kind: l.kind }));
 }
 
 /** Active students in an arm, by surname: who is on its sheets this term. */
@@ -163,7 +165,7 @@ type Unlock = { id: string; by: string; reason: string; at: number };
  * Everything the lists need for a term, read once: which cells are filled per student, exclusions,
  * completions, open unlock requests, and each sheet's teacher.
  */
-async function termSnapshot(tx: Tx, term: string, components: ScoreComponent[]) {
+export async function termSnapshot(tx: Tx, term: string, components: ScoreComponent[]) {
   const partIds = new Set(components.map((c) => c.id));
   const filled = await tx
     .select({ armId: scores.classArmId, subjectId: scores.schoolSubjectId, studentId: scores.studentId, componentId: scores.componentId })
@@ -211,7 +213,7 @@ async function termSnapshot(tx: Tx, term: string, components: ScoreComponent[]) 
 }
 type Snapshot = Awaited<ReturnType<typeof termSnapshot>>;
 
-function statusIn(snap: Snapshot, armId: string, subjectId: string, pupilIds: string[]): { status: SheetStatus; complete: number; of: number } {
+export function statusIn(snap: Snapshot, armId: string, subjectId: string, pupilIds: string[]): { status: SheetStatus; complete: number; of: number } {
   const taking = pupilIds.filter((p) => !snap.excluded.has(`${armId}|${subjectId}|${p}`));
   const complete = taking.filter((p) => (snap.parts.get(`${armId}|${subjectId}|${p}`)?.size ?? 0) === snap.components.length).length;
   const key = `${armId}|${subjectId}`;
@@ -317,7 +319,10 @@ async function scoresEnteredThisTerm(tx: Tx): Promise<boolean> {
 resultsRoutes.openapi(
   createRoute({ method: "get", path: "/v1/results/settings", tags: ["results"], summary: "Results settings: score parts, grading scale, positions", responses: { 200: ok("Settings", SettingsDataSchema), ...errors } }),
   async (c) => {
-    const data = await schoolRoute(c, { roles: ADMINS }, async ({ tx }) => ({ ...(await settingsOf(tx)), scoresEntered: await scoresEnteredThisTerm(tx) }));
+    const data = await schoolRoute(c, { roles: ADMINS }, async ({ tx }) => {
+      const { components, scale, showPositions } = await settingsOf(tx);
+      return { components, scale, showPositions, scoresEntered: await scoresEnteredThisTerm(tx) };
+    });
     return c.json(data, 200);
   },
 );

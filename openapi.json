@@ -3317,8 +3317,66 @@
                   "description": "The latest ten school days this term, newest first (no notes)"
                 },
                 "results": {
-                  "type": "null",
-                  "description": "Results come with C4–C6; null until then"
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "term": {
+                          "type": "string"
+                        },
+                        "published": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        }
+                      },
+                      "required": [
+                        "term",
+                        "published"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "term": {
+                          "type": "string"
+                        },
+                        "published": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        },
+                        "average": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "position": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "of": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "term",
+                        "published",
+                        "average",
+                        "position",
+                        "of"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "This term's name, and once the class is published the average, position (when shown) and class size; null before a term opens"
                 },
                 "pastTerms": {
                   "type": "array",
@@ -3337,7 +3395,7 @@
                       "label"
                     ]
                   },
-                  "description": "Empty until results exist"
+                  "description": "Closed terms whose results were published, newest first"
                 }
               },
               "required": [
@@ -3390,6 +3448,308 @@
           "absent"
         ],
         "description": "This term's register marks (late counts as present); null outside a term"
+      },
+      "ReportCardData": {
+        "type": "object",
+        "properties": {
+          "school": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "logoUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "brandColor": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "null: your default, as on GET /v1/school"
+              }
+            },
+            "required": [
+              "name",
+              "logoUrl",
+              "brandColor"
+            ]
+          },
+          "term": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "session": {
+                "type": "string"
+              },
+              "index": {
+                "type": "integer"
+              },
+              "isLast": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "key",
+              "name",
+              "session",
+              "index",
+              "isLast"
+            ]
+          },
+          "student": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fullName": {
+                "type": "string"
+              },
+              "admissionNo": {
+                "type": "string"
+              },
+              "armLabel": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "fullName",
+              "admissionNo",
+              "armLabel"
+            ]
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "maxScore": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "maxScore"
+              ]
+            }
+          },
+          "subjects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "scores": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "isAbsent": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "isAbsent"
+                    ]
+                  }
+                },
+                "total": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "grade": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "remark": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "scores",
+                "total",
+                "grade",
+                "remark"
+              ]
+            }
+          },
+          "average": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "position": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "of": {
+            "type": "integer"
+          },
+          "showPositions": {
+            "type": "boolean"
+          },
+          "attendance": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "term": {
+                "type": "string"
+              },
+              "days": {
+                "type": "integer"
+              },
+              "present": {
+                "type": "integer"
+              },
+              "late": {
+                "type": "integer"
+              },
+              "absent": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "term",
+              "days",
+              "present",
+              "late",
+              "absent"
+            ]
+          },
+          "ratings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "trait": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "trait",
+                "value"
+              ]
+            }
+          },
+          "teacherRemark": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "principalRemark": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "formTeacher": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nextTermBegins": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scale": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minScore": {
+                  "type": "number"
+                },
+                "grade": {
+                  "type": "string"
+                },
+                "remark": {
+                  "type": "string"
+                },
+                "isPass": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "minScore",
+                "grade",
+                "remark",
+                "isPass"
+              ]
+            }
+          },
+          "published": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "school",
+          "term",
+          "student",
+          "components",
+          "subjects",
+          "average",
+          "position",
+          "of",
+          "showPositions",
+          "attendance",
+          "ratings",
+          "teacherRemark",
+          "principalRemark",
+          "formTeacher",
+          "nextTermBegins",
+          "scale",
+          "published"
+        ]
       },
       "ProfileName": {
         "type": "object",
@@ -4509,6 +4869,398 @@
         },
         "required": [
           "approve"
+        ]
+      },
+      "Broadsheet": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "session": {
+                "type": "string"
+              },
+              "index": {
+                "type": "integer"
+              },
+              "isLast": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "key",
+              "name",
+              "session",
+              "index",
+              "isLast"
+            ]
+          },
+          "armId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "showPositions": {
+            "type": "boolean"
+          },
+          "subjects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "not-started",
+                    "in-progress",
+                    "complete"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "code",
+                "status"
+              ]
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "studentId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "admissionNo": {
+                  "type": "string"
+                },
+                "cells": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "total": {
+                            "type": "number"
+                          },
+                          "grade": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "total",
+                          "grade"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "excluded"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": "By subject id: total and grade, \"excluded\", or null while a part is empty"
+                },
+                "average": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "position": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "studentId",
+                "fullName",
+                "admissionNo",
+                "cells",
+                "average",
+                "position"
+              ]
+            }
+          },
+          "allComplete": {
+            "type": "boolean"
+          },
+          "published": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "by": {
+                "type": "string"
+              },
+              "at": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "by",
+              "at"
+            ]
+          },
+          "canPublish": {
+            "type": "boolean",
+            "description": "Owners and admins; the form teacher only reads"
+          }
+        },
+        "required": [
+          "term",
+          "armId",
+          "armLabel",
+          "showPositions",
+          "subjects",
+          "rows",
+          "allComplete",
+          "published",
+          "canPublish"
+        ]
+      },
+      "ClassReports": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "session": {
+                "type": "string"
+              },
+              "index": {
+                "type": "integer"
+              },
+              "isLast": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "key",
+              "name",
+              "session",
+              "index",
+              "isLast"
+            ]
+          },
+          "armId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "ratings": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "traits": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "enabled",
+              "traits"
+            ]
+          },
+          "canWritePrincipal": {
+            "type": "boolean"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "studentId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "teacherRemark": {
+                  "type": "string"
+                },
+                "principalRemark": {
+                  "type": "string"
+                },
+                "ratings": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "required": [
+                "studentId",
+                "fullName",
+                "teacherRemark",
+                "principalRemark",
+                "ratings"
+              ]
+            }
+          }
+        },
+        "required": [
+          "term",
+          "armId",
+          "armLabel",
+          "ratings",
+          "canWritePrincipal",
+          "rows"
+        ]
+      },
+      "Remark": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "Rating": {
+        "type": "object",
+        "properties": {
+          "trait": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "trait",
+          "value"
+        ]
+      },
+      "RatingSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "traits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "traits"
+        ]
+      },
+      "RatingSettingsInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "traits": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 30
+            },
+            "maxItems": 12
+          }
+        },
+        "required": [
+          "enabled",
+          "traits"
+        ]
+      },
+      "SetPublished": {
+        "type": "object",
+        "properties": {
+          "published": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "published"
+        ]
+      },
+      "ReportTerm": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "published": {
+            "type": "boolean"
+          },
+          "open": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "session",
+          "published",
+          "open"
         ]
       },
       "ImportSetup": {
@@ -9621,6 +10373,76 @@
         }
       }
     },
+    "/v1/me/children/{studentId}/report-card": {
+      "get": {
+        "tags": [
+          "parents"
+        ],
+        "summary": "A child's report card for a published term (default: this term). Anything else answers not found",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "studentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-[1-3]$"
+            },
+            "required": false,
+            "name": "term",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCardData"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such guardian here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/me/photo": {
       "put": {
         "tags": [
@@ -11030,6 +11852,635 @@
           },
           "409": {
             "description": "Nothing to reopen or decline",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/broadsheet": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "A class's broadsheet this term: every student against every subject, with average and position (when shown)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Broadsheet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Broadsheet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/reports": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Remarks and ratings for a class this term, and the school's rating traits",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Class reports",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassReports"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/students/{studentId}/remarks/{kind}": {
+      "put": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Save a remark for this term (empty clears it). teacher: the form teacher or an admin; principal: owners and admins",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "studentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "teacher",
+                "principal"
+              ]
+            },
+            "required": true,
+            "name": "kind",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Remark"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not in this class any more",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "#/text over 300 characters",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/students/{studentId}/ratings": {
+      "put": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Save a behaviour rating for this term: 1 (Poor) to 5 (Excellent), or null to clear it",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "studentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rating"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trait not rated here, or student not in this class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/results/ratings": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Behaviour ratings: on or off, and the traits",
+        "responses": {
+          "200": {
+            "description": "Rating settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Turn behaviour ratings on or off and set the traits (at most 12, each up to 30 characters)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A trait needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/published": {
+      "put": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Publish a class's results for this term (every subject complete first), or take them back",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPublished"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Subjects not complete (detail lists them), or already so",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students/{id}/report-card": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "A student's report card for this term, or a past one (?term=2026-1). Owners, admins, and the form teacher of the student's class",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-[1-3]$"
+            },
+            "required": false,
+            "name": "term",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCardData"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students/{id}/report-terms": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Every term a student has results in, newest first, and whether each was published",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Terms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportTerm"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your class",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, student or term, or no term open for results",
             "content": {
               "application/problem+json": {
                 "schema": {

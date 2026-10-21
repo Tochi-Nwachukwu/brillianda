@@ -363,3 +363,21 @@ not closed, once it has started.
 
 Saving single scores isn't written to the change history (too many); completing, unlocking,
 requests, leaving a student out and settings are, with your fake's sentences.
+
+**21 October 2026, C3 + C4** (broadsheet, remarks, ratings, publishing, report cards; parents see results)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getBroadsheet` | `GET /v1/arms/{armId}/broadsheet` → `Broadsheet` | owner, admin, the class's form teacher | `canPublish` false for the form teacher; positions null when the school hides them |
+| `getClassReports` | `GET /v1/arms/{armId}/reports` → `ClassReports` | same | |
+| `saveRemark` | `PUT /v1/arms/{armId}/students/{studentId}/remarks/{teacher\|principal}` `{ text }` → 204 | teacher remark: form teacher or admin; principal: owner, admin | Up to 300 characters (422 `#/text`); empty clears. 409 if the student left the class |
+| `saveRating` | `PUT /v1/arms/{armId}/students/{studentId}/ratings` `{ trait, value }` → 204 | form teacher or admin | 1 to 5, or null to clear. 409 if ratings are off or the trait isn't on the list |
+| `getRatingSettings` / `saveRatingSettings` | `GET` / `PUT /v1/results/ratings` `{ enabled, traits }` | owner, admin | Off with no traits until set (your `ratingSettingsSchema`) |
+| `setPublished` | `PUT /v1/arms/{armId}/published` `{ published }` → 204 | owner, admin | 409 "2 subjects aren’t complete yet: Mathematics, French." or already so |
+| `getReportCard` | `GET /v1/students/{id}/report-card?term=` → `ReportCardData` | owner, admin; the form teacher of the student's class | `term` defaults to the open one. `school.brandColor` is null when the school has none, as on `GET /v1/school` |
+| `getReportTerms` | `GET /v1/students/{id}/report-terms` → `ReportTerm[]` | owner, admin | Newest first |
+| parent home | `GET /v1/me/children` | parent | Each child's `results` is now `{ term, published: false }` until the class is published, then `{ term, published: true, average, position, of }`; `pastTerms` lists closed, published terms |
+| `getParentReportCard` | `GET /v1/me/children/{studentId}/report-card?term=` → `ReportCardData` | parent | Their own children, published terms only; anything else 404 |
+
+A past term's card uses the class the student had scores in then. Closing a term (C5) comes next,
+which makes past terms appear.

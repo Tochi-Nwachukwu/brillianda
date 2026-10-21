@@ -48,6 +48,8 @@ import type { ResolvedSchool } from "../lib/school-directory.js";
 import { schoolUrl } from "../lib/urls.js";
 import { schoolRoute, type Role } from "../school-route.js";
 import { armOptions } from "./classes.js";
+import { buildReportCard, computeClass, publishedFor, ReportCardSchema, reportTermsOf } from "./reports.js";
+import { resultsTermOf, type ResultsTerm } from "./results.js";
 
 export const parentRoutes = new OpenAPIHono<AppEnv>();
 
@@ -315,6 +317,24 @@ parentRoutes.openapi(
 
 // ——— What parents see ———
 
+type ChildResults = { term: string; published: false } | { term: string; published: true; average: number | null; position: number | null; of: number } | null;
+
+/** This term's results for a parent: nothing but the term's name until the class is published. */
+async function childResults(tx: Tx, studentId: string, armId: string, term: ResultsTerm): Promise<ChildResults> {
+  const label = `${term.name}, ${term.session}`;
+  if (!(await publishedFor(tx, term.key, armId))) return { term: label, published: false };
+  const { settings, pupils, results } = await computeClass(tx, term.key, armId, term.key);
+  const mine = results.get(studentId);
+  return { term: label, published: true, average: mine?.average ?? null, position: settings.showPositions ? (mine?.position ?? null) : null, of: pupils.length };
+}
+
+/** The parent's own children (through their family records), active or not. */
+async function myChildIds(tx: Tx, userId: string): Promise<Set<string>> {
+  const mine = (await tx.select({ guardianId: parentLinks.guardianId }).from(parentLinks).where(eq(parentLinks.userId, userId))).map((l) => l.guardianId);
+  if (!mine.length) return new Set();
+  return new Set([...(await childrenByGuardian(tx, mine)).values()].flat().map((s) => s.id));
+}
+
 const ParentHomeSchema = z
   .object({
     fullName: z.string(),
@@ -328,8 +348,14 @@ const ParentHomeSchema = z
         formTeacher: z.string().nullable(),
         attendance: AttendanceSchema,
         recent: z.array(z.object({ date: z.string(), mark: z.enum(["present", "late", "absent"]).nullable() })).openapi({ description: "The latest ten school days this term, newest first (no notes)" }),
-        results: z.null().openapi({ description: "Results come with C4–C6; null until then" }),
-        pastTerms: z.array(z.object({ key: z.string(), label: z.string() })).openapi({ description: "Empty until results exist" }),
+        results: z
+          .union([
+            z.object({ term: z.string(), published: z.literal(false) }),
+            z.object({ term: z.string(), published: z.literal(true), average: z.number().nullable(), position: z.number().int().nullable(), of: z.number().int() }),
+          ])
+          .nullable()
+          .openapi({ description: "This term's name, and once the class is published the average, position (when shown) and class size; null before a term opens" }),
+        pastTerms: z.array(z.object({ key: z.string(), label: z.string() })).openapi({ description: "Closed terms whose results were published, newest first" }),
       }),
     ),
   })
@@ -378,6 +404,16 @@ parentRoutes.openapi(
           : [],
       );
       const labels = new Map((await armOptions(tx, { all: true })).map((a) => [a.id, a.label]));
+      const open = await resultsTermOf(tx);
+      const resultsOf = new Map<string, ChildResults>();
+      const pastOf = new Map<string, { key: string; label: string }[]>();
+      for (const s of kids) {
+        resultsOf.set(s.id, open ? await childResults(tx, s.id, s.classArmId, open) : null);
+        pastOf.set(
+          s.id,
+          (await reportTermsOf(tx, s.id)).filter((t) => t.published && !t.open).map((t) => ({ key: t.key, label: `${t.name}, ${t.session}` })),
+        );
+      }
       return {
         fullName: auth.user.fullName,
         schoolDay: latestSchoolDay(today, terms) === today,
@@ -389,10 +425,33 @@ parentRoutes.openapi(
           formTeacher: formTeachers.get(s.classArmId) ?? null,
           attendance: attendance.get(s.id) ?? null,
           recent: days.map((date) => ({ date, mark: (marks.get(`${s.id}|${date}`) as "present" | "late" | "absent" | undefined) ?? null })),
-          results: null,
-          pastTerms: [],
+          results: resultsOf.get(s.id) ?? null,
+          pastTerms: pastOf.get(s.id) ?? [],
         })),
       };
+    });
+    return c.json(data, 200);
+  },
+);
+
+parentRoutes.openapi(
+  createRoute({
+    method: "get",
+    path: "/v1/me/children/{studentId}/report-card",
+    tags: ["parents"],
+    summary: "A child's report card for a published term (default: this term). Anything else answers not found",
+    request: { params: z.object({ studentId: Id }), query: z.object({ term: z.string().regex(/^\d{4}-[1-3]$/, "Pick a term").optional() }) },
+    responses: { 200: ok("Report card", ReportCardSchema), ...errors },
+  }),
+  async (c) => {
+    const { studentId } = c.req.valid("param");
+    const { term } = c.req.valid("query");
+    const data = await schoolRoute(c, { roles: ["parent"] }, async ({ tx, auth, school }) => {
+      const notFound = () => new ApiError("not_found", "There’s no published report card for that term.");
+      if (!(await myChildIds(tx, auth.user.id)).has(studentId)) throw notFound();
+      const card = await buildReportCard(tx, school, studentId, term);
+      if (!card?.published) throw notFound();
+      return card;
     });
     return c.json(data, 200);
   },
