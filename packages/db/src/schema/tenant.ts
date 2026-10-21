@@ -753,6 +753,9 @@ export const termClosures = pgTable(
     id: id(),
     schoolId: schoolId(),
     termKey: text().notNull(),
+    /** The term's name and session when it closed ("First Term", "2026/2027"), kept after the calendar moves on. */
+    name: text(),
+    sessionName: text(),
     closedBy: uuid().references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

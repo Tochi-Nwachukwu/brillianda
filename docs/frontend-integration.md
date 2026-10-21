@@ -381,3 +381,15 @@ requests, leaving a student out and settings are, with your fake's sentences.
 
 A past term's card uses the class the student had scores in then. Closing a term (C5) comes next,
 which makes past terms appear.
+
+**21 October 2026, C5** (closing a term)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getTermStatus` | `GET /v1/terms/status` → `TermStatusData` | owner, admin | `closed` newest first, with who closed it and when (ms) |
+| `closeTerm` | `POST /v1/terms/close` `{ closeUnpublished, nextStartsOn?, nextEndsOn? }` → `{ closed, next }` | owner, admin | 409: no open term, the session's last term ("…closes when you complete promotion."), or "N classes aren’t published yet: …. Publish them, or close anyway." 422 `#/nextStartsOn` / `#/nextEndsOn` for the next term's dates (after the closed term started, ends after it starts, before the term after it). The new dates are saved to the calendar |
+
+After closing, results move to the next term once it starts (fresh sheets for the same classes,
+subjects and teachers); before then `GET /v1/results` shows `term: null` and `next`. The closed
+term's scores can't change, its open unlock requests are declined, and it appears in
+`report-terms`, report cards (`?term=`) and parents' `pastTerms` when published.

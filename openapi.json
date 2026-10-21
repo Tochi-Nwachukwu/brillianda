@@ -5263,6 +5263,174 @@
           "open"
         ]
       },
+      "TermStatusData": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "session": {
+                "type": "string"
+              },
+              "index": {
+                "type": "integer"
+              },
+              "isLast": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "key",
+              "name",
+              "session",
+              "index",
+              "isLast"
+            ]
+          },
+          "following": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "startsOn": {
+                "type": "string"
+              },
+              "endsOn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "startsOn",
+              "endsOn"
+            ],
+            "description": "The term after the open one, whose dates can be adjusted when closing"
+          },
+          "waiting": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "startsOn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "startsOn"
+            ],
+            "description": "When no term is open: the next one, opening on its start date"
+          },
+          "unpublished": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "armId",
+                "label"
+              ]
+            }
+          },
+          "closed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "session": {
+                  "type": "string"
+                },
+                "by": {
+                  "type": "string"
+                },
+                "at": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "key",
+                "name",
+                "session",
+                "by",
+                "at"
+              ]
+            }
+          }
+        },
+        "required": [
+          "open",
+          "following",
+          "waiting",
+          "unpublished",
+          "closed"
+        ]
+      },
+      "TermClosed": {
+        "type": "object",
+        "properties": {
+          "closed": {
+            "type": "string"
+          },
+          "next": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "closed",
+          "next"
+        ]
+      },
+      "CloseTerm": {
+        "type": "object",
+        "properties": {
+          "closeUnpublished": {
+            "type": "boolean",
+            "default": false
+          },
+          "nextStartsOn": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "nextEndsOn": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        }
+      },
       "ImportSetup": {
         "type": "object",
         "properties": {
@@ -12481,6 +12649,136 @@
           },
           "404": {
             "description": "No such class, student or term, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/terms/status": {
+      "get": {
+        "tags": [
+          "terms"
+        ],
+        "summary": "The term open for results, what closing it would leave out, and past terms",
+        "responses": {
+          "200": {
+            "description": "Status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TermStatusData"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/terms/close": {
+      "post": {
+        "tags": [
+          "terms"
+        ],
+        "summary": "Close the open term (not the session's last: promotion closes that). Refused while classes are unpublished unless closeUnpublished",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseTerm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TermClosed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No term open, the last term, or classes unpublished (detail lists them)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The next term's dates",
             "content": {
               "application/problem+json": {
                 "schema": {

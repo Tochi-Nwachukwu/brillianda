@@ -27,6 +27,7 @@ import { profileRoutes } from "./routes/profile.js";
 import { teamRoutes } from "./routes/team.js";
 import { resultsRoutes } from "./routes/results.js";
 import { reportRoutes } from "./routes/reports.js";
+import { termRoutes } from "./routes/terms.js";
 import { devRoutes } from "./routes/dev.js";
 import { schoolRoutes } from "./routes/school.js";
 import { sessionRoutes } from "./routes/session.js";
@@ -149,6 +150,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", teamRoutes);
   app.route("/", resultsRoutes);
   app.route("/", reportRoutes);
+  app.route("/", termRoutes);
   app.route("/", importRoutes);
   app.route("/", brandingRoutes);
   app.route("/", trialRoutes);

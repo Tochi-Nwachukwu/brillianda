@@ -152,12 +152,18 @@ export async function publishedFor(tx: Tx, termKey: string, armId: string) {
 export async function termByKey(tx: Tx, key: string): Promise<ResultsTerm | null> {
   const open = await resultsTermOf(tx);
   if (open?.key === key) return open;
-  const [closed] = await tx.select({ id: termClosures.id }).from(termClosures).where(eq(termClosures.termKey, key)).limit(1);
+  const [closed] = await tx.select({ name: termClosures.name, sessionName: termClosures.sessionName }).from(termClosures).where(eq(termClosures.termKey, key)).limit(1);
   if (!closed) return null;
   const [year, number] = key.split("-").map(Number) as [number, number];
   const { startYear, terms } = await currentSession(tx);
   const known = startYear === year ? terms[number - 1] : undefined;
-  return { key, name: known?.name ?? `Term ${number}`, session: sessionName(year), index: number - 1, isLast: startYear === year ? number === terms.length : false };
+  return {
+    key,
+    name: closed.name ?? known?.name ?? `Term ${number}`,
+    session: closed.sessionName ?? sessionName(year),
+    index: number - 1,
+    isLast: startYear === year ? number === terms.length : false,
+  };
 }
 
 /** The class a student was in for a term: where their scores are, else where they are now. */
