@@ -9,3 +9,5 @@ export * from "./admission.js";
 export * from "./students.js";
 export * from "./studentImport.js";
 export * from "./attendance.js";
+export * from "./grading.js";
+export * from "./results.js";

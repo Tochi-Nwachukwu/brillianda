@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
+import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -64,6 +64,13 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
     const [register] = await tx.insert(registers).values({ schoolId, classArmId: classArm!.id, day: "2026-09-14", takenBy: ownerId }).returning({ id: registers.id });
     await tx.insert(registerMarks).values({ schoolId, registerId: register!.id, studentId: student!.id, mark: "present" });
     await tx.insert(parentLinks).values({ schoolId, guardianId: guardian!.id, userId: ownerId });
+    await tx.insert(resultsSettings).values({ schoolId, components: [{ id: "exam", name: "Exam", maxScore: 100 }], scale: [{ minScore: 0, grade: "F", remark: "", isPass: false }] });
+    await tx.insert(termClosures).values({ schoolId, termKey: "2025-1" });
+    const sheet = { schoolId, termKey: "2026-1", classArmId: classArm!.id, schoolSubjectId: subject!.id };
+    await tx.insert(scores).values({ ...sheet, studentId: student!.id, componentId: "exam", value: 71.5 });
+    await tx.insert(scoreExclusions).values({ ...sheet, studentId: student!.id });
+    await tx.insert(sheetCompletions).values(sheet);
+    await tx.insert(unlockRequests).values({ ...sheet, reason: "A typo in the exam score" });
   });
 
   return { schoolId, ownerId, sessionId };

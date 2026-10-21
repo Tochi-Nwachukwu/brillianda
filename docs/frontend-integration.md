@@ -339,3 +339,27 @@ session can't open a school.
 
 Team accounts are made with `pnpm --filter @brillianda/api team:add -- email "Full Name"` (the
 password is printed once); `-- --disable email` turns one off and signs it out.
+
+**21 October 2026, C2** (results: settings and score entry)
+
+Totals, grades and positions use your `grading.ts` and `results.ts`, copied verbatim into the API's
+core (the Zod schemas sit in `apps/api/src/lib/results-rules.ts` with the same rules and messages).
+The term is your `ResultsTerm`: `"<session start year>-<term number>"`, the session's first term
+not closed, once it has started.
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getResultsSettings` | `GET /v1/results/settings` → `ResultsSettingsData` | owner, admin | Defaults until saved |
+| `saveResultsSettings` | `PUT /v1/results/settings` (`resultsSettingsSchema`) → 204 | owner, admin | 422 with your messages; 409 if parts or marks change after scores are in this term. The scale is stored highest first |
+| `getResultsOverview` | `GET /v1/results` → `ResultsOverview` | owner, admin | Classes with at least one active student. `term: null` and `next` before the term starts |
+| `getArmSheets` | `GET /v1/arms/{armId}/sheets` → `{ term, armLabel, sheets }` | owner, admin | 404 when no term is open |
+| `getMySheets` | `GET /v1/me/sheets` → `{ term, sheets }` | staff | The teacher's subject classes |
+| `getScoreSheet` | `GET /v1/arms/{armId}/subjects/{subjectId}/sheet` → `ScoreSheetData` | that subject's teacher; owner, admin | 403 for another teacher; 404 if the class doesn't take the subject or no term is open |
+| `saveScore` | `PUT …/sheet/scores` `{ studentId, componentId, raw }` → `{ status }` | same | `raw` per your `parseScoreInput`; 422 `#/raw` with its message. 409 when complete (teachers), when the student is left out, or when the student or part isn't on the sheet any more |
+| `setExcluded` | `PUT …/sheet/excluded` `{ studentId, excluded }` → 204 | same | Electives only (409 otherwise); clears their scores |
+| `markComplete` | `POST …/sheet/complete` → 204 | same | 409 with "N students still have empty scores…" |
+| `requestUnlock` | `POST …/sheet/unlock-request` `{ reason }` → 204 | same | Reason 5 to 200 (422 `#/reason`); 409 if not locked or already asked |
+| `resolveUnlock` | `POST …/sheet/unlock` `{ approve }` → 204 | owner, admin | Approve reopens (with or without a request); decline needs a request (409 otherwise) |
+
+Saving single scores isn't written to the change history (too many); completing, unlocking,
+requests, leaving a student out and settings are, with your fake's sentences.

@@ -3836,6 +3836,681 @@
           "status"
         ]
       },
+      "ResultsSettingsData": {
+        "type": "object",
+        "properties": {
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "maxScore": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "maxScore"
+              ]
+            }
+          },
+          "scale": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minScore": {
+                  "type": "number"
+                },
+                "grade": {
+                  "type": "string"
+                },
+                "remark": {
+                  "type": "string"
+                },
+                "isPass": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "minScore",
+                "grade",
+                "remark",
+                "isPass"
+              ]
+            }
+          },
+          "showPositions": {
+            "type": "boolean"
+          },
+          "scoresEntered": {
+            "type": "boolean",
+            "description": "Parts can't change once scores are in this term (names and the scale always can)"
+          }
+        },
+        "required": [
+          "components",
+          "scale",
+          "showPositions",
+          "scoresEntered"
+        ]
+      },
+      "ResultsSettings": {
+        "type": "object",
+        "properties": {
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 20
+                },
+                "maxScore": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "maxScore"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 8
+          },
+          "scale": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minScore": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "grade": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4
+                },
+                "remark": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "isPass": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "minScore",
+                "grade",
+                "remark",
+                "isPass"
+              ]
+            },
+            "minItems": 2,
+            "maxItems": 12
+          },
+          "showPositions": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "components",
+          "scale",
+          "showPositions"
+        ]
+      },
+      "ResultsOverview": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "$ref": "#/components/schemas/ResultsTerm"
+          },
+          "next": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "startsOn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "startsOn"
+            ],
+            "description": "When no term is open: the next one, opening on its start date"
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "sheets": {
+                  "type": "integer"
+                },
+                "complete": {
+                  "type": "integer"
+                },
+                "inProgress": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "armId",
+                "label",
+                "sheets",
+                "complete",
+                "inProgress"
+              ]
+            }
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/UnlockRequest"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "armId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "armLabel": {
+                      "type": "string"
+                    },
+                    "subjectId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "subjectName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "armId",
+                    "armLabel",
+                    "subjectId",
+                    "subjectName"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "term",
+          "next",
+          "arms",
+          "requests"
+        ]
+      },
+      "ResultsTerm": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "2026-1"
+          },
+          "name": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "isLast": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "session",
+          "index",
+          "isLast"
+        ]
+      },
+      "UnlockRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "by": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "at": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "by",
+          "reason",
+          "at"
+        ]
+      },
+      "ArmSheets": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "$ref": "#/components/schemas/ResultsTerm"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "sheets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SheetSummary"
+            }
+          }
+        },
+        "required": [
+          "term",
+          "armLabel",
+          "sheets"
+        ]
+      },
+      "SheetSummary": {
+        "type": "object",
+        "properties": {
+          "armId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "compulsory",
+              "elective"
+            ]
+          },
+          "teacher": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not-started",
+              "in-progress",
+              "complete"
+            ]
+          },
+          "complete": {
+            "type": "integer"
+          },
+          "of": {
+            "type": "integer"
+          },
+          "unlockRequest": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UnlockRequest"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "armId",
+          "armLabel",
+          "subjectId",
+          "subjectName",
+          "kind",
+          "teacher",
+          "status",
+          "complete",
+          "of",
+          "unlockRequest"
+        ]
+      },
+      "MySheets": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "$ref": "#/components/schemas/ResultsTerm"
+          },
+          "sheets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SheetSummary"
+            }
+          }
+        },
+        "required": [
+          "term",
+          "sheets"
+        ]
+      },
+      "ScoreSheet": {
+        "type": "object",
+        "properties": {
+          "term": {
+            "$ref": "#/components/schemas/ResultsTerm"
+          },
+          "armId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "compulsory",
+              "elective"
+            ]
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "maxScore": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "maxScore"
+              ]
+            }
+          },
+          "scale": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "minScore": {
+                  "type": "number"
+                },
+                "grade": {
+                  "type": "string"
+                },
+                "remark": {
+                  "type": "string"
+                },
+                "isPass": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "minScore",
+                "grade",
+                "remark",
+                "isPass"
+              ]
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not-started",
+              "in-progress",
+              "complete"
+            ]
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Admins always; a teacher until the sheet is marked complete"
+          },
+          "isAdmin": {
+            "type": "boolean"
+          },
+          "completedBy": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "by": {
+                "type": "string"
+              },
+              "at": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "by",
+              "at"
+            ]
+          },
+          "unlockRequest": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UnlockRequest"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            ]
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "studentId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "admissionNo": {
+                  "type": "string"
+                },
+                "excluded": {
+                  "type": "boolean"
+                },
+                "scores": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "isAbsent": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "isAbsent"
+                    ]
+                  },
+                  "description": "By part id; a missing part is empty"
+                }
+              },
+              "required": [
+                "studentId",
+                "fullName",
+                "admissionNo",
+                "excluded",
+                "scores"
+              ]
+            }
+          }
+        },
+        "required": [
+          "term",
+          "armId",
+          "armLabel",
+          "subjectId",
+          "subjectName",
+          "kind",
+          "components",
+          "scale",
+          "status",
+          "canEdit",
+          "isAdmin",
+          "completedBy",
+          "unlockRequest",
+          "rows"
+        ]
+      },
+      "SheetStatusAfterSave": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "not-started",
+              "in-progress",
+              "complete"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "SaveScore": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "raw": {
+            "type": "string",
+            "maxLength": 20
+          }
+        },
+        "required": [
+          "studentId",
+          "componentId",
+          "raw"
+        ]
+      },
+      "SetExcluded": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "excluded": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "studentId",
+          "excluded"
+        ]
+      },
+      "UnlockRequestInput": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ResolveUnlock": {
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "approve"
+        ]
+      },
       "ImportSetup": {
         "type": "object",
         "properties": {
@@ -9571,6 +10246,790 @@
           },
           "404": {
             "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/results/settings": {
+      "get": {
+        "tags": [
+          "results"
+        ],
+        "summary": "Results settings: score parts, grading scale, positions",
+        "responses": {
+          "200": {
+            "description": "Settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultsSettingsData"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "results"
+        ],
+        "summary": "Save results settings. Parts add up to 100 and can't change once scores are in this term",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResultsSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Scores are in this term, so the parts can't change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/results": {
+      "get": {
+        "tags": [
+          "results"
+        ],
+        "summary": "Each class's sheets this term (complete, in progress) and unlock requests waiting",
+        "responses": {
+          "200": {
+            "description": "Overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultsOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/sheets": {
+      "get": {
+        "tags": [
+          "results"
+        ],
+        "summary": "One class's sheets this term, with teacher, status and progress",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sheets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArmSheets"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/sheets": {
+      "get": {
+        "tags": [
+          "results"
+        ],
+        "summary": "A teacher's own sheets this term, with progress",
+        "responses": {
+          "200": {
+            "description": "Sheets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MySheets"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/subjects/{subjectId}/sheet": {
+      "get": {
+        "tags": [
+          "results"
+        ],
+        "summary": "One score sheet: parts, scale, status, each student's scores and whether they take the subject",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sheet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreSheet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/subjects/{subjectId}/sheet/scores": {
+      "put": {
+        "tags": [
+          "results"
+        ],
+        "summary": "Save one score: \"\" clears it, \"ABS\" marks absent, else a number from 0 to the part's marks (2 decimals)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveScore"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SheetStatusAfterSave"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Locked, or the student or part isn't on this sheet any more",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "#/raw isn't a score",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/subjects/{subjectId}/sheet/excluded": {
+      "put": {
+        "tags": [
+          "results"
+        ],
+        "summary": "An elective a student doesn't take (or does again). Leaving it out clears their scores on this sheet",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetExcluded"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Locked, compulsory, or not on this sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/subjects/{subjectId}/sheet/complete": {
+      "post": {
+        "tags": [
+          "results"
+        ],
+        "summary": "Mark a sheet complete (locks it for its teacher). Refused while a student who takes it has an empty part",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Complete"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already complete, or scores still empty (detail says how many)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/subjects/{subjectId}/sheet/unlock-request": {
+      "post": {
+        "tags": [
+          "results"
+        ],
+        "summary": "Ask an admin to unlock a completed sheet, with a reason (5 to 200 characters)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockRequestInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Asked"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not locked, or a request is already waiting",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "#/reason",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/arms/{armId}/subjects/{subjectId}/sheet/unlock": {
+      "post": {
+        "tags": [
+          "results"
+        ],
+        "summary": "Owners and admins: reopen a sheet (answering a request if there is one), or decline a request (approve: false)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "subjectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveUnlock"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "This role can't do this, or it isn't your sheet",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class or subject, or no term open for results",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nothing to reopen or decline",
             "content": {
               "application/problem+json": {
                 "schema": {

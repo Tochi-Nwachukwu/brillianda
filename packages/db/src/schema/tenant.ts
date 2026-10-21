@@ -9,7 +9,7 @@
  * Checklist for a new school table: see .claude/skills/brillianda-tenancy/SKILL.md.
  */
 import { sql } from "drizzle-orm";
-import { boolean, check, date, foreignKey, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, foreignKey, index, integer, jsonb, numeric, pgEnum, pgTable, smallint, text, timestamp, unique, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { bytea, citext } from "./columns.js";
 import { backupRead, createdAt, id, platformAccess, schoolIsolation, updatedAt } from "./columns.js";
 import { schools, users } from "./platform.js";
@@ -717,6 +717,164 @@ export const parentLinks = pgTable(
     foreignKey({ name: "parent_links_guardian_fk", columns: [t.schoolId, t.guardianId], foreignColumns: [guardians.schoolId, guardians.id] }).onDelete("cascade"),
     foreignKey({ name: "parent_links_member_fk", columns: [t.schoolId, t.userId], foreignColumns: [schoolMembers.schoolId, schoolMembers.userId] }).onDelete("cascade"),
     index("parent_links_user_idx").on(t.schoolId, t.userId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+// ——— Results (C2) ———
+// A term is keyed "<session start year>-<term number>" (e.g. "2026-1"), as the front end keys it,
+// so results don't depend on whether the calendar was saved or later edited.
+
+/** A school's score parts, grading scale and whether positions show. Defaults until saved. */
+export const resultsSettings = pgTable(
+  "results_settings",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    components: jsonb().$type<{ id: string; name: string; maxScore: number }[]>().notNull(),
+    scale: jsonb().$type<{ minScore: number; grade: string; remark: string; isPass: boolean }[]>().notNull(),
+    showPositions: boolean().notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [unique("results_settings_school_id_id_key").on(t.schoolId, t.id), unique("results_settings_one_per_school_key").on(t.schoolId), schoolIsolation(t.schoolId), backupRead()],
+).enableRLS();
+
+/** Terms the school has closed (C5). The open term for results is the session's first not here. */
+export const termClosures = pgTable(
+  "term_closures",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    closedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("term_closures_school_id_id_key").on(t.schoolId, t.id),
+    unique("term_closures_term_key").on(t.schoolId, t.termKey),
+    check("term_closures_key_shape", sql`${t.termKey} ~ '^[0-9]{4}-[1-3]$'`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** One score: a student's mark for one part of one subject, in one class and term. ABS is 0 + absent. */
+export const scores = pgTable(
+  "scores",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    classArmId: uuid().notNull(),
+    schoolSubjectId: uuid().notNull(),
+    studentId: uuid().notNull(),
+    /** The part's id in results_settings.components (ca1, ca2, exam, …). */
+    componentId: text().notNull(),
+    value: numeric({ precision: 5, scale: 2, mode: "number" }).notNull(),
+    isAbsent: boolean().notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("scores_school_id_id_key").on(t.schoolId, t.id),
+    unique("scores_cell_key").on(t.schoolId, t.termKey, t.classArmId, t.schoolSubjectId, t.studentId, t.componentId),
+    foreignKey({ name: "scores_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
+    foreignKey({ name: "scores_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }),
+    foreignKey({ name: "scores_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }),
+    index("scores_student_idx").on(t.schoolId, t.studentId, t.termKey),
+    check("scores_value_check", sql`${t.value} >= 0 AND ${t.value} <= 100 AND (NOT ${t.isAbsent} OR ${t.value} = 0)`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** An elective a student doesn't take, for one class and term: off their sheet and their average. */
+export const scoreExclusions = pgTable(
+  "score_exclusions",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    classArmId: uuid().notNull(),
+    schoolSubjectId: uuid().notNull(),
+    studentId: uuid().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("score_exclusions_school_id_id_key").on(t.schoolId, t.id),
+    unique("score_exclusions_row_key").on(t.schoolId, t.termKey, t.classArmId, t.schoolSubjectId, t.studentId),
+    foreignKey({ name: "score_exclusions_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
+    foreignKey({ name: "score_exclusions_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }),
+    foreignKey({ name: "score_exclusions_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** A sheet (class, subject, term) marked complete: locked for its teacher until an admin unlocks it. */
+export const sheetCompletions = pgTable(
+  "sheet_completions",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    classArmId: uuid().notNull(),
+    schoolSubjectId: uuid().notNull(),
+    completedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("sheet_completions_school_id_id_key").on(t.schoolId, t.id),
+    unique("sheet_completions_sheet_key").on(t.schoolId, t.termKey, t.classArmId, t.schoolSubjectId),
+    foreignKey({ name: "sheet_completions_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
+    foreignKey({ name: "sheet_completions_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+export const unlockStatus = pgEnum("unlock_status", ["open", "approved", "declined"]);
+
+/** A teacher asking to reopen a completed sheet, and the admin's answer. One open request per sheet. */
+export const unlockRequests = pgTable(
+  "unlock_requests",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    termKey: text().notNull(),
+    classArmId: uuid().notNull(),
+    schoolSubjectId: uuid().notNull(),
+    requestedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    reason: text().notNull(),
+    status: unlockStatus().notNull().default("open"),
+    resolvedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    resolvedAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("unlock_requests_school_id_id_key").on(t.schoolId, t.id),
+    uniqueIndex("unlock_requests_one_open_idx").on(t.schoolId, t.termKey, t.classArmId, t.schoolSubjectId).where(sql`${t.status} = 'open'`),
+    foreignKey({ name: "unlock_requests_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
+    foreignKey({ name: "unlock_requests_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
+    check("unlock_requests_reason_check", sql`char_length(${t.reason}) BETWEEN 5 AND 200`),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],
