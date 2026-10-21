@@ -51,7 +51,7 @@ const errors = {
   404: problemContent("No active school here"),
 } as const;
 
-const who = sql<string>`coalesce(${users.fullName}, 'Someone')`;
+const who = sql<string>`coalesce(${users.fullName}, ${auditLog.actorName}, 'Someone')`;
 const lagosDay = sql`(${auditLog.createdAt} at time zone 'Africa/Lagos')::date`;
 const studentName = sql<string>`coalesce(${students.firstName} || ' ' || nullif(${students.otherNames}, '') || ' ' || ${students.lastName}, ${students.firstName} || ' ' || ${students.lastName}, '')`;
 const escapeLike = (word: string) => word.replace(/[\\%_]/g, (m) => `\\${m}`);

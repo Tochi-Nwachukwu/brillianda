@@ -30,3 +30,58 @@ export async function revokeUserSessions(db: Executor, userId: string, exceptSes
   );
   return Number(result.rows[0]?.revoked ?? 0);
 }
+
+export interface ConsoleSchoolRow {
+  schoolId: string;
+  subdomain: string;
+  name: string;
+  status: "active" | "suspended" | "archived";
+  createdAt: Date;
+  state: string | null;
+  phone: string | null;
+  levelsOffered: string[];
+  ownerName: string | null;
+  ownerEmail: string | null;
+  students: number;
+  classes: number;
+  subjects: number;
+  admins: number;
+  teachers: number;
+  parents: number;
+  setup: { calendar: boolean; classes: boolean; arms: boolean; subjects: boolean; students: boolean; admins: boolean; branding: boolean };
+}
+
+/**
+ * Every school's counts, contacts and setup flags, for the Brillianda team console only
+ * (SECURITY DEFINER, migration 0026). Never a student's own record.
+ */
+export async function consoleSchools(db: Executor): Promise<ConsoleSchoolRow[]> {
+  const result = await db.execute<Record<string, unknown>>(sql`select * from app_console_schools()`);
+  return result.rows.map((r) => ({
+    schoolId: r.school_id as string,
+    subdomain: r.subdomain as string,
+    name: r.name as string,
+    status: r.status as ConsoleSchoolRow["status"],
+    createdAt: new Date(r.created_at as string),
+    state: (r.state as string | null) ?? null,
+    phone: (r.phone as string | null) ?? null,
+    levelsOffered: (r.levels_offered as string[] | null) ?? [],
+    ownerName: (r.owner_name as string | null) ?? null,
+    ownerEmail: (r.owner_email as string | null) ?? null,
+    students: Number(r.students),
+    classes: Number(r.classes),
+    subjects: Number(r.subjects),
+    admins: Number(r.admins),
+    teachers: Number(r.teachers),
+    parents: Number(r.parents),
+    setup: {
+      calendar: !!r.calendar_done,
+      classes: !!r.classes_done,
+      arms: !!r.arms_done,
+      subjects: !!r.subjects_done,
+      students: !!r.students_done,
+      admins: !!r.admins_done,
+      branding: !!r.branding_done,
+    },
+  }));
+}

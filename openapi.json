@@ -3437,6 +3437,405 @@
           "password"
         ]
       },
+      "TeamMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "email"
+        ]
+      },
+      "TeamLogin": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "ConsoleOverview": {
+        "type": "object",
+        "properties": {
+          "schools": {
+            "type": "object",
+            "properties": {
+              "active": {
+                "type": "integer"
+              },
+              "suspended": {
+                "type": "integer"
+              },
+              "newThisWeek": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "active",
+              "suspended",
+              "newThisWeek"
+            ]
+          },
+          "students": {
+            "type": "integer"
+          },
+          "trialsWaiting": {
+            "type": "integer"
+          },
+          "recentSchools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsoleSchool"
+            }
+          },
+          "activity": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "integer"
+                },
+                "who": {
+                  "type": "string"
+                },
+                "what": {
+                  "type": "string"
+                },
+                "subdomain": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "at",
+                "who",
+                "what"
+              ]
+            }
+          }
+        },
+        "required": [
+          "schools",
+          "students",
+          "trialsWaiting",
+          "recentSchools",
+          "activity"
+        ]
+      },
+      "ConsoleSchool": {
+        "type": "object",
+        "properties": {
+          "subdomain": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended",
+              "archived"
+            ],
+            "description": "suspended: paused by the team"
+          },
+          "createdAt": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "ms since epoch"
+          },
+          "owner": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "fullName": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "fullName",
+              "email"
+            ]
+          },
+          "students": {
+            "type": "integer"
+          },
+          "classes": {
+            "type": "integer"
+          },
+          "setupDone": {
+            "type": "integer"
+          },
+          "setupTotal": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "subdomain",
+          "name",
+          "status",
+          "createdAt",
+          "owner",
+          "students",
+          "classes",
+          "setupDone",
+          "setupTotal"
+        ]
+      },
+      "ConsoleSchoolDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ConsoleSchool"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "state": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "levelsOffered": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "admins": {
+                "type": "integer",
+                "description": "The owner and admins"
+              },
+              "teachers": {
+                "type": "integer"
+              },
+              "parents": {
+                "type": "integer"
+              },
+              "subjects": {
+                "type": "integer"
+              },
+              "setup": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "done": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "label",
+                    "done"
+                  ]
+                }
+              },
+              "statusNote": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "suspended"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "by": {
+                    "type": "string"
+                  },
+                  "at": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "status",
+                  "reason",
+                  "by",
+                  "at"
+                ],
+                "description": "Why it was last paused or reactivated, by whom"
+              }
+            },
+            "required": [
+              "state",
+              "phone",
+              "levelsOffered",
+              "admins",
+              "teachers",
+              "parents",
+              "subjects",
+              "setup",
+              "statusNote"
+            ]
+          }
+        ]
+      },
+      "SchoolStatusChange": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "suspended"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "status",
+          "reason"
+        ]
+      },
+      "TrialRequestRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "integer"
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "studentCount": {
+            "type": "integer"
+          },
+          "state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "converted",
+              "declined"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "schoolName",
+          "contactName",
+          "role",
+          "email",
+          "phone",
+          "studentCount",
+          "state",
+          "interests",
+          "message",
+          "status",
+          "note"
+        ]
+      },
+      "TrialRequestUpdate": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "new",
+              "contacted",
+              "converted",
+              "declined"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "default": ""
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "ImportSetup": {
         "type": "object",
         "properties": {
@@ -8742,6 +9141,436 @@
           },
           "429": {
             "description": "Too many tries",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/login": {
+      "post": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Sign in to the team console (main site only). School accounts can't sign in here",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TeamLogin"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed in; sets the team cookie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMember"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Wrong email or password",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many tries",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/logout": {
+      "post": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Sign out of the team console (works even when the session is already gone)",
+        "responses": {
+          "204": {
+            "description": "Signed out; clears the team cookie"
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/me": {
+      "get": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Who is signed in to the team console",
+        "responses": {
+          "200": {
+            "description": "Signed in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMember"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to the team console",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/overview": {
+      "get": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Overview: schools active, paused and new this week; students; trial requests waiting; newest schools; recent activity",
+        "responses": {
+          "200": {
+            "description": "Overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsoleOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to the team console",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/schools": {
+      "get": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Every school: status, owner, students, classes, setup progress, joined (by name)",
+        "responses": {
+          "200": {
+            "description": "Schools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConsoleSchool"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to the team console",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/schools/{subdomain}": {
+      "get": {
+        "tags": [
+          "team"
+        ],
+        "summary": "One school's summary. Opening it writes a line to that school's change history (at most once an hour per team member)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63
+            },
+            "required": true,
+            "name": "subdomain",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsoleSchoolDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to the team console",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/schools/{subdomain}/status": {
+      "put": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Pause a school (its people can't sign in; nothing is deleted) or reactivate it. The reason shows in its history",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 63
+            },
+            "required": true,
+            "name": "subdomain",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchoolStatusChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Changed"
+          },
+          "401": {
+            "description": "Not signed in to the team console",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already in that state, or archived",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Reason needed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/trial-requests": {
+      "get": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Trial requests from the website, newest first",
+        "responses": {
+          "200": {
+            "description": "Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrialRequestRow"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to the team console",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/team/trial-requests/{id}": {
+      "patch": {
+        "tags": [
+          "team"
+        ],
+        "summary": "Set a trial request's status and the team's note (empty clears it)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrialRequestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to the team console",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the main site, or no such school or request",
             "content": {
               "application/problem+json": {
                 "schema": {

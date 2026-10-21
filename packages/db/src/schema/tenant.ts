@@ -100,6 +100,8 @@ export const auditLog = pgTable(
     id: id(),
     schoolId: schoolId(),
     actorUserId: uuid(),
+    /** For actors who aren't school users: the Brillianda team ("Ada Okoro (Brillianda)"). */
+    actorName: text(),
     action: text().notNull(),
     entity: text().notNull(),
     entityId: uuid(),
@@ -162,6 +164,7 @@ export const invitations = pgTable(
     check("invitations_parent_guardian_check", sql`(${t.role}::text = 'parent') = (${t.guardianId} IS NOT NULL)`),
     schoolIsolation(t.schoolId),
     backupRead(),
+    platformAccess("select"),
   ],
 ).enableRLS();
 
@@ -195,6 +198,7 @@ export const academicSessions = pgTable(
     check("academic_sessions_dates_check", sql`${t.endsOn} > ${t.startsOn}`),
     schoolIsolation(t.schoolId),
     backupRead(),
+    platformAccess("select"),
   ],
 ).enableRLS();
 
@@ -264,6 +268,7 @@ export const classLevels = pgTable(
     uniqueIndex("class_levels_school_name_idx").on(t.schoolId, sql`lower(${t.name})`),
     schoolIsolation(t.schoolId),
     backupRead(),
+    platformAccess("select"),
   ],
 ).enableRLS();
 
@@ -315,6 +320,7 @@ export const classArms = pgTable(
     index("class_arms_school_arm_idx").on(t.schoolId, t.armId),
     schoolIsolation(t.schoolId),
     backupRead(),
+    platformAccess("select"),
   ],
 ).enableRLS();
 
@@ -346,6 +352,7 @@ export const schoolSubjects = pgTable(
     uniqueIndex("school_subjects_school_catalogue_idx").on(t.schoolId, t.catalogueId).where(sql`${t.catalogueId} IS NOT NULL`),
     schoolIsolation(t.schoolId),
     backupRead(),
+    platformAccess("select"),
   ],
 ).enableRLS();
 
@@ -372,6 +379,7 @@ export const classLevelSubjects = pgTable(
     index("class_level_subjects_subject_idx").on(t.schoolId, t.schoolSubjectId),
     schoolIsolation(t.schoolId),
     backupRead(),
+    platformAccess("select"),
   ],
 ).enableRLS();
 
@@ -470,6 +478,7 @@ export const students = pgTable(
     index("students_school_name_trgm_idx").using("gin", sql`app_unaccent(${t.firstName} || ' ' || ${t.otherNames} || ' ' || ${t.lastName}) gin_trgm_ops`),
     schoolIsolation(t.schoolId),
     backupRead(),
+    platformAccess("select"),
   ],
 ).enableRLS();
 

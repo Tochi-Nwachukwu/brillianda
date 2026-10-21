@@ -14,7 +14,8 @@
     "bench": "tsx --env-file-if-exists=../../.env scripts/bench.ts",
     "seed:test-school": "tsx scripts/seed-test-school.ts",
     "seed:test-teachers": "tsx scripts/seed-test-teachers.ts",
-    "seed:test-parent": "tsx scripts/seed-test-parent.ts"
+    "seed:test-parent": "tsx scripts/seed-test-parent.ts",
+    "team:add": "tsx scripts/team-add.ts"
   },
   "dependencies": {
     "@brillianda/auth": "workspace:*",

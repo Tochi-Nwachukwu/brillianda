@@ -196,3 +196,59 @@ export const userPhotos = pgTable("user_photos", {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+/**
+ * The Brillianda team (the console, C1): separate accounts from school accounts. A school's owner
+ * can't sign in here, and a team account can't sign in to a school. Made with `pnpm team:add`.
+ */
+export const teamMembers = pgTable(
+  "team_members",
+  {
+    id: id(),
+    email: citext().notNull().unique(),
+    fullName: text().notNull(),
+    /** Argon2id PHC string. */
+    passwordHash: text().notNull(),
+    status: userStatus().notNull().default("active"),
+    lastLoginAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check("team_members_email_shape", sql`${t.email} ~ '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$'`)],
+);
+
+/** A team sign-in. Only an HMAC of the cookie's token is stored; a fixed lifetime, no sliding. */
+export const teamSessions = pgTable(
+  "team_sessions",
+  {
+    id: id(),
+    teamMemberId: uuid()
+      .notNull()
+      .references(() => teamMembers.id, { onDelete: "cascade" }),
+    tokenHash: text().notNull().unique(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    ip: text(),
+    userAgent: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("team_sessions_member_idx").on(t.teamMemberId)],
+);
+
+/** What the team did, for the console's activity list: pauses, reactivations, trial follow-ups. */
+export const teamLog = pgTable(
+  "team_log",
+  {
+    id: id(),
+    teamMemberId: uuid().references(() => teamMembers.id, { onDelete: "set null" }),
+    /** Kept so the log still reads right if the account goes. */
+    teamMemberName: text().notNull(),
+    action: text().notNull(),
+    summary: text().notNull(),
+    /** The school it was about, if any. Not "school_id": this is not a school table (no RLS). */
+    aboutSchoolId: uuid().references(() => schools.id, { onDelete: "set null" }),
+    /** Pausing and reactivating: the reason given, shown on the school's summary. */
+    reason: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("team_log_created_idx").on(t.createdAt.desc()), index("team_log_school_idx").on(t.aboutSchoolId, t.createdAt.desc())],
+);

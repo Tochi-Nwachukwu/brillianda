@@ -36,6 +36,7 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | 6 Teachers and registers (C1) | Teacher role and invitations, form and subject teachers, daily register, teacher home, Home register card | ✅ |
 | 7 Parents (C2, B3) | Parent role and invites from guardian records, Parents page, parent home with attendance, attendance on the student page | ✅ |
 | 8 My profile (C14) | Name, photo and password for every role | ✅ |
+| 9 Team console (C1) | Team accounts and sign-in, overview, schools, a school's summary (logged), pause and reactivate, trial requests | ✅ |
 | 5 Hardening | Branding and logos ✅, trial requests ✅; speed, security review, production setup | in progress |
 
 ## Email

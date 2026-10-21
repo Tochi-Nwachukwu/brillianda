@@ -318,3 +318,24 @@ the Okafor siblings' guardian on `fecheck`. The password is printed once and sen
 
 Every role can call these, for their own account only. `DELETE /v1/me` now answers 405 with
 `Allow: GET, HEAD, PATCH`.
+
+**21 October 2026, C1** (the team console)
+
+All on the **main site** (your apex: `x-forwarded-host` = the root domain). On a school's address
+these paths answer 404. Team accounts are separate: a school account can't sign in here and a team
+session can't open a school.
+
+| Your function | Endpoint | Notes |
+|---|---|---|
+| `teamSignIn` | `POST /v1/team/login` `{ email, password }` → `TeamMember` | Sets `__Host-bd_team` (Path=/, SameSite=Strict, 12 hours). Copy the `set-cookie` back like the school session; your fake used `Path=/console`, which `__Host-` doesn't allow. 401 `invalid_credentials`, 429 after too many tries |
+| `teamSignOut` | `POST /v1/team/logout` → 204 | Clears the cookie |
+| `getTeamMember` | `GET /v1/team/me` → `TeamMember` | 401 when not signed in |
+| `getConsoleOverview` | `GET /v1/team/overview` → `ConsoleOverview` | `activity`: the team's actions and sign-ups, newest first, 12 at most |
+| `listConsoleSchools` | `GET /v1/team/schools` → `ConsoleSchool[]` | By name. Setup has your seven steps (Calendar … Branding) |
+| `getConsoleSchool` | `GET /v1/team/schools/{subdomain}` → `ConsoleSchoolDetail` | Writes "Viewed the school’s summary from the Brillianda team console" to the school's change history, at most once an hour per person; `who` there is "Ada Okoro (Brillianda)" |
+| `setSchoolStatus` | `PUT /v1/team/schools/{subdomain}/status` `{ status: "active" \| "suspended", reason }` → 204 | Reason 3 to 200 characters (422 `#/reason`). 409 if already so. The school's history gets "Paused the school’s account: <reason>"; a paused school's addresses answer 404 `school_unavailable` |
+| `listTrialRequests` | `GET /v1/team/trial-requests` → `TrialRequestRow[]` | Newest first |
+| `setTrialStatus` | `PATCH /v1/team/trial-requests/{id}` `{ status, note }` → 204 | Note up to 500 characters; empty clears it |
+
+Team accounts are made with `pnpm --filter @brillianda/api team:add -- email "Full Name"` (the
+password is printed once); `-- --disable email` turns one off and signs it out.

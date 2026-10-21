@@ -123,7 +123,7 @@ homeRoutes.openapi(
       const subjects = await subjectCounts(tx);
       const [active] = await tx.select({ n: count() }).from(students).where(and(isNull(students.deletedAt), eq(students.status, "active")));
       const recent = await tx
-        .select({ id: auditLog.id, at: auditLog.createdAt, who: users.fullName, what: auditLog.summary })
+        .select({ id: auditLog.id, at: auditLog.createdAt, who: sql<string | null>`coalesce(${users.fullName}, ${auditLog.actorName})`, what: auditLog.summary })
         .from(auditLog)
         .leftJoin(users, eq(users.id, auditLog.actorUserId))
         .where(isNotNull(auditLog.summary))

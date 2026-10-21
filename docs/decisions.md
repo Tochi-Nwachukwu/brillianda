@@ -93,3 +93,28 @@ and it saves choosing, paying for and securing a storage provider before v1. The
 Content Security Policy needs no extra host. **Student photos are different**: thousands of them
 per school would bloat the database and backups, so they go to object storage (Cloudflare R2
 suggested) when that feature is built, and logos can move with them.
+
+## 7. The team console picks a school by name, and counts across schools (21 October 2026)
+
+**Rule elsewhere:** the school comes from the host, never from input; cross-school reads go
+through a SECURITY DEFINER function.
+
+**Here:** the Brillianda team console (`/v1/team/*`, main site only) lists every school and opens
+one by its subdomain in the path. Its reads across schools all come from one function,
+`app_console_schools()` (migration 0026): counts, the owner's name and email, contact details and
+setup flags, never a student's own record. Its two writes into a school, the "viewed the summary"
+line (at most once an hour per person) and pausing or reactivating with a reason, go through
+`withSchool` for that school and show in the school's own change history under the team member's
+name with "(Brillianda)".
+
+**Why:** the plan says Brillianda staff reach a school only through the console, with each access
+logged and shown to the school. Team accounts are separate from school accounts (their own table,
+`__Host-bd_team` cookie, 12-hour sessions, no sign-up: `team:add` creates them), so a school
+session can't open the console and a team session can't open a school. Pausing takes effect at
+once on the instance that served it and within a minute everywhere (the school lookup cache).
+
+## 8. Profile photos live in Postgres for now (21 October 2026)
+
+`user_photos`, one row per person, at most 150 KB and 1024 px (the browser sends 256×256 JPEGs),
+served to the person themselves at `GET /v1/me/photo`. Same reasoning as logos (#6): small, one per
+person, no storage provider needed yet. They move to R2 with student photos.

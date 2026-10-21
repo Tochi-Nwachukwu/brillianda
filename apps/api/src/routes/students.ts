@@ -292,7 +292,7 @@ studentRoutes.openapi(
       }
       const history = await tx.select().from(enrolments).where(eq(enrolments.studentId, id)).orderBy(asc(enrolments.startedOn), asc(enrolments.createdAt));
       const changes = await tx
-        .select({ id: auditLog.id, at: auditLog.createdAt, who: users.fullName, what: auditLog.summary })
+        .select({ id: auditLog.id, at: auditLog.createdAt, who: sql<string | null>`coalesce(${users.fullName}, ${auditLog.actorName})`, what: auditLog.summary })
         .from(auditLog)
         .leftJoin(users, eq(users.id, auditLog.actorUserId))
         .where(and(eq(auditLog.entity, "student"), eq(auditLog.entityId, id), isNotNull(auditLog.summary)))

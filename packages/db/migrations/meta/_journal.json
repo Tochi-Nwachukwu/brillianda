@@ -176,6 +176,20 @@
       "when": 1792589990409,
       "tag": "0024_user_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792590753953,
+      "tag": "0025_team_console",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792590755597,
+      "tag": "0026_console_function",
+      "breakpoints": true
     }
   ]
 }
