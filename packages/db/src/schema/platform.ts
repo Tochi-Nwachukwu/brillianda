@@ -4,7 +4,7 @@
  */
 import { sql } from "drizzle-orm";
 import { boolean, check, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { citext, createdAt, id, updatedAt } from "./columns.js";
+import { bytea, citext, createdAt, id, updatedAt } from "./columns.js";
 
 export const userStatus = pgEnum("user_status", ["active", "disabled"]);
 
@@ -179,3 +179,20 @@ export const emailOutbox = pgTable(
   },
   (t) => [index("email_outbox_to_created_idx").on(t.to, t.createdAt.desc()), index("email_outbox_created_idx").on(t.createdAt)],
 );
+
+/**
+ * A person's profile photo (C14), shown in every dashboard of every school they belong to. Kept
+ * apart from users so that reading a user never drags the picture along. The browser shrinks it
+ * to a small square first; the API checks it again (PNG, JPEG or WebP, at most 150 KB, 1024 px).
+ */
+export const userPhotos = pgTable("user_photos", {
+  userId: uuid()
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  contentType: text().notNull(),
+  bytes: bytea().notNull(),
+  /** SHA-256 of the bytes: the version in the photo's URL. */
+  sha256: text().notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});

@@ -304,3 +304,17 @@ Changed: `GET /v1/members` and Home's `admins` count stay owner and admins only;
 
 **Testing:** `pnpm --filter @brillianda/api seed:test-parent -- fecheck` adds a parent account for
 the Okafor siblings' guardian on `fecheck`. The password is printed once and sent privately.
+
+**21 October 2026, C14** (my profile, every role)
+
+| Your function | Endpoint | Notes |
+|---|---|---|
+| who am I | `GET /v1/me` | Gains `photo` (an address for `<img src>`, through your `/api` rewrite like the logo, or `null`) and `phone` (a parent's comes from their family's record; shown locked). The other endpoints that return `Me` (login, accept, handover) don't include them |
+| save my name | `PATCH /v1/me` `{ fullName }` → 204 | Your `joinName`: everything before the last space is the first name. 422 `#/fullName` if either part is empty or over 60 characters |
+| set my photo | `PUT /v1/me/photo` `{ photo }` → 204 | Your `photoSchema` data URL (PNG, JPEG or WebP). The API reads the bytes: at most 150 KB and 1024 px, else 422 `#/photo` |
+| remove my photo | `DELETE /v1/me/photo` → 204 | |
+| the photo itself | `GET /v1/me/photo?v=` | Your own only, behind the session; cached privately for a year when `v` matches |
+| change my password | `POST /v1/me/password` `{ current, password }` → 204 | 422 `#/current` when it's wrong, `#/password` when it's the same or too short. Signs the person out on their other devices, in every school; this session stays |
+
+Every role can call these, for their own account only. `DELETE /v1/me` now answers 405 with
+`Allow: GET, HEAD, PATCH`.

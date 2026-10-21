@@ -120,9 +120,9 @@ describe("HTTP rules", () => {
   it("405 with Allow for a known path and wrong method", async () => {
     const res = await h.app.request("/v1/me", { method: "DELETE", headers: { host: HOST, origin: ORIGIN } });
     expect(res.status).toBe(405);
-    expect(res.headers.get("allow")).toBe("GET, HEAD");
+    expect(res.headers.get("allow")).toBe("GET, HEAD, PATCH");
     const body = await problem(res);
-    expect(body.allow).toEqual(["GET", "HEAD"]);
+    expect(body.allow).toEqual(["GET", "HEAD", "PATCH"]);
   });
 
   it("404 only for paths that do not exist", async () => {

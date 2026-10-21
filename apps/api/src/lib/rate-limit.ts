@@ -40,6 +40,8 @@ export const RATE_RULES = {
   tokenRedeemPerIp: { name: "token-redeem:ip", limit: 30, windowSec: 600 },
   invitePerUser: { name: "invite:user", limit: 50, windowSec: 86_400 },
   trialPerIp: { name: "trial:ip", limit: 5, windowSec: 3600 },
+  profilePerUser: { name: "profile:user", limit: 30, windowSec: 600 },
+  passwordChangePerUser: { name: "password-change:user", limit: 10, windowSec: 900 },
 } as const satisfies Record<string, RateRule>;
 
 /** Single-process fallback for local development and tests. Not shared across instances. */

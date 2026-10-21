@@ -223,6 +223,20 @@
               "name",
               "subdomain"
             ]
+          },
+          "photo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "GET /v1/me only: the photo's address for <img src>, or null"
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "GET /v1/me only: shown locked (a parent's comes from their family's record)"
           }
         },
         "required": [
@@ -3377,6 +3391,52 @@
         ],
         "description": "This term's register marks (late counts as present); null outside a term"
       },
+      "ProfileName": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "description": "First and last name joined with a space (the last word is the last name)",
+            "example": "Ada Obi"
+          }
+        },
+        "required": [
+          "fullName"
+        ]
+      },
+      "ProfilePhoto": {
+        "type": "object",
+        "properties": {
+          "photo": {
+            "type": "string",
+            "maxLength": 200000,
+            "pattern": "^data:image\\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$",
+            "description": "A data URL; the browser shrinks it to a 256×256 JPEG first"
+          }
+        },
+        "required": [
+          "photo"
+        ]
+      },
+      "ChangePassword": {
+        "type": "object",
+        "properties": {
+          "current": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "current",
+          "password"
+        ]
+      },
       "ImportSetup": {
         "type": "object",
         "properties": {
@@ -4031,6 +4091,57 @@
           },
           "404": {
             "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Save my name (every role; my own profile only)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileName"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Name needs fixing",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8425,6 +8536,212 @@
           },
           "404": {
             "description": "No such guardian here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/photo": {
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Set my photo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePhoto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Not a picture, or too big",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Remove my photo",
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "My photo, for <img src>. With ?v= matching the current version it is cached privately for a year",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/password": {
+      "post": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Change my password. Needs the current one; signs me out on my other devices, in every school",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePassword"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Changed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "#/current wrong, or #/password the same as now",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many tries",
             "content": {
               "application/problem+json": {
                 "schema": {
