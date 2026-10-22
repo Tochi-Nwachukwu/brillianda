@@ -145,36 +145,41 @@ export async function seedTestTeachers(base: AppDeps, opts: TeacherSeedOptions):
   const { db } = base;
   const [school] = await db.select({ id: schools.id, ownerId: schools.ownerUserId }).from(schools).where(eq(schools.subdomain, opts.subdomain));
   if (!school) throw new Error(`There is no school at "${opts.subdomain}". Run seed:test-school first.`);
-  for (const email of [opts.formTeacherEmail, opts.subjectTeacherEmail]) {
-    const [taken] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
-    if (taken) throw new Error(`${email} already has a Brillianda account. Use another email.`);
-  }
+
+  // Check the school is ready before touching any account, so a failed run leaves nothing behind.
+  const call = await apiAs(base, opts.subdomain, school.id, school.ownerId);
+  const page = (await call("GET", "/v1/teachers")) as { arms: { id: string; label: string }[]; subjects: { id: string; name: string }[] };
+  if (page.arms.length < 2) throw new Error(`"${opts.subdomain}" needs at least two classes. Add them on its Classes page first.`);
+  if (!page.subjects.length) throw new Error(`"${opts.subdomain}" has no subjects yet. Add some on its Subjects page first.`);
+  const subjectNamed = (name: string) => page.subjects.find((s) => s.name.toLowerCase().startsWith(name)) ?? page.subjects[0]!;
+  const maths = subjectNamed("mathematics");
+  const english = subjectNamed("english");
+
   const form = { email: opts.formTeacherEmail, password: password() };
   const subject = { email: opts.subjectTeacherEmail, password: password() };
   const [formId, subjectId] = await db.transaction(async (tx) => {
+    await scopeToSchool(tx, school.id);
     const ids: string[] = [];
     for (const [who, fullName] of [[form, "Test Form Teacher"], [subject, "Test Subject Teacher"]] as const) {
-      const [u] = await tx
-        .insert(users)
-        .values({ email: who.email, fullName, passwordHash: await hashPassword(who.password), emailVerifiedAt: new Date() })
-        .returning({ id: users.id });
+      const passwordHash = await hashPassword(who.password);
+      const [existing] = await tx.select({ id: users.id, fullName: users.fullName }).from(users).where(eq(users.email, who.email));
+      if (existing) {
+        // A re-run (say, after an earlier one stopped half-way): reuse the account only if this seed
+        // made it as a teacher here, and give it a fresh password to print.
+        const [member] = await tx.select({ role: schoolMembers.role }).from(schoolMembers).where(eq(schoolMembers.userId, existing.id));
+        if (member?.role !== "teacher" || existing.fullName !== fullName) throw new Error(`${who.email} already has a Brillianda account. Use another email.`);
+        await tx.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, existing.id));
+        ids.push(existing.id);
+        continue;
+      }
+      const [u] = await tx.insert(users).values({ email: who.email, fullName, passwordHash, emailVerifiedAt: new Date() }).returning({ id: users.id });
+      await tx.insert(schoolMembers).values({ schoolId: school.id, userId: u!.id, role: "teacher", invitedBy: school.ownerId, createdBy: school.ownerId, updatedBy: school.ownerId });
+      await tx.insert(auditLog).values({ schoolId: school.id, actorUserId: u!.id, action: "member.joined", entity: "user", entityId: u!.id, changes: { via: "seed", role: "teacher" }, summary: "Joined as a teacher" });
       ids.push(u!.id);
     }
-    await scopeToSchool(tx, school.id);
-    await tx.insert(schoolMembers).values(ids.map((userId) => ({ schoolId: school.id, userId, role: "teacher" as const, invitedBy: school.ownerId, createdBy: school.ownerId, updatedBy: school.ownerId })));
-    await tx.insert(auditLog).values(
-      ids.map((userId) => ({ schoolId: school.id, actorUserId: userId, action: "member.joined", entity: "user", entityId: userId, changes: { via: "seed", role: "teacher" }, summary: "Joined as a teacher"})),
-    );
     return ids;
   });
 
-  const call = await apiAs(base, opts.subdomain, school.id, school.ownerId);
-  const page = (await call("GET", "/v1/teachers")) as { arms: { id: string; label: string }[]; subjects: { id: string; name: string }[] };
-  if (page.arms.length < 2) throw new Error(`"${opts.subdomain}" needs at least two classes.`);
-  const subjectNamed = (name: string) => page.subjects.find((s) => s.name.toLowerCase().startsWith(name)) ?? page.subjects[0];
-  const maths = subjectNamed("mathematics");
-  const english = subjectNamed("english");
-  if (!maths || !english) throw new Error(`"${opts.subdomain}" has no subjects yet.`);
   const [first, second] = page.arms;
   await call("PUT", `/v1/arms/${first!.id}/form-teacher`, { userId: formId });
   await call("PUT", `/v1/teachers/${formId}/subject-classes`, [first!, second!].map((a) => ({ armId: a.id, subjectId: maths.id })));

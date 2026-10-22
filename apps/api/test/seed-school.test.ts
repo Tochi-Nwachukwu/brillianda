@@ -54,6 +54,11 @@ describe("test school for the frontend team", () => {
     expect(theirs.formArms).toEqual([]);
     expect(theirs.subjects).toHaveLength(4);
     await expect(seedTestTeachers(h.deps, { subdomain: "nowhere", formTeacherEmail: "a@x.test", subjectTeacherEmail: "b@x.test" })).rejects.toThrow(/no school/);
+    // Running it again resets their passwords and keeps their classes; someone else's email is refused.
+    const again = await seedTestTeachers(h.deps, { subdomain: "fecheck", formTeacherEmail: "form@fecheck.test", subjectTeacherEmail: "subject@fecheck.test" });
+    expect(again.formTeacher.password).not.toBe(r.formTeacher.password);
+    expect((await browser(h, schoolHost("fecheck")).post("/v1/auth/login", { email: "form@fecheck.test", password: again.formTeacher.password })).status).toBe(200);
+    await expect(seedTestTeachers(h.deps, { subdomain: "fecheck", formTeacherEmail: "owner@fecheck.test", subjectTeacherEmail: "z@x.test" })).rejects.toThrow(/already has a Brillianda account/);
   });
 
   it("adds a parent who follows the Okafor siblings", async () => {
