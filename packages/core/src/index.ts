@@ -12,3 +12,4 @@ export * from "./attendance.js";
 export * from "./grading.js";
 export * from "./results.js";
 export * from "./promotion.js";
+export * from "./birthdays.js";

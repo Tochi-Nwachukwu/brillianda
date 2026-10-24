@@ -41,6 +41,7 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | 11 Reports (C3, C4) | Broadsheet, remarks, ratings, publishing, report cards; parents see published results | ✅ |
 | 12 Closing a term (C5) | Term status, closing with checks, next term dates | ✅ |
 | 13 Promotion (B1) | Yearly averages, pass mark, decisions, completing the session | ✅ |
+| 14 Birthday messages (B2) | Settings, upcoming birthdays, daily texts (Termii, `SMS_PROVIDER=termii`), parent card | ✅ API (texts: console until Termii is set up) |
 | 5 Hardening | Branding and logos ✅, trial requests ✅; speed, security review, production setup | in progress |
 
 ## Email

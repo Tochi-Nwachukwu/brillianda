@@ -4,6 +4,7 @@ import type { Database } from "@brillianda/db";
 import type { BotCheck } from "./lib/bot-check.js";
 import type { Logger } from "./lib/logger.js";
 import type { Mailer } from "./lib/mailer.js";
+import type { Sms } from "./lib/sms.js";
 import type { RateLimiter } from "./lib/rate-limit.js";
 import type { SchoolDirectory } from "./lib/school-directory.js";
 
@@ -25,6 +26,8 @@ export interface AppConfig {
   frontendUrl?: string;
   /** The API's own hostnames, treated as the main site when called directly (not through the frontend). */
   apiHosts?: string[];
+  /** The daily jobs' bearer secret (Vercel Cron). Unset: the job endpoints answer 404. */
+  cronSecret?: string;
   /** Staging: key for reading the email outbox (GET /v1/dev/outbox). Unset: no outbox. Never in production. */
   outboxKey?: string;
 }
@@ -37,6 +40,7 @@ export interface AppDeps {
   schools: SchoolDirectory;
   logger: Logger;
   mailer: Mailer;
+  sms: Sms;
   botCheck: BotCheck;
   config: AppConfig;
 }

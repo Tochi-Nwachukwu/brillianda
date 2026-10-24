@@ -47,6 +47,7 @@ import { RATE_RULES } from "../lib/rate-limit.js";
 import type { ResolvedSchool } from "../lib/school-directory.js";
 import { schoolUrl } from "../lib/urls.js";
 import { schoolRoute, type Role } from "../school-route.js";
+import { birthdayFor, birthdaySettingsOf } from "./birthdays.js";
 import { armOptions } from "./classes.js";
 import { buildReportCard, computeClass, publishedFor, ReportCardSchema, reportTermsOf } from "./reports.js";
 import { resultsTermOf, type ResultsTerm } from "./results.js";
@@ -356,6 +357,7 @@ const ParentHomeSchema = z
           .nullable()
           .openapi({ description: "This term's name, and once the class is published the average, position (when shown) and class size; null before a term opens" }),
         pastTerms: z.array(z.object({ key: z.string(), label: z.string() })).openapi({ description: "Closed terms whose results were published, newest first" }),
+        birthday: z.string().nullable().openapi({ description: "On the child's birthday, when the school sends birthday messages: the school's message; otherwise null" }),
       }),
     ),
   })
@@ -370,7 +372,7 @@ parentRoutes.openapi(
     responses: { 200: ok("Parent home", ParentHomeSchema), ...errors },
   }),
   async (c) => {
-    const data = await schoolRoute(c, { roles: ["parent"] }, async ({ tx, auth }) => {
+    const data = await schoolRoute(c, { roles: ["parent"] }, async ({ tx, auth, school }) => {
       const mine = (await tx.select({ guardianId: parentLinks.guardianId }).from(parentLinks).where(eq(parentLinks.userId, auth.user.id))).map((l) => l.guardianId);
       const kidsByGuardian = mine.length ? await childrenByGuardian(tx, mine) : new Map();
       const seen = new Set<string>();
@@ -405,6 +407,7 @@ parentRoutes.openapi(
       );
       const labels = new Map((await armOptions(tx, { all: true })).map((a) => [a.id, a.label]));
       const open = await resultsTermOf(tx);
+      const birthdays = await birthdaySettingsOf(tx);
       const resultsOf = new Map<string, ChildResults>();
       const pastOf = new Map<string, { key: string; label: string }[]>();
       for (const s of kids) {
@@ -427,6 +430,7 @@ parentRoutes.openapi(
           recent: days.map((date) => ({ date, mark: (marks.get(`${s.id}|${date}`) as "present" | "late" | "absent" | undefined) ?? null })),
           results: resultsOf.get(s.id) ?? null,
           pastTerms: pastOf.get(s.id) ?? [],
+          birthday: birthdayFor(birthdays, school.name, s, today),
         })),
       };
     });

@@ -5,6 +5,7 @@ import type { Env } from "./env.js";
 import { AllowAllBotCheck, TurnstileBotCheck } from "./lib/bot-check.js";
 import { createLogger, type Logger } from "./lib/logger.js";
 import { ConsoleMailer, OutboxMailer, ResendMailer, type Mailer } from "./lib/mailer.js";
+import { ConsoleSms, OutboxSms, TermiiSms, type Sms } from "./lib/sms.js";
 import { MemoryRateLimiter, UpstashRateLimiter } from "./lib/rate-limit.js";
 import { SchoolDirectory } from "./lib/school-directory.js";
 
@@ -19,6 +20,12 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
       : new MemoryRateLimiter();
   const provider: Mailer =
     env.MAIL_PROVIDER === "resend" ? new ResendMailer(env.RESEND_API_KEY!, env.MAIL_FROM, logger) : new ConsoleMailer(logger);
+  const termii =
+    env.SMS_PROVIDER === "termii"
+      ? new TermiiSms({ apiKey: env.TERMII_API_KEY!, senderId: env.TERMII_SENDER_ID!, baseUrl: env.TERMII_BASE_URL!, channel: env.TERMII_CHANNEL }, logger)
+      : null;
+  // Staging keeps every text in the outbox; without Termii, only there.
+  const sms: Sms = env.MAIL_OUTBOX_KEY ? new OutboxSms(db, termii, logger) : (termii ?? new ConsoleSms(logger));
   return {
     db,
     secret: AuthSecret.fromBase64(env.AUTH_SECRET),
@@ -26,6 +33,7 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
     schools: new SchoolDirectory(db),
     logger,
     mailer: env.MAIL_OUTBOX_KEY ? new OutboxMailer(db, provider, logger) : provider,
+    sms,
     botCheck: env.TURNSTILE_SECRET_KEY ? new TurnstileBotCheck(env.TURNSTILE_SECRET_KEY) : new AllowAllBotCheck(),
     config: {
       appEnv: env.APP_ENV,
@@ -47,6 +55,7 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
         .map((h) => h.trim().toLowerCase())
         .filter(Boolean),
       ...(env.MAIL_OUTBOX_KEY ? { outboxKey: env.MAIL_OUTBOX_KEY } : {}),
+      ...(env.CRON_SECRET ? { cronSecret: env.CRON_SECRET } : {}),
     },
   };
 }

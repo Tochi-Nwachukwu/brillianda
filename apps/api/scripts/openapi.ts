@@ -19,6 +19,7 @@ const deps = {
   rateLimiter: new MemoryRateLimiter(),
   logger: silentLogger,
   mailer: { send: async () => {} },
+  sms: { send: async () => ({ ref: null }) },
   botCheck: { verify: async () => true },
   config: { rootDomain: "brillianda.com", protocol: "https", proxySecret: "x".repeat(16), allowSchoolQueryParam: false, secureCookies: true },
 } satisfies AppDeps;

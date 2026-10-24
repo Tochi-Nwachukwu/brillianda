@@ -29,6 +29,7 @@ try {
     schools: new SchoolDirectory(t.db),
     logger: silentLogger,
     mailer: { send: async () => {} },
+    sms: { send: async () => ({ ref: null }) },
     botCheck: { verify: async () => true },
     config: { rootDomain: "brillianda.test", protocol: "https", proxySecret: "x".repeat(16), allowSchoolQueryParam: false, secureCookies: false },
   });

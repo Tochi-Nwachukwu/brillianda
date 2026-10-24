@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, reportRemarks, reportRatings, publishedResults, promotionDecisions, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
+import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, reportRemarks, reportRatings, publishedResults, promotionDecisions, birthdaySettings, birthdayTexts, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -75,6 +75,8 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
     await tx.insert(reportRatings).values({ schoolId, termKey: "2026-1", studentId: student!.id, trait: "Neatness", value: 4 });
     await tx.insert(publishedResults).values({ schoolId, termKey: "2026-1", classArmId: classArm!.id });
     await tx.insert(promotionDecisions).values({ schoolId, startYear: 2026, studentId: student!.id, decision: "repeat", reason: "Fixture" });
+    await tx.insert(birthdaySettings).values({ schoolId, enabled: true, message: "Happy birthday, {name}!" });
+    await tx.insert(birthdayTexts).values({ schoolId, studentId: student!.id, day: "2026-10-15", phone: null, text: "Happy birthday, Ada!", status: "no_phone" });
   });
 
   return { schoolId, ownerId, sessionId };

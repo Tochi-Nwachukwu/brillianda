@@ -85,3 +85,9 @@ export async function consoleSchools(db: Executor): Promise<ConsoleSchoolRow[]> 
     },
   }));
 }
+
+/** Schools that send birthday texts, for the daily job (SECURITY DEFINER, migration 0035). */
+export async function birthdaySchools(db: Executor): Promise<{ schoolId: string; subdomain: string; name: string }[]> {
+  const result = await db.execute<Record<string, unknown>>(sql`select * from app_birthday_schools()`);
+  return result.rows.map((r) => ({ schoolId: r.school_id as string, subdomain: r.subdomain as string, name: r.name as string }));
+}

@@ -38,6 +38,17 @@ const EnvSchema = z.object({
     .transform((v) => v.replace(/\/+$/, ""))
     .optional()
     .or(z.literal("").transform(() => undefined)),
+  /** console = print texts to the terminal / host logs. termii = send for real (needs TERMII_API_KEY, TERMII_SENDER_ID, TERMII_BASE_URL). */
+  SMS_PROVIDER: z.enum(["console", "termii"]).default("console"),
+  TERMII_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
+  /** The approved sender ID (3 to 11 letters or digits), e.g. Brillianda. */
+  TERMII_SENDER_ID: z.string().regex(/^[A-Za-z0-9 ]{3,11}$/, "TERMII_SENDER_ID is 3 to 11 letters or digits").optional().or(z.literal("").transform(() => undefined)),
+  /** Each Termii account has its own base URL, on its dashboard. */
+  TERMII_BASE_URL: z.string().url().optional().or(z.literal("").transform(() => undefined)),
+  /** dnd reaches numbers on Do-Not-Disturb (must be activated on the account); generic doesn't. */
+  TERMII_CHANNEL: z.enum(["dnd", "generic"]).default("dnd"),
+  /** Vercel Cron sends it as "Authorization: Bearer <CRON_SECRET>" to the daily jobs. Unset: no jobs run. */
+  CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters").optional().or(z.literal("").transform(() => undefined)),
   /** Staging: every email is also kept in an outbox readable with this key (GET /v1/dev/outbox). */
   MAIL_OUTBOX_KEY: z.string().min(24, "MAIL_OUTBOX_KEY must be at least 24 characters").optional().or(z.literal("").transform(() => undefined)),
   /** Where trial requests from the marketing site are emailed. Unset: stored only. */
@@ -62,6 +73,9 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   if (env.MAIL_PROVIDER === "resend" && !env.RESEND_API_KEY) {
     throw new Error("MAIL_PROVIDER=resend needs RESEND_API_KEY");
   }
+  if (env.SMS_PROVIDER === "termii" && !(env.TERMII_API_KEY && env.TERMII_SENDER_ID && env.TERMII_BASE_URL)) {
+    throw new Error("SMS_PROVIDER=termii needs TERMII_API_KEY, TERMII_SENDER_ID and TERMII_BASE_URL");
+  }
   if (env.APP_ENV === "production") {
     if (env.MAIL_OUTBOX_KEY) throw new Error("MAIL_OUTBOX_KEY is for staging only: production must never keep a readable copy of emails");
     if (env.FRONTEND_URL) throw new Error("FRONTEND_URL is for staging only: production links use each school's own subdomain");
@@ -74,6 +88,8 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     if (!env.UPSTASH_REDIS_REST_URL) throw new Error("Upstash is required in production (rate limits must be shared)");
     if (!env.TURNSTILE_SECRET_KEY) throw new Error("TURNSTILE_SECRET_KEY is required in production (signup bot check)");
     if (env.MAIL_PROVIDER === "console") throw new Error("A real MAIL_PROVIDER is required in production; console mail reaches nobody");
+    if (env.SMS_PROVIDER === "console") throw new Error("A real SMS_PROVIDER is required in production; console texts reach nobody");
+    if (!env.CRON_SECRET) throw new Error("CRON_SECRET is required in production (the daily birthday texts)");
   }
   if (env.APP_ENV === "staging" && env.PUBLIC_PROTOCOL !== "https") {
     throw new Error("PUBLIC_PROTOCOL must be https on a hosted staging environment");

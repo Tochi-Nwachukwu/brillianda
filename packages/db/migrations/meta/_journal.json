@@ -239,6 +239,20 @@
       "when": 1792860244708,
       "tag": "0033_force_rls_promotion",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792861729925,
+      "tag": "0034_birthdays",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1792861731482,
+      "tag": "0035_birthday_function",
+      "breakpoints": true
     }
   ]
 }

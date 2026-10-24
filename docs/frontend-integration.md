@@ -414,3 +414,16 @@ arm; their class history gets the new class from the first term's start), keeps 
 they are, marks graduates `graduated`, and makes the next session current, confirmed, with the same
 number of terms and names (first term at the chosen dates, the rest suggested; change them on
 the calendar). The yearly average averages each term's average, skipping terms with no results.
+
+**24 October 2026, B2** (birthday messages)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getBirthdays` | `GET /v1/birthdays` → `BirthdaysPage` | owner, admin | Your type. `sent` lists texts sent and those logged with no phone (`to: null`), newest first, up to 20; a text the SMS provider refused isn't listed |
+| `getBirthdaysThisWeek` | `GET /v1/birthdays?days=7` → `BirthdaysThisWeek` | owner, admin | Any `days` from 1 to 31 |
+| `saveBirthdaySettings` | `PUT /v1/birthdays/settings` `{ enabled, message }` → 204 | owner, admin | Your `birthdaySettingsSchema` (422 `#/message`). Off, with your default message, until saved. Turning on or off and changing the message go in the change history |
+| parent home | `GET /v1/me/children` | parent | Each child gains `birthday`: the filled-in message on the child's birthday when the school sends them, else `null` |
+
+The texts go out from a daily job at 06:00 UTC (7:00 am Lagos; Vercel may run it up to an hour
+late), to the primary guardian's phone, once per child per day. On staging every text also lands
+in the outbox (`tag` `sms_birthday`, `to` the number) whether or not an SMS provider is set up.

@@ -993,3 +993,62 @@ export const promotionDecisions = pgTable(
     backupRead(),
   ],
 ).enableRLS();
+
+// ——— Birthday messages (B2) ———
+
+/** Per school: whether birthday texts go out, and the message ({name}, {age}, {school}). No row: off, the default message. */
+export const birthdaySettings = pgTable(
+  "birthday_settings",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    enabled: boolean().notNull().default(false),
+    message: text().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("birthday_settings_school_id_id_key").on(t.schoolId, t.id),
+    unique("birthday_settings_one_per_school_key").on(t.schoolId),
+    check("birthday_settings_message_length", sql`char_length(${t.message}) BETWEEN 10 AND 300`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+    // The daily job finds the schools that send them (app_birthday_schools).
+    platformAccess("select"),
+  ],
+).enableRLS();
+
+/** pending: claimed by the daily job, being sent. no_phone: the guardian has no phone; logged, not sent. */
+export const birthdayTextStatus = pgEnum("birthday_text_status", ["pending", "sent", "no_phone", "failed"]);
+
+/** Each birthday text: one per student per day, which is what stops a second send. */
+export const birthdayTexts = pgTable(
+  "birthday_texts",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    studentId: uuid().notNull(),
+    day: date({ mode: "string" }).notNull(),
+    /** E.164, or null when the guardian has no phone. */
+    phone: text(),
+    text: text().notNull(),
+    status: birthdayTextStatus().notNull(),
+    /** The SMS provider's message id, for support. */
+    providerRef: text(),
+    error: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("birthday_texts_school_id_id_key").on(t.schoolId, t.id),
+    unique("birthday_texts_once_key").on(t.schoolId, t.studentId, t.day),
+    foreignKey({ name: "birthday_texts_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }).onDelete("cascade"),
+    index("birthday_texts_school_created_idx").on(t.schoolId, t.createdAt),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();

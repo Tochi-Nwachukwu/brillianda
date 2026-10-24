@@ -3396,6 +3396,13 @@
                     ]
                   },
                   "description": "Closed terms whose results were published, newest first"
+                },
+                "birthday": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "On the child's birthday, when the school sends birthday messages: the school's message; otherwise null"
                 }
               },
               "required": [
@@ -3407,7 +3414,8 @@
                 "attendance",
                 "recent",
                 "results",
-                "pastTerms"
+                "pastTerms",
+                "birthday"
               ]
             }
           }
@@ -5691,6 +5699,159 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
           }
         }
+      },
+      "BirthdaysPage": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "enabled",
+              "message"
+            ]
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "today": {
+            "type": "string"
+          },
+          "upcoming": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BirthdayRow"
+            },
+            "description": "The next 30 days, today first"
+          },
+          "sent": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "armLabel": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "date",
+                "fullName",
+                "armLabel",
+                "to",
+                "text"
+              ]
+            },
+            "description": "The latest 20 texts, newest first. `to` is null when the guardian has no phone"
+          }
+        },
+        "required": [
+          "settings",
+          "schoolName",
+          "today",
+          "upcoming",
+          "sent"
+        ]
+      },
+      "BirthdayRow": {
+        "type": "object",
+        "properties": {
+          "studentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "on": {
+            "type": "string"
+          },
+          "inDays": {
+            "type": "integer"
+          },
+          "turns": {
+            "type": "integer"
+          },
+          "guardianPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "studentId",
+          "fullName",
+          "armLabel",
+          "on",
+          "inDays",
+          "turns",
+          "guardianPhone"
+        ]
+      },
+      "BirthdaysThisWeek": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BirthdayRow"
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "rows"
+        ]
+      },
+      "BirthdaySettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "enabled",
+          "message"
+        ]
       },
       "ImportSetup": {
         "type": "object",
@@ -13307,6 +13468,138 @@
           },
           "422": {
             "description": "The first term's dates",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/birthdays": {
+      "get": {
+        "tags": [
+          "birthdays"
+        ],
+        "summary": "The birthday page (settings, the next 30 days, texts sent); with ?days=N, on or off and the next N days (Home's card)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 31
+            },
+            "required": false,
+            "name": "days",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Birthdays",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/BirthdaysPage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BirthdaysThisWeek"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/birthdays/settings": {
+      "put": {
+        "tags": [
+          "birthdays"
+        ],
+        "summary": "Turn birthday texts on or off and set the message ({name} required; {age}, {school} optional; up to 300 characters)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BirthdaySettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The message needs fixing",
             "content": {
               "application/problem+json": {
                 "schema": {
