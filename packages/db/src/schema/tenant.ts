@@ -1052,3 +1052,33 @@ export const birthdayTexts = pgTable(
     backupRead(),
   ],
 ).enableRLS();
+
+// ——— Books and things needed (B3) ———
+
+export type BookListItem = { id: string; category: "textbook" | "stationery" | "uniform" | "other"; name: string; detail: string; quantity: number; price: number | null };
+
+/** One class level's list for one session (startYear), shown to its parents once shared. */
+export const bookLists = pgTable(
+  "book_lists",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    classLevelId: uuid().notNull(),
+    startYear: integer().notNull(),
+    items: jsonb().$type<BookListItem[]>().notNull().default(sql`'[]'::jsonb`),
+    shared: boolean().notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("book_lists_school_id_id_key").on(t.schoolId, t.id),
+    unique("book_lists_level_year_key").on(t.schoolId, t.classLevelId, t.startYear),
+    foreignKey({ name: "book_lists_level_fk", columns: [t.schoolId, t.classLevelId], foreignColumns: [classLevels.schoolId, classLevels.id] }).onDelete("cascade"),
+    check("book_lists_at_most_80", sql`jsonb_array_length(${t.items}) <= 80`),
+    check("book_lists_shared_not_empty", sql`NOT ${t.shared} OR jsonb_array_length(${t.items}) > 0`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();

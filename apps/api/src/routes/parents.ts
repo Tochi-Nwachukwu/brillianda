@@ -48,6 +48,7 @@ import type { ResolvedSchool } from "../lib/school-directory.js";
 import { schoolUrl } from "../lib/urls.js";
 import { schoolRoute, type Role } from "../school-route.js";
 import { birthdayFor, birthdaySettingsOf } from "./birthdays.js";
+import { BookListSchema, bookListsFor } from "./booklists.js";
 import { armOptions } from "./classes.js";
 import { buildReportCard, computeClass, publishedFor, ReportCardSchema, reportTermsOf } from "./reports.js";
 import { resultsTermOf, type ResultsTerm } from "./results.js";
@@ -357,6 +358,7 @@ const ParentHomeSchema = z
           .nullable()
           .openapi({ description: "This term's name, and once the class is published the average, position (when shown) and class size; null before a term opens" }),
         pastTerms: z.array(z.object({ key: z.string(), label: z.string() })).openapi({ description: "Closed terms whose results were published, newest first" }),
+        bookLists: z.array(z.object({ label: z.string(), list: BookListSchema })).openapi({ description: "Shared lists: the class level they move into next session (none in the final class), then this session's" }),
         birthday: z.string().nullable().openapi({ description: "On the child's birthday, when the school sends birthday messages: the school's message; otherwise null" }),
       }),
     ),
@@ -405,12 +407,16 @@ parentRoutes.openapi(
             ).map((f) => [f.armId, f.name])
           : [],
       );
-      const labels = new Map((await armOptions(tx, { all: true })).map((a) => [a.id, a.label]));
+      const allArms = await armOptions(tx, { all: true });
+      const labels = new Map(allArms.map((a) => [a.id, a.label]));
+      const levelOf = new Map(allArms.map((a) => [a.id, a.levelId]));
       const open = await resultsTermOf(tx);
       const birthdays = await birthdaySettingsOf(tx);
       const resultsOf = new Map<string, ChildResults>();
       const pastOf = new Map<string, { key: string; label: string }[]>();
+      const listsOf = new Map<string, Awaited<ReturnType<typeof bookListsFor>>>();
       for (const s of kids) {
+        listsOf.set(s.id, await bookListsFor(tx, levelOf.get(s.classArmId) ?? null));
         resultsOf.set(s.id, open ? await childResults(tx, s.id, s.classArmId, open) : null);
         pastOf.set(
           s.id,
@@ -430,6 +436,7 @@ parentRoutes.openapi(
           recent: days.map((date) => ({ date, mark: (marks.get(`${s.id}|${date}`) as "present" | "late" | "absent" | undefined) ?? null })),
           results: resultsOf.get(s.id) ?? null,
           pastTerms: pastOf.get(s.id) ?? [],
+          bookLists: listsOf.get(s.id) ?? [],
           birthday: birthdayFor(birthdays, school.name, s, today),
         })),
       };

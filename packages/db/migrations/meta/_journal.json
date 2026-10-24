@@ -253,6 +253,20 @@
       "when": 1792861731482,
       "tag": "0035_birthday_function",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792862534617,
+      "tag": "0036_book_lists",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792862536116,
+      "tag": "0037_force_rls_book_lists",
+      "breakpoints": true
     }
   ]
 }

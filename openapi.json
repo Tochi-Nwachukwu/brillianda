@@ -3397,6 +3397,25 @@
                   },
                   "description": "Closed terms whose results were published, newest first"
                 },
+                "bookLists": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": {
+                        "type": "string"
+                      },
+                      "list": {
+                        "$ref": "#/components/schemas/BookList"
+                      }
+                    },
+                    "required": [
+                      "label",
+                      "list"
+                    ]
+                  },
+                  "description": "Shared lists: the class level they move into next session (none in the final class), then this session's"
+                },
                 "birthday": {
                   "type": [
                     "string",
@@ -3415,6 +3434,7 @@
                 "recent",
                 "results",
                 "pastTerms",
+                "bookLists",
                 "birthday"
               ]
             }
@@ -3456,6 +3476,98 @@
           "absent"
         ],
         "description": "This term's register marks (late counts as present); null outside a term"
+      },
+      "BookList": {
+        "type": "object",
+        "properties": {
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelName": {
+            "type": "string"
+          },
+          "startYear": {
+            "type": "integer"
+          },
+          "session": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "textbook",
+                    "stationery",
+                    "uniform",
+                    "other"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "price": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "category",
+                "name",
+                "detail",
+                "quantity",
+                "price"
+              ]
+            }
+          },
+          "shared": {
+            "type": "boolean"
+          },
+          "updated": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "by": {
+                "type": "string"
+              },
+              "at": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "by",
+              "at"
+            ],
+            "description": "Who changed it last and when (ms); null until saved"
+          }
+        },
+        "required": [
+          "levelId",
+          "levelName",
+          "startYear",
+          "session",
+          "items",
+          "shared",
+          "updated"
+        ]
       },
       "ReportCardData": {
         "type": "object",
@@ -5851,6 +5963,131 @@
         "required": [
           "enabled",
           "message"
+        ]
+      },
+      "BookListsPage": {
+        "type": "object",
+        "properties": {
+          "startYear": {
+            "type": "integer"
+          },
+          "session": {
+            "type": "string"
+          },
+          "sessions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "startYear": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "startYear",
+                "name",
+                "label"
+              ]
+            },
+            "description": "Next session first, then this one"
+          },
+          "lists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookList"
+            },
+            "description": "Every class level, in the school's order"
+          }
+        },
+        "required": [
+          "startYear",
+          "session",
+          "sessions",
+          "lists"
+        ]
+      },
+      "SaveBookList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 64,
+                  "description": "Kept when given; new items get one"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "textbook",
+                    "stationery",
+                    "uniform",
+                    "other"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 120
+                },
+                "detail": {
+                  "type": "string",
+                  "maxLength": 160,
+                  "default": ""
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 99
+                },
+                "price": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "minimum": 0,
+                      "maximum": 10000000
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "category",
+                "name",
+                "quantity",
+                "price"
+              ]
+            },
+            "maxItems": 80
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "ShareBookList": {
+        "type": "object",
+        "properties": {
+          "shared": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "shared"
         ]
       },
       "ImportSetup": {
@@ -13600,6 +13837,251 @@
           },
           "422": {
             "description": "The message needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/book-lists": {
+      "get": {
+        "tags": [
+          "book lists"
+        ],
+        "summary": "Every class level's book list for a session: this one or the next (the default)",
+        "parameters": [
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "The session's start year"
+            },
+            "required": false,
+            "description": "The session's start year",
+            "name": "session",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book lists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookListsPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such class level",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/book-lists/{session}/{levelId}": {
+      "put": {
+        "tags": [
+          "book lists"
+        ],
+        "summary": "Replace a class level's list for a session (up to 80 items). Sharing stays as it was; emptying a shared list stops sharing it",
+        "parameters": [
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "required": false,
+            "name": "session",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "levelId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveBookList"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such class level",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not this session or the next",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "An item needs fixing; errors[] points at it, e.g. #/items/2/name",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/book-lists/{session}/{levelId}/shared": {
+      "put": {
+        "tags": [
+          "book lists"
+        ],
+        "summary": "Share a class level's list with its parents, or stop sharing it",
+        "parameters": [
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "required": false,
+            "name": "session",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "levelId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareBookList"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such class level",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "An empty list, or not this session or the next",
             "content": {
               "application/problem+json": {
                 "schema": {

@@ -427,3 +427,12 @@ the calendar). The yearly average averages each term's average, skipping terms w
 The texts go out from a daily job at 06:00 UTC (7:00 am Lagos; Vercel may run it up to an hour
 late), to the primary guardian's phone, once per child per day. On staging every text also lands
 in the outbox (`tag` `sms_birthday`, `to` the number) whether or not an SMS provider is set up.
+
+**24 October 2026, B3** (books and things needed)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getBookLists` | `GET /v1/book-lists?session=2027` → `BookListsPage` | owner, admin | `session` is the start year: this session or the next (the default; any other year shows the next). Every class level in the school's order |
+| `saveBookList` | `PUT /v1/book-lists/{session}/{levelId}` `{ items }` → 204 | owner, admin | Your `bookListSchema` (422 `#/items/2/name` and so on). Replaces the list; items keep the `id` you send, new ones get one. Emptying a shared list stops sharing it. 409 "Lists are for this session or the next."; 404 for a level that isn't here |
+| `setBookListShared` | `PUT /v1/book-lists/{session}/{levelId}/shared` `{ shared }` → 204 | owner, admin | 409 "Add something to the list before sharing it." Sharing and stopping go in the change history (so do saves) |
+| parent home | `GET /v1/me/children` | parent | Each child gains `bookLists: [{ label, list }]`: "For next session: JSS 2, 2027/2028" (none in the final class), then "This session: JSS 1, 2026/2027", shared lists only |
