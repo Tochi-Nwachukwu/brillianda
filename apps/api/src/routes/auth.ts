@@ -31,7 +31,7 @@ import { emails } from "../emails.js";
 import { ApiError, problemContent } from "../lib/errors.js";
 import { RATE_RULES } from "../lib/rate-limit.js";
 import type { ResolvedSchool } from "../lib/school-directory.js";
-import { schoolUrl } from "../lib/urls.js";
+import { apexUrl, schoolUrl } from "../lib/urls.js";
 import { ANY_MEMBER, enforceRateLimit, requireSchool, schoolRoute } from "../school-route.js";
 
 export const authRoutes = new OpenAPIHono<AppEnv>();
@@ -294,7 +294,7 @@ authRoutes.openapi(
     method: "post",
     path: "/v1/auth/find-school",
     tags: ["auth"],
-    summary: "Email links to every school this address can sign in to (main site only)",
+    summary: "Email links to every school this address can sign in to, or say there are none (main site only)",
     request: { body: json(z.object({ email: EmailSchema }).openapi("EmailRequest")) },
     responses: { 202: accepted, 404: problemContent("Only on the main site"), 429: problemContent("Too many requests") },
   }),
@@ -306,9 +306,9 @@ authRoutes.openapi(
     const { db, mailer, config } = c.get("deps");
     inBackground(c, "find my school", async () => {
       const user = await userIdByEmail(c, email);
-      if (!user) return;
-      const list = await listUserSchools(db, user.id);
-      if (!list.length) return;
+      const list = user ? await listUserSchools(db, user.id) : [];
+      // The answer above is the same either way; only the address's owner learns there's no school.
+      if (!list.length) return void (await mailer.send(emails.noSchoolFound(email, apexUrl(config, "/signup"))));
       await mailer.send(emails.findMySchool(email, list.map((s) => ({ name: s.name, url: schoolUrl(config, s.subdomain) }))));
     });
     return c.json({ accepted: true as const }, 202);

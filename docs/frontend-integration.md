@@ -393,3 +393,24 @@ After closing, results move to the next term once it starts (fresh sheets for th
 subjects and teachers); before then `GET /v1/results` shows `term: null` and `next`. The closed
 term's scores can't change, its open unlock requests are declined, and it appears in
 `report-terms`, report cards (`?term=`) and parents' `pastTerms` when published.
+
+**24 October 2026, A2** (Find my school, no school)
+
+`POST /v1/auth/find-school` still answers 202 either way. When the address has no school, it now
+gets an email "There's no school on Brillianda for this email", asking them to check which email
+their school uses, with a link to `/signup` on the main site.
+
+**24 October 2026, B1** (promotion)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getPromotionPlan` | `GET /v1/promotion` → `PromotionPlan` | owner, admin | Your type exactly. Classes with active students, in the school's order. `open` only in the session's last term; `unpublished` only then. `firstTerm` is the next session's suggested first term |
+| `setPassMark` | `PUT /v1/promotion/pass-mark` `{ passMark }` → 204 | owner, admin | 0 to 100 (422 `#/passMark`). Until set, the scale's lowest pass (40). Goes in the change history |
+| `setDecision` | `PUT /v1/promotion/students/{id}` `{ decision, reason }` → 204 | owner, admin | `reason` up to 200 characters, or null. Choosing the suggestion clears the change and its reason. 404 for a student not in a class this session |
+| `completePromotion` | `POST /v1/promotion/complete` `{ closeUnpublished, startsOn?, endsOn? }` → `{ promoted, repeating, graduated, session }` | owner, admin | 409 "Promotion opens in the session’s last term." or "N classes aren’t published yet: …. Publish them, or complete anyway." 422 `#/startsOn` (after the last term started) / `#/endsOn` (after it starts, before the next session's second term). Dates default to `firstTerm` |
+
+Completing closes the last term, moves students up (same arm name, else the next level's first
+arm; their class history gets the new class from the first term's start), keeps repeaters where
+they are, marks graduates `graduated`, and makes the next session current, confirmed, with the same
+number of terms and names (first term at the chosen dates, the rest suggested; change them on
+the calendar). The yearly average averages each term's average, skipping terms with no results.

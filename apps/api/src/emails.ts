@@ -48,6 +48,13 @@ export const emails = {
       ...schools.map((s) => `${s.name}: ${s.url}`),
     ]),
 
+  noSchoolFound: (to: string, signupUrl: string) =>
+    message(to, "find_school_none", "There's no school on Brillianda for this email", "No school for this email", [
+      `Someone asked which Brillianda schools ${to} can sign in to. There aren't any yet.`,
+      "If your school uses Brillianda, check with them which email they added you with, and try that one.",
+      "If you run a school and want to start using Brillianda, you can set yours up now.",
+    ], { label: "Set up a school", url: signupUrl }),
+
   passwordReset: (to: string, schoolName: string, url: string) =>
     message(to, "password_reset", `Reset your password for ${schoolName}`, "Reset your password", [
       `Someone asked to reset the password for ${to} at ${schoolName}. The link works once, for 30 minutes.`,

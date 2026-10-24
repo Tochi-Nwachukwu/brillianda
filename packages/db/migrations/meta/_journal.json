@@ -225,6 +225,20 @@
       "when": 1792593991173,
       "tag": "0031_term_closure_names",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792860242790,
+      "tag": "0032_promotion",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1792860244708,
+      "tag": "0033_force_rls_promotion",
+      "breakpoints": true
     }
   ]
 }

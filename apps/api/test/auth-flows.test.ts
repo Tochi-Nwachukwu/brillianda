@@ -140,6 +140,9 @@ describe("find my school", () => {
     expect(mail.text).toContain("https://cedar.brillianda.test/");
 
     expect((await apex.post("/v1/auth/find-school", { email: "ghost@x.test" })).status).toBe(202);
+    const none = await waitForMail(h, "ghost@x.test", "find_school_none");
+    expect(none.subject).toBe("There's no school on Brillianda for this email");
+    expect(none.text).toContain("https://brillianda.test/signup");
     expect((await browser(h, schoolHost("oak")).post("/v1/auth/find-school", { email: OWNER })).status).toBe(404);
   });
 });

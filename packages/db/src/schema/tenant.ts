@@ -738,6 +738,8 @@ export const resultsSettings = pgTable(
     /** Behaviour ratings on report cards (C3): off until the school turns them on. */
     ratingsEnabled: boolean().notNull().default(false),
     ratingTraits: text().array().notNull().default(sql`'{}'::text[]`),
+    /** Promotion's pass mark (B1); null means the scale's lowest passing grade. */
+    passMark: numeric({ precision: 5, scale: 2, mode: "number" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
     createdBy: uuid(),
@@ -958,6 +960,35 @@ export const publishedResults = pgTable(
     unique("published_results_school_id_id_key").on(t.schoolId, t.id),
     unique("published_results_class_key").on(t.schoolId, t.termKey, t.classArmId),
     foreignKey({ name: "published_results_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+// ——— Promotion (B1) ———
+
+export const promotionDecision = pgEnum("promotion_decision", ["promote", "repeat", "graduate"]);
+
+/** A school's change to a student's suggested decision for the session that starts in startYear. No row: the suggestion. */
+export const promotionDecisions = pgTable(
+  "promotion_decisions",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    startYear: integer().notNull(),
+    studentId: uuid().notNull(),
+    decision: promotionDecision().notNull(),
+    reason: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("promotion_decisions_school_id_id_key").on(t.schoolId, t.id),
+    unique("promotion_decisions_student_key").on(t.schoolId, t.startYear, t.studentId),
+    foreignKey({ name: "promotion_decisions_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }).onDelete("cascade"),
+    check("promotion_decisions_reason_length", sql`char_length(${t.reason}) <= 200`),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],
