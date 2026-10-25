@@ -4,3 +4,7 @@ packages:
 
 onlyBuiltDependencies:
   - esbuild
+
+# Security fix (GHSA-mrhx-c7xc-m3w5): @vercel/cli-config pins zod 4.1.11; lift every copy to a patched one.
+overrides:
+  zod: ^4.6.6

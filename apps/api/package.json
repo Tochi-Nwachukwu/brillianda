@@ -30,7 +30,7 @@
     "@vercel/functions": "^3.9.11",
     "hono": "^4.10.6",
     "pg": "^8.16.3",
-    "zod": "^4.1.12"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "tsup": "^8.5.1",
