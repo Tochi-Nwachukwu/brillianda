@@ -446,3 +446,18 @@ in the outbox (`tag` `sms_birthday`, `to` the number) whether or not an SMS prov
 | `countOpenCorrections` | `GET /v1/corrections/count` → `{ open }` | owner, admin | |
 | `resolveCorrection` | `POST /v1/corrections/{id}/resolve` `{ approve, reason? }` → 204 | owner, admin | Declining needs `reason` 3 to 200 characters (422 `#/reason`). 409 "This request has already been answered." Approving changes the student (and, for phone and email, the guardian record the parent asked through) in one go; it goes in the change history with the student |
 | parent home | `GET /v1/me/children` | parent | Each child gains `details` (`ChildDetails`; `guardian` is the parent's own family record, `dateOfBirth` "" when unknown) and `corrections` (the latest five, newest first) |
+
+**25 October 2026, B5** (timetable)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getTimetable` | `GET /v1/timetable` → `TimetablePage` | owner, admin, teacher | `periods` is `[]` until a bell schedule is saved. `me.canEdit` is false for teachers. `file.url` is `/api/v1/timetable/document?v=…` |
+| `saveBellSchedule` | `PUT /v1/timetable/periods` `{ periods }` → `{ removed }` | owner, admin | Your `periodsSchema` (422 `#/periods/1/start` "Starts after Period 1 ends", `#/periods/0/end` "Ends after it starts"); each period's `id` must be unique. Lessons in a removed period, or one made a break, are dropped and counted |
+| `setLesson` | `PUT /v1/timetable/{armId}/{day}/{periodId}` `{ subjectId \| null }` → 204 | owner, admin | `day` 1 (Monday) to 5. null makes it free. 409 "No lessons in a break."; 404 for a class, period or subject that isn't here |
+| `importTimetable` | `PUT /v1/timetable/classes` `{ fileName, classes: [{ armId, lessons }] }` → `{ classes, lessons }` | owner, admin | Replaces those classes' weeks. 422 `#/classes/0/lessons/2` for two lessons in one slot |
+| `uploadTimetableFile` / `removeTimetableFile` | `PUT` (multipart, field `file`) / `DELETE /v1/timetable/document` → 204 | owner, admin | A PDF (checked by its bytes) up to 2 MB: 422 "Upload a PDF.", 413 over 2 MB |
+| the document | `GET /v1/timetable/document` | owner, admin, teacher | `application/pdf`, inline, with its file name |
+| `getMyLessonsToday` | `GET /v1/me/lessons?day=` → `[{ period, armLabel, subjectName }]` | staff | `day` defaults to today in Lagos (`[]` at weekends). The lessons whose subject and class they teach, in period order |
+
+Clashes (a teacher in two classes at once) are listed, never refused. A lesson's teacher comes
+from `PUT /v1/teachers/{id}/subject-classes`, so changing who teaches a class changes the timetable too.

@@ -1124,3 +1124,61 @@ export const correctionRequests = pgTable(
     backupRead(),
   ],
 ).enableRLS();
+
+// ——— Timetable (B5) ———
+
+export type TimetablePeriod = { id: string; label: string; start: string; end: string; kind: "lesson" | "break" };
+
+/** The school's bell schedule (the same for every class, Monday to Friday) and its uploaded document. */
+export const timetables = pgTable(
+  "timetables",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    periods: jsonb().$type<TimetablePeriod[]>().notNull().default(sql`'[]'::jsonb`),
+    /** The uploaded timetable document (a PDF up to 2 MB); null when there is none. */
+    fileName: text(),
+    fileBytes: bytea(),
+    fileSha256: text(),
+    fileBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    fileAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("timetables_school_id_id_key").on(t.schoolId, t.id),
+    unique("timetables_one_per_school_key").on(t.schoolId),
+    check("timetables_file_size", sql`${t.fileBytes} IS NULL OR octet_length(${t.fileBytes}) <= 2097152`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** A class's subject in one lesson period on one day (1 Monday to 5 Friday). Its teacher is the class's teacher for that subject. */
+export const timetableLessons = pgTable(
+  "timetable_lessons",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    classArmId: uuid().notNull(),
+    day: smallint().notNull(),
+    periodId: text().notNull(),
+    schoolSubjectId: uuid().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("timetable_lessons_school_id_id_key").on(t.schoolId, t.id),
+    unique("timetable_lessons_slot_key").on(t.schoolId, t.classArmId, t.day, t.periodId),
+    foreignKey({ name: "timetable_lessons_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }).onDelete("cascade"),
+    foreignKey({ name: "timetable_lessons_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
+    index("timetable_lessons_school_subject_idx").on(t.schoolId, t.schoolSubjectId),
+    check("timetable_lessons_day", sql`${t.day} BETWEEN 1 AND 5`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();

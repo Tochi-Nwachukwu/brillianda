@@ -15,3 +15,4 @@ export * from "./promotion.js";
 export * from "./birthdays.js";
 export * from "./booklists.js";
 export * from "./corrections.js";
+export * from "./timetable.js";

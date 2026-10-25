@@ -6370,6 +6370,357 @@
           "approve"
         ]
       },
+      "TimetablePage": {
+        "type": "object",
+        "properties": {
+          "periods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Period"
+            }
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "levelId": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "levelId"
+              ]
+            }
+          },
+          "subjects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "levelIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "code",
+                "levelIds"
+              ]
+            },
+            "description": "The school's subjects, and which class levels take each"
+          },
+          "lessons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "day": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "periodId": {
+                  "type": "string"
+                },
+                "subjectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "teacherId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "teacherName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "armId",
+                "day",
+                "periodId",
+                "subjectId",
+                "teacherId",
+                "teacherName"
+              ]
+            }
+          },
+          "clashes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "teacherName": {
+                  "type": "string"
+                },
+                "day": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "periodId": {
+                  "type": "string"
+                },
+                "armLabels": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "teacherName",
+                "day",
+                "periodId",
+                "armLabels"
+              ]
+            },
+            "description": "A teacher in two classes at once"
+          },
+          "file": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "size": {
+                "type": "integer"
+              },
+              "url": {
+                "type": "string"
+              },
+              "by": {
+                "type": "string"
+              },
+              "at": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "name",
+              "size",
+              "url",
+              "by",
+              "at"
+            ]
+          },
+          "me": {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "canEdit": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "userId",
+              "canEdit"
+            ]
+          }
+        },
+        "required": [
+          "periods",
+          "arms",
+          "subjects",
+          "lessons",
+          "clashes",
+          "file",
+          "me"
+        ]
+      },
+      "Period": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "lesson",
+              "break"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "start",
+          "end",
+          "kind"
+        ]
+      },
+      "BellSchedule": {
+        "type": "object",
+        "properties": {
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 30
+                },
+                "start": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                },
+                "end": {
+                  "type": "string",
+                  "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "lesson",
+                    "break"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "start",
+                "end",
+                "kind"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 16
+          }
+        },
+        "required": [
+          "periods"
+        ]
+      },
+      "SetLesson": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "subjectId"
+        ]
+      },
+      "TimetableImport": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "lessons": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "day": {
+                        "type": "integer"
+                      },
+                      "periodId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "subjectId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "required": [
+                      "day",
+                      "periodId",
+                      "subjectId"
+                    ]
+                  },
+                  "maxItems": 100
+                }
+              },
+              "required": [
+                "armId",
+                "lessons"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 200
+          }
+        },
+        "required": [
+          "fileName",
+          "classes"
+        ]
+      },
       "ImportSetup": {
         "type": "object",
         "properties": {
@@ -14644,6 +14995,576 @@
           },
           "422": {
             "description": "A reason is needed to decline (#/reason)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/timetable": {
+      "get": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "The whole timetable for staff: periods, classes, subjects, lessons with their teacher, clashes, the document",
+        "responses": {
+          "200": {
+            "description": "Timetable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimetablePage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/timetable/periods": {
+      "put": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "Save the bell schedule (up to 16 periods, in order, no overlaps). Lessons in a removed period, or one made a break, are dropped",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BellSchedule"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "removed"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A period needs fixing, e.g. #/periods/2/start",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/timetable/{armId}/{day}/{periodId}": {
+      "put": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "One class's lesson in one period; a null subject makes it free",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "armId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "required": true,
+            "name": "day",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "required": true,
+            "name": "periodId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetLesson"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such class, period or subject",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A break",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/timetable/classes": {
+      "put": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "Replace whole classes' weeks, read from an uploaded file in the browser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimetableImport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Imported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "classes": {
+                      "type": "integer"
+                    },
+                    "lessons": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "classes",
+                    "lessons"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A class or subject that isn't here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A lesson in a break",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A lesson needs fixing, e.g. #/classes/0/lessons/3/periodId",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/timetable/document": {
+      "put": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "Upload the timetable document: multipart/form-data, one file named `file`, a PDF up to 2 MB",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Over 2 MB",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Not a PDF",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "Remove the timetable document",
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "The timetable document (a PDF), for staff",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": false,
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No document",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/lessons": {
+      "get": {
+        "tags": [
+          "timetable"
+        ],
+        "summary": "The signed-in teacher's lessons on a day (default today; none at weekends), in period order",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "required": false,
+            "name": "day",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lessons",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "period": {
+                        "$ref": "#/components/schemas/Period"
+                      },
+                      "armLabel": {
+                        "type": "string"
+                      },
+                      "subjectName": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "period",
+                      "armLabel",
+                      "subjectName"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
             "content": {
               "application/problem+json": {
                 "schema": {

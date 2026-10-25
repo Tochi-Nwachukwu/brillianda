@@ -25,7 +25,7 @@ const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * Upload routes (multipart) will opt out when they exist.
  */
 /** The only route that takes a file: the school's logo, as multipart/form-data. */
-const MULTIPART_PATHS = new Set(["/v1/school/logo"]);
+const MULTIPART_PATHS = new Set(["/v1/school/logo", "/v1/timetable/document"]);
 
 export const requireJsonBody = () =>
   createMiddleware<AppEnv>(async (c, next) => {

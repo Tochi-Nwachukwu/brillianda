@@ -30,6 +30,7 @@ import { reportRoutes } from "./routes/reports.js";
 import { birthdayRoutes } from "./routes/birthdays.js";
 import { bookListRoutes } from "./routes/booklists.js";
 import { correctionRoutes } from "./routes/corrections.js";
+import { timetableRoutes } from "./routes/timetable.js";
 import { promotionRoutes } from "./routes/promotion.js";
 import { termRoutes } from "./routes/terms.js";
 import { devRoutes } from "./routes/dev.js";
@@ -127,8 +128,15 @@ export function createApp(deps: AppDeps) {
       throw new ApiError("payload_too_large", "A logo can be at most 300 KB.");
     },
   });
+  const documentBody = bodyLimit({
+    maxSize: 2_200_000,
+    onError: () => {
+      throw new ApiError("payload_too_large", "This PDF is over 2 MB. Save a smaller copy and try again.");
+    },
+  });
   app.use("/v1/*", (c, next) => {
     if (c.req.path === "/v1/imports" || c.req.path === "/v1/imports/check") return bigBody(c, next);
+    if (c.req.path === "/v1/timetable/document") return documentBody(c, next);
     if (c.req.path === "/v1/school/logo") return logoBody(c, next);
     return smallBody(c, next);
   });
@@ -159,6 +167,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", birthdayRoutes);
   app.route("/", bookListRoutes);
   app.route("/", correctionRoutes);
+  app.route("/", timetableRoutes);
   app.route("/", importRoutes);
   app.route("/", brandingRoutes);
   app.route("/", trialRoutes);

@@ -281,6 +281,20 @@
       "when": 1792926463636,
       "tag": "0039_force_rls_corrections",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792927272535,
+      "tag": "0040_timetable",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792927274226,
+      "tag": "0041_force_rls_timetable",
+      "breakpoints": true
     }
   ]
 }

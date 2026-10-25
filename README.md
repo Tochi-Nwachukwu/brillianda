@@ -44,6 +44,7 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | 14 Birthday messages (B2) | Settings, upcoming birthdays, daily texts (Termii, `SMS_PROVIDER=termii`), parent card | ✅ API (texts: console until Termii is set up) |
 | 15 Book lists (B3) | A list per class level and session, sharing, parents see theirs | ✅ |
 | 16 Corrections (B4) | Parents see their child's details and ask for fixes; admins approve or decline | ✅ |
+| 17 Timetable (B5) | Bell schedule, lessons, clashes, uploads, the PDF, a teacher's day | ✅ |
 | 5 Hardening | Branding and logos ✅, trial requests ✅; speed, security review, production setup | in progress |
 
 ## Email
