@@ -69,7 +69,14 @@ const errors = {
 } as const;
 
 const AccessEnum = z.enum(["none", "invited", "active"]);
-const AttendanceSchema = z
+export const ChildResultsSchema = z
+  .union([
+    z.object({ term: z.string(), published: z.literal(false) }),
+    z.object({ term: z.string(), published: z.literal(true), average: z.number().nullable(), position: z.number().int().nullable(), of: z.number().int() }),
+  ])
+  .nullable()
+  .openapi({ description: "This term's name, and once the class is published the average, position (when shown) and class size; null before a term opens" });
+export const AttendanceSchema = z
   .object({ term: z.string(), days: z.number().int(), present: z.number().int(), late: z.number().int(), absent: z.number().int() })
   .nullable()
   .openapi("AttendanceSummary", { description: "This term's register marks (late counts as present); null outside a term" });
@@ -108,6 +115,9 @@ async function inviteGuardian(tx: Tx, c: Context<AppEnv>, school: ResolvedSchool
     .innerJoin(users, eq(users.id, schoolMembers.userId))
     .where(eq(users.email, g.email))
     .limit(1);
+  if (member && member.role === "student") {
+    throw new ApiError("conflict", `${g.email} is a student’s account here. Use another email for the parent app.`);
+  }
   if (member && member.role !== "parent") {
     throw new ApiError("conflict", `${g.email} belongs to someone on the staff here. Staff can’t use the parent app with the same email yet.`);
   }
@@ -320,10 +330,10 @@ parentRoutes.openapi(
 
 // ——— What parents see ———
 
-type ChildResults = { term: string; published: false } | { term: string; published: true; average: number | null; position: number | null; of: number } | null;
+export type ChildResults = { term: string; published: false } | { term: string; published: true; average: number | null; position: number | null; of: number } | null;
 
 /** This term's results for a parent: nothing but the term's name until the class is published. */
-async function childResults(tx: Tx, studentId: string, armId: string, term: ResultsTerm): Promise<ChildResults> {
+export async function childResults(tx: Tx, studentId: string, armId: string, term: ResultsTerm): Promise<ChildResults> {
   const label = `${term.name}, ${term.session}`;
   if (!(await publishedFor(tx, term.key, armId))) return { term: label, published: false };
   const { settings, pupils, results } = await computeClass(tx, term.key, armId, term.key);
@@ -351,13 +361,7 @@ const ParentHomeSchema = z
         formTeacher: z.string().nullable(),
         attendance: AttendanceSchema,
         recent: z.array(z.object({ date: z.string(), mark: z.enum(["present", "late", "absent"]).nullable() })).openapi({ description: "The latest ten school days this term, newest first (no notes)" }),
-        results: z
-          .union([
-            z.object({ term: z.string(), published: z.literal(false) }),
-            z.object({ term: z.string(), published: z.literal(true), average: z.number().nullable(), position: z.number().int().nullable(), of: z.number().int() }),
-          ])
-          .nullable()
-          .openapi({ description: "This term's name, and once the class is published the average, position (when shown) and class size; null before a term opens" }),
+        results: ChildResultsSchema,
         pastTerms: z.array(z.object({ key: z.string(), label: z.string() })).openapi({ description: "Closed terms whose results were published, newest first" }),
         details: ChildDetailsSchema.nullable(),
         corrections: z.array(CorrectionRowSchema).openapi({ description: "This child's latest five correction requests, newest first" }),

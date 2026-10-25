@@ -9,12 +9,12 @@ export interface UserSchool {
   schoolId: string;
   name: string;
   subdomain: string;
-  role: "owner" | "admin" | "teacher" | "parent";
+  role: "owner" | "admin" | "teacher" | "parent" | "student";
 }
 
 /** For the login school picker and the Find my school email: names and subdomains only. */
 export async function listUserSchools(db: Executor, userId: string): Promise<UserSchool[]> {
-  const result = await db.execute<{ school_id: string; name: string; subdomain: string; role: "owner" | "admin" | "teacher" | "parent" }>(
+  const result = await db.execute<{ school_id: string; name: string; subdomain: string; role: "owner" | "admin" | "teacher" | "parent" | "student" }>(
     sql`select school_id, name, subdomain, role from app_user_schools(${userId}::uuid)`,
   );
   return result.rows.map((r) => ({ schoolId: r.school_id, name: r.name, subdomain: r.subdomain, role: r.role }));

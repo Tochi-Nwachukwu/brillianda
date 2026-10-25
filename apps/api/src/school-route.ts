@@ -21,7 +21,7 @@ import { errors } from "./lib/errors.js";
 import { RATE_RULES, type RateRule } from "./lib/rate-limit.js";
 import type { ResolvedSchool } from "./lib/school-directory.js";
 
-export const ROLES = ["owner", "admin", "teacher", "parent"] as const;
+export const ROLES = ["owner", "admin", "teacher", "parent", "student"] as const;
 export type Role = (typeof ROLES)[number];
 /** Anyone with access to the school: for "who am I" style reads. */
 export const ANY_MEMBER: readonly Role[] = ROLES;

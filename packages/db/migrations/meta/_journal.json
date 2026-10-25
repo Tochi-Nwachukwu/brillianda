@@ -295,6 +295,20 @@
       "when": 1792927274226,
       "tag": "0041_force_rls_timetable",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1792928690204,
+      "tag": "0042_student_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792928692162,
+      "tag": "0043_force_rls_student_links",
+      "breakpoints": true
     }
   ]
 }

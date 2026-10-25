@@ -461,3 +461,18 @@ in the outbox (`tag` `sms_birthday`, `to` the number) whether or not an SMS prov
 
 Clashes (a teacher in two classes at once) are listed, never refused. A lesson's teacher comes
 from `PUT /v1/teachers/{id}/subject-classes`, so changing who teaches a class changes the timetable too.
+
+**25 October 2026, B6** (student accounts and the student portal)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getStudentAccounts` | `GET /v1/student-accounts` → `StudentAccountsPage` | owner, admin | Active students in class order |
+| `inviteStudent` | `POST /v1/students/{id}/invite` `{ email }` → 201 `{ access, email, resent }` | owner, admin | Sends the invite email (role `student`); inviting again replaces the open one. 422 `#/email` "Someone at this school already uses this email"; 409 "Ada already uses the student portal." or the email has another open invitation |
+| `removeStudentAccess` | `DELETE /v1/students/{id}/access` → 204 | owner, admin | Ends access (their sessions end) or cancels the invite; the record stays |
+| `getStudentHome` | `GET /v1/me/student` → `StudentHome` | student | `results` like the parent home's |
+| `getStudentTimetable` | `GET /v1/me/timetable` → `ClassTimetable` | student | |
+| `getStudentReportCard` | `GET /v1/me/report-card?term=` → `ReportCardData` | student | Published terms only; anything else 404 |
+
+Accepting works as for staff: `GET /v1/invitations/lookup` gives `role: "student"` and the
+student's name, then `POST /v1/invitations/accept`. `membership.role` (on `/v1/me` and sign-in) can
+now be `"student"`: send them to `/learn`. Every other endpoint answers 403 to a student.

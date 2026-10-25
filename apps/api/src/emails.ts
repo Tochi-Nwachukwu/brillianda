@@ -76,7 +76,9 @@ export const emails = {
   invitation: (to: string, schoolName: string, inviterName: string, role: string, url: string, inviteeName?: string | null) =>
     message(to, "invitation", `${inviterName} invited you to ${schoolName}`, `Join ${schoolName} on Brillianda`, [
       ...(inviteeName ? [`Hello ${inviteeName.split(/\s+/)[0]},`] : []),
-      role === "parent"
+      role === "student"
+        ? `${schoolName} invited you to its student portal on Brillianda, to see your timetable, attendance and results.`
+        : role === "parent"
         ? `${schoolName} invited you to its parent app on Brillianda, to follow your children’s attendance and, later, their results.`
         : role === "teacher"
           ? `${inviterName} invited you to join ${schoolName} on Brillianda as a teacher, to take your class registers.`

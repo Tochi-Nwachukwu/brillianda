@@ -35,7 +35,7 @@ export const MeSchema = z
       fullName: z.string(),
       emailVerified: z.boolean(),
     }),
-    membership: z.object({ role: z.enum(["owner", "admin", "teacher", "parent"]).openapi({ description: "teacher: the teacher screens (Today, Register, My subjects); parent: My children. Everything else refuses them" }) }),
+    membership: z.object({ role: z.enum(["owner", "admin", "teacher", "parent", "student"]).openapi({ description: "teacher: the teacher screens (Today, Register, My subjects); parent: My children; student: the student portal. Everything else refuses them" }) }),
     school: z.object({ id: z.string().uuid(), name: z.string(), subdomain: z.string() }),
     photo: z.string().nullable().optional().openapi({ description: "GET /v1/me only: the photo's address for <img src>, or null" }),
     phone: z.string().nullable().optional().openapi({ description: "GET /v1/me only: shown locked (a parent's comes from their family's record)" }),

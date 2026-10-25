@@ -118,3 +118,24 @@ once on the instance that served it and within a minute everywhere (the school l
 `user_photos`, one row per person, at most 150 KB and 1024 px (the browser sends 256×256 JPEGs),
 served to the person themselves at `GET /v1/me/photo`. Same reasoning as logos (#6): small, one per
 person, no storage provider needed yet. They move to R2 with student photos.
+
+## 9. The timetable PDF lives in Postgres too (25 October 2026)
+
+One per school, at most 2 MB (a CHECK enforces it), on the `timetables` row. Same reasoning as #6
+and #8; it moves to R2 with the other files.
+
+## 10. Students sign in, and see only themselves (25 October 2026)
+
+The front end's B6 adds a `student` role. Students are often under 18, so:
+
+- A student account belongs to one student record (`student_links`, unique both ways), made only
+  through an invitation from an owner or admin, to an email nobody else at the school uses.
+- Every other route names the roles it serves and none names `student`; the only routes open to
+  them besides `/v1/me/student`, `/v1/me/timetable` and `/v1/me/report-card` are their own
+  account's (`GET /v1/me`, profile, password). A test walks the staff and parent routes as a student.
+- What they see: their own record, class, timetable (teachers by name only), attendance and
+  published results. No other student, guardian or staff contact detail.
+- Ending access deletes the membership (and with it the link and every session at the school);
+  the record stays.
+- AI features (B7) are not offered to students, and need the provider decision in the front end's
+  `docs/ai-integration.md` (Step 0) before they're built.

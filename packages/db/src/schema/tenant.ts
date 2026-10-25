@@ -23,7 +23,7 @@ const schoolId = () =>
  * owner and admin run the school; teacher takes registers and (later) enters scores (C1); parent
  * follows their own children, through a guardian record (C2, parent_links).
  */
-export const memberRole = pgEnum("member_role", ["owner", "admin", "teacher", "parent"]);
+export const memberRole = pgEnum("member_role", ["owner", "admin", "teacher", "parent", "student"]);
 export const memberStatus = pgEnum("member_status", ["active", "suspended"]);
 
 export const schoolMembers = pgTable(
@@ -141,6 +141,8 @@ export const invitations = pgTable(
     role: memberRole().notNull(),
     /** Parent invitations only: the guardian record the account will follow. */
     guardianId: uuid(),
+    /** Student invitations (B6): the student record the account will belong to. */
+    studentId: uuid(),
     tokenHash: text().notNull().unique(),
     invitedBy: uuid().references(() => users.id, { onDelete: "set null" }),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
@@ -162,6 +164,8 @@ export const invitations = pgTable(
     index("invitations_school_guardian_idx").on(t.schoolId, t.guardianId),
     // role::text: the new enum value can't be used in the migration that adds it (one transaction).
     check("invitations_parent_guardian_check", sql`(${t.role}::text = 'parent') = (${t.guardianId} IS NOT NULL)`),
+    check("invitations_student_record_check", sql`(${t.role}::text = 'student') = (${t.studentId} IS NOT NULL)`),
+    index("invitations_school_student_idx").on(t.schoolId, t.studentId),
     schoolIsolation(t.schoolId),
     backupRead(),
     platformAccess("select"),
@@ -1178,6 +1182,35 @@ export const timetableLessons = pgTable(
     foreignKey({ name: "timetable_lessons_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
     index("timetable_lessons_school_subject_idx").on(t.schoolId, t.schoolSubjectId),
     check("timetable_lessons_day", sql`${t.day} BETWEEN 1 AND 5`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+// ——— Student accounts (B6) ———
+
+/**
+ * A student's own account: one per student record, one record per account. Composite keys mean
+ * the link goes when the membership (access ended) or the student record does.
+ */
+export const studentLinks = pgTable(
+  "student_links",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    studentId: uuid().notNull(),
+    userId: uuid().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("student_links_school_id_id_key").on(t.schoolId, t.id),
+    unique("student_links_student_key").on(t.schoolId, t.studentId),
+    unique("student_links_user_key").on(t.schoolId, t.userId),
+    foreignKey({ name: "student_links_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }).onDelete("cascade"),
+    foreignKey({ name: "student_links_member_fk", columns: [t.schoolId, t.userId], foreignColumns: [schoolMembers.schoolId, schoolMembers.userId] }).onDelete("cascade"),
     schoolIsolation(t.schoolId),
     backupRead(),
   ],

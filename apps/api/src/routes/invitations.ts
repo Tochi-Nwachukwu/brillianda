@@ -11,7 +11,7 @@
  * Tokens are looked up inside withSchool, so a link only works at the school that sent it.
  */
 import { generateToken, hashPassword } from "@brillianda/auth";
-import { and, auditLog, desc, eq, gt, guardians, inArray, invitations, isNull, parentLinks, schoolMembers, users, withSchool, type Tx } from "@brillianda/db";
+import { and, auditLog, desc, eq, gt, guardians, inArray, invitations, isNull, parentLinks, schoolMembers, studentLinks, students, users, withSchool, type Tx } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { EmailSchema, meBody, MeSchema, PasswordSchema, startSession, TokenSchema } from "../auth-helpers.js";
@@ -33,7 +33,7 @@ const InvitationSchema = z
     id: z.string().uuid(),
     email: z.string().email(),
     fullName: z.string().nullable().openapi({ description: "The invitee's name, if the owner gave one" }),
-    role: z.enum(["owner", "admin", "teacher", "parent"]),
+    role: z.enum(["owner", "admin", "teacher", "parent", "student"]),
     invitedBy: z.string().nullable().openapi({ description: "Inviter's name" }),
     createdAt: z.string(),
     expiresAt: z.string(),
@@ -66,6 +66,7 @@ async function findOpenByToken(tx: Tx, c: Context<AppEnv>, token: string) {
       fullName: invitations.fullName,
       role: invitations.role,
       guardianId: invitations.guardianId,
+      studentId: invitations.studentId,
       inviterName: users.fullName,
     })
     .from(invitations)
@@ -114,7 +115,7 @@ invitationRoutes.openapi(
         .from(invitations)
         .where(and(eq(invitations.email, email), openInvite()))
         .limit(1);
-      if (open && open.role !== role && (open.role === "parent" || auth.membership.role !== "owner")) {
+      if (open && open.role !== role && (open.role === "parent" || open.role === "student" || auth.membership.role !== "owner")) {
         throw new ApiError("conflict", `${email} is already invited as ${open.role === "admin" ? "an admin" : `a ${open.role}`}.`);
       }
 
@@ -220,7 +221,7 @@ const LookupSchema = z
   .object({
     email: z.string().email(),
     fullName: z.string().nullable().openapi({ description: "The name the owner gave, to greet them and prefill the name field" }),
-    role: z.enum(["owner", "admin", "teacher", "parent"]),
+    role: z.enum(["owner", "admin", "teacher", "parent", "student"]),
     school: z.object({ name: z.string(), subdomain: z.string() }),
     invitedBy: z.string().nullable(),
     existingAccount: z.boolean().openapi({ description: "true: just accept. false: also send fullName and password" }),
@@ -328,6 +329,14 @@ invitationRoutes.openapi(
           .onConflictDoNothing({ target: [parentLinks.schoolId, parentLinks.guardianId, parentLinks.userId] });
       }
 
+      if (inv.role === "student") {
+        const [record] = await tx.select({ id: students.id }).from(students).where(and(eq(students.id, inv.studentId!), isNull(students.deletedAt))).limit(1);
+        if (!record) throw new ApiError("link_invalid", "This invitation is for a student record that was removed. Ask the school for a new one.");
+        const [taken] = await tx.select({ userId: studentLinks.userId }).from(studentLinks).where(eq(studentLinks.studentId, record.id)).limit(1);
+        if (taken && taken.userId !== user!.id) throw new ApiError("conflict", "This student already has an account here. Ask the school for help.");
+        await tx.insert(studentLinks).values({ schoolId: school.id, studentId: record.id, userId: user!.id, createdBy: user!.id, updatedBy: user!.id }).onConflictDoNothing();
+      }
+
       const accepted = await tx
         .update(invitations)
         .set({ acceptedAt: new Date(), acceptedUserId: user!.id, updatedBy: user!.id })
@@ -339,7 +348,7 @@ invitationRoutes.openapi(
         schoolId: school.id,
         actorUserId: user!.id,
         action: "member.joined",
-        summary: { teacher: "Joined as a teacher", parent: "Joined the parent app", admin: "Joined as an admin", owner: "Joined as an admin" }[membership.role],
+        summary: { teacher: "Joined as a teacher", parent: "Joined the parent app", student: "Joined the student portal", admin: "Joined as an admin", owner: "Joined as an admin" }[membership.role],
         entity: "school_member",
         entityId: membership.id,
         changes: { email: inv.email, role: membership.role, invitationId: inv.id },

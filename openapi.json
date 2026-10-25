@@ -195,9 +195,10 @@
                   "owner",
                   "admin",
                   "teacher",
-                  "parent"
+                  "parent",
+                  "student"
                 ],
-                "description": "teacher: the teacher screens (Today, Register, My subjects); parent: My children. Everything else refuses them"
+                "description": "teacher: the teacher screens (Today, Register, My subjects); parent: My children; student: the student portal. Everything else refuses them"
               }
             },
             "required": [
@@ -717,7 +718,8 @@
                     "owner",
                     "admin",
                     "teacher",
-                    "parent"
+                    "parent",
+                    "student"
                   ]
                 },
                 "url": {
@@ -767,7 +769,8 @@
               "owner",
               "admin",
               "teacher",
-              "parent"
+              "parent",
+              "student"
             ]
           },
           "invitedBy": {
@@ -841,7 +844,8 @@
               "owner",
               "admin",
               "teacher",
-              "parent"
+              "parent",
+              "student"
             ]
           },
           "school": {
@@ -6719,6 +6723,369 @@
         "required": [
           "fileName",
           "classes"
+        ]
+      },
+      "StudentAccountsPage": {
+        "type": "object",
+        "properties": {
+          "students": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "admissionNo": {
+                  "type": "string"
+                },
+                "armId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "armLabel": {
+                  "type": "string"
+                },
+                "access": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "invited",
+                    "active"
+                  ]
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "fullName",
+                "admissionNo",
+                "armId",
+                "armLabel",
+                "access",
+                "email"
+              ]
+            }
+          },
+          "arms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "label"
+              ]
+            }
+          }
+        },
+        "required": [
+          "students",
+          "arms"
+        ]
+      },
+      "InviteStudent": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "StudentHome": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "admissionNo": {
+            "type": "string"
+          },
+          "formTeacher": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "birthday": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "On their birthday, when the school sends birthday messages: the school's message"
+          },
+          "lessonsToday": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "periodLabel": {
+                  "type": "string"
+                },
+                "start": {
+                  "type": "string"
+                },
+                "end": {
+                  "type": "string"
+                },
+                "subjectName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "periodLabel",
+                "start",
+                "end",
+                "subjectName"
+              ]
+            },
+            "description": "In order; empty at weekends or when the timetable has none"
+          },
+          "attendance": {
+            "$ref": "#/components/schemas/AttendanceSummary"
+          },
+          "recent": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "mark": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "present",
+                    "late",
+                    "absent",
+                    null
+                  ]
+                }
+              },
+              "required": [
+                "date",
+                "mark"
+              ]
+            },
+            "description": "The latest ten school days this term, newest first"
+          },
+          "results": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "term": {
+                    "type": "string"
+                  },
+                  "published": {
+                    "type": "boolean",
+                    "enum": [
+                      false
+                    ]
+                  }
+                },
+                "required": [
+                  "term",
+                  "published"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "term": {
+                    "type": "string"
+                  },
+                  "published": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "average": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "position": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "of": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "term",
+                  "published",
+                  "average",
+                  "position",
+                  "of"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "This term's name, and once the class is published the average, position (when shown) and class size; null before a term opens"
+          },
+          "pastTerms": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "label"
+              ]
+            }
+          },
+          "bookLists": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "list": {
+                  "$ref": "#/components/schemas/BookList"
+                }
+              },
+              "required": [
+                "label",
+                "list"
+              ]
+            }
+          }
+        },
+        "required": [
+          "fullName",
+          "armLabel",
+          "admissionNo",
+          "formTeacher",
+          "birthday",
+          "lessonsToday",
+          "attendance",
+          "recent",
+          "results",
+          "pastTerms",
+          "bookLists"
+        ]
+      },
+      "ClassTimetable": {
+        "type": "object",
+        "properties": {
+          "armLabel": {
+            "type": "string"
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "start": {
+                  "type": "string"
+                },
+                "end": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "lesson",
+                    "break"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "start",
+                "end",
+                "kind"
+              ]
+            }
+          },
+          "lessons": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "day": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "periodId": {
+                  "type": "string"
+                },
+                "subjectName": {
+                  "type": "string"
+                },
+                "teacherName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "day",
+                "periodId",
+                "subjectName",
+                "teacherName"
+              ]
+            }
+          }
+        },
+        "required": [
+          "armLabel",
+          "periods",
+          "lessons"
         ]
       },
       "ImportSetup": {
@@ -15555,6 +15922,381 @@
           },
           "403": {
             "description": "Only owners and admins change it; teachers read it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/student-accounts": {
+      "get": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Active students, in class order, with their student portal access",
+        "responses": {
+          "200": {
+            "description": "Students",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentAccountsPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students/{id}/invite": {
+      "post": {
+        "tags": [
+          "students"
+        ],
+        "summary": "Invite a student to the student portal with their own email (or one the school gives them). Inviting again replaces the open invitation",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteStudent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access": {
+                      "type": "string",
+                      "enum": [
+                        "invited"
+                      ]
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "resent": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "access",
+                    "email",
+                    "resent"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already uses the portal, or the email has another open invitation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The email: invalid, or someone at this school already uses it (#/email)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/students/{id}/access": {
+      "delete": {
+        "tags": [
+          "students"
+        ],
+        "summary": "End a student's portal access, or cancel their invite. Their record stays",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Ended"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such student",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/student": {
+      "get": {
+        "tags": [
+          "student portal"
+        ],
+        "summary": "The student's home: class, today's lessons, attendance, published results, book lists",
+        "responses": {
+          "200": {
+            "description": "Home",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentHome"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/timetable": {
+      "get": {
+        "tags": [
+          "student portal"
+        ],
+        "summary": "The student's class week: periods and lessons with their teachers' names",
+        "responses": {
+          "200": {
+            "description": "Timetable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassTimetable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/report-card": {
+      "get": {
+        "tags": [
+          "student portal"
+        ],
+        "summary": "The student's report card for a published term (default: this term). Anything else answers not found",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-[1-3]$"
+            },
+            "required": false,
+            "name": "term",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCardData"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
             "content": {
               "application/problem+json": {
                 "schema": {

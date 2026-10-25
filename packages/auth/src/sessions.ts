@@ -18,7 +18,7 @@ export interface SessionUser {
 
 export interface SessionMembership {
   id: string;
-  role: "owner" | "admin" | "teacher" | "parent";
+  role: "owner" | "admin" | "teacher" | "parent" | "student";
 }
 
 export interface ValidSession {
