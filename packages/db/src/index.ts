@@ -52,6 +52,11 @@ export {
   birthdayTextStatus,
   bookLists,
   type BookListItem,
+  correctionRequests,
+  correctionStatus,
+  type CorrectionChange,
 } from "./schema/index.js";
 // Re-export the query helpers feature code needs, so nothing imports drizzle internals ad hoc.
 export { and, asc, count, desc, eq, gt, gte, inArray, isNull, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";
+export { alias } from "drizzle-orm/pg-core";
+export type { SQL } from "drizzle-orm";

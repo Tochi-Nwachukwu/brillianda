@@ -60,13 +60,13 @@ export const studentRoutes = new OpenAPIHono<AppEnv>();
 // ── Input ───────────────────────────────────────────────────────────────────────────────────────
 
 const clean = (v: unknown) => (typeof v === "string" ? v.normalize("NFC").trim().replace(/\s+/g, " ") : v);
-const PersonName = (label: string) =>
+export const PersonName = (label: string) =>
   z.preprocess(clean, z.string().min(1, `Enter the ${label}`).max(60, "Use at most 60 characters").regex(PERSON_NAME, "Letters, spaces, hyphens and apostrophes only"));
-const OptionalName = z.preprocess(
+export const OptionalName = z.preprocess(
   clean,
   z.union([z.literal(""), z.string().max(60, "Use at most 60 characters").regex(PERSON_NAME, "Letters, spaces, hyphens and apostrophes only")]),
 );
-const realDay = (v: string) => {
+export const realDay = (v: string) => {
   const d = new Date(`${v}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
 };

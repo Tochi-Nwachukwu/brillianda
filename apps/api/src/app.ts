@@ -29,6 +29,7 @@ import { resultsRoutes } from "./routes/results.js";
 import { reportRoutes } from "./routes/reports.js";
 import { birthdayRoutes } from "./routes/birthdays.js";
 import { bookListRoutes } from "./routes/booklists.js";
+import { correctionRoutes } from "./routes/corrections.js";
 import { promotionRoutes } from "./routes/promotion.js";
 import { termRoutes } from "./routes/terms.js";
 import { devRoutes } from "./routes/dev.js";
@@ -157,6 +158,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", promotionRoutes);
   app.route("/", birthdayRoutes);
   app.route("/", bookListRoutes);
+  app.route("/", correctionRoutes);
   app.route("/", importRoutes);
   app.route("/", brandingRoutes);
   app.route("/", trialRoutes);

@@ -3397,6 +3397,16 @@
                   },
                   "description": "Closed terms whose results were published, newest first"
                 },
+                "details": {
+                  "$ref": "#/components/schemas/ChildDetails"
+                },
+                "corrections": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CorrectionRow"
+                  },
+                  "description": "This child's latest five correction requests, newest first"
+                },
                 "bookLists": {
                   "type": "array",
                   "items": {
@@ -3434,6 +3444,8 @@
                 "recent",
                 "results",
                 "pastTerms",
+                "details",
+                "corrections",
                 "bookLists",
                 "birthday"
               ]
@@ -3476,6 +3488,189 @@
           "absent"
         ],
         "description": "This term's register marks (late counts as present); null outside a term"
+      },
+      "ChildDetails": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "otherNames": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "ISO day, or \"\" when unknown"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female"
+            ]
+          },
+          "admissionDate": {
+            "type": "string"
+          },
+          "stateOfOrigin": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "guardian": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "phone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "email": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "phone",
+              "email"
+            ],
+            "description": "The parent's own family record"
+          }
+        },
+        "required": [
+          "firstName",
+          "otherNames",
+          "lastName",
+          "dateOfBirth",
+          "gender",
+          "admissionDate",
+          "stateOfOrigin",
+          "address",
+          "guardian"
+        ]
+      },
+      "CorrectionRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "integer"
+          },
+          "studentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "studentName": {
+            "type": "string"
+          },
+          "armLabel": {
+            "type": "string"
+          },
+          "by": {
+            "type": "string"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "firstName",
+                    "otherNames",
+                    "lastName",
+                    "dateOfBirth",
+                    "gender",
+                    "stateOfOrigin",
+                    "address",
+                    "guardianPhone",
+                    "guardianEmail"
+                  ]
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field",
+                "from",
+                "to"
+              ]
+            }
+          },
+          "note": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "approved",
+              "declined"
+            ]
+          },
+          "decided": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "by": {
+                "type": "string"
+              },
+              "at": {
+                "type": "integer"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "by",
+              "at",
+              "reason"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "studentId",
+          "studentName",
+          "armLabel",
+          "by",
+          "changes",
+          "note",
+          "status",
+          "decided"
+        ]
       },
       "BookList": {
         "type": "object",
@@ -6088,6 +6283,91 @@
         },
         "required": [
           "shared"
+        ]
+      },
+      "CorrectionRequest": {
+        "type": "object",
+        "properties": {
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "firstName",
+                    "otherNames",
+                    "lastName",
+                    "dateOfBirth",
+                    "gender",
+                    "stateOfOrigin",
+                    "address",
+                    "guardianPhone",
+                    "guardianEmail"
+                  ]
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "field",
+                "value"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 9
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 300,
+            "default": ""
+          }
+        },
+        "required": [
+          "changes"
+        ]
+      },
+      "CorrectionsPage": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrectionRow"
+            },
+            "description": "Waiting, newest first"
+          },
+          "answered": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrectionRow"
+            },
+            "description": "The latest 20 answered"
+          }
+        },
+        "required": [
+          "open",
+          "answered"
+        ]
+      },
+      "ResolveCorrection": {
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "approve"
         ]
       },
       "ImportSetup": {
@@ -14082,6 +14362,288 @@
           },
           "409": {
             "description": "An empty list, or not this session or the next",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/children/{studentId}/corrections": {
+      "post": {
+        "tags": [
+          "corrections"
+        ],
+        "summary": "A parent asks the school to correct their child's details (or their own phone or email)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "studentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Asked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not one of this parent's children",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A value needs fixing (#/changes/1/value), or nothing would change (#/changes)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/corrections": {
+      "get": {
+        "tags": [
+          "corrections"
+        ],
+        "summary": "Correction requests: those waiting, then the latest 20 answered",
+        "responses": {
+          "200": {
+            "description": "Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectionsPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/corrections/count": {
+      "get": {
+        "tags": [
+          "corrections"
+        ],
+        "summary": "How many correction requests are waiting (the More tab's count)",
+        "responses": {
+          "200": {
+            "description": "Count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "open": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "open"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/corrections/{id}/resolve": {
+      "post": {
+        "tags": [
+          "corrections"
+        ],
+        "summary": "Approve (the record changes, in the student's change history) or decline with a reason the parent sees",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveCorrection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Answered"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already answered, or the student has left",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A reason is needed to decline (#/reason)",
             "content": {
               "application/problem+json": {
                 "schema": {

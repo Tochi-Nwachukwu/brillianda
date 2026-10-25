@@ -267,6 +267,20 @@
       "when": 1792862536116,
       "tag": "0037_force_rls_book_lists",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1792926461571,
+      "tag": "0038_correction_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1792926463636,
+      "tag": "0039_force_rls_corrections",
+      "breakpoints": true
     }
   ]
 }

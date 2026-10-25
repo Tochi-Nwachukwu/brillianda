@@ -1082,3 +1082,45 @@ export const bookLists = pgTable(
     backupRead(),
   ],
 ).enableRLS();
+
+// ——— Corrections parents ask for (B4) ———
+
+export const correctionStatus = pgEnum("correction_status", ["open", "approved", "declined"]);
+export type CorrectionChange = { field: string; from: string; to: string };
+
+/**
+ * A parent's request to correct their child's details. `changes` keeps what the record said when
+ * asked (`from`) and what it should say (`to`). The guardian is the family record the parent asked
+ * through: phone and email changes go to it.
+ */
+export const correctionRequests = pgTable(
+  "correction_requests",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    studentId: uuid().notNull(),
+    guardianId: uuid().notNull(),
+    requestedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    changes: jsonb().$type<CorrectionChange[]>().notNull(),
+    note: text().notNull().default(""),
+    status: correctionStatus().notNull().default("open"),
+    decidedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    decidedAt: timestamp({ withTimezone: true }),
+    declineReason: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("correction_requests_school_id_id_key").on(t.schoolId, t.id),
+    foreignKey({ name: "correction_requests_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }).onDelete("cascade"),
+    foreignKey({ name: "correction_requests_guardian_fk", columns: [t.schoolId, t.guardianId], foreignColumns: [guardians.schoolId, guardians.id] }).onDelete("cascade"),
+    index("correction_requests_school_status_idx").on(t.schoolId, t.status, t.createdAt),
+    index("correction_requests_school_student_idx").on(t.schoolId, t.studentId),
+    check("correction_requests_note_length", sql`char_length(${t.note}) <= 300`),
+    check("correction_requests_reason_length", sql`${t.declineReason} IS NULL OR char_length(${t.declineReason}) BETWEEN 3 AND 200`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();

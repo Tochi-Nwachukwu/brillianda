@@ -436,3 +436,13 @@ in the outbox (`tag` `sms_birthday`, `to` the number) whether or not an SMS prov
 | `saveBookList` | `PUT /v1/book-lists/{session}/{levelId}` `{ items }` → 204 | owner, admin | Your `bookListSchema` (422 `#/items/2/name` and so on). Replaces the list; items keep the `id` you send, new ones get one. Emptying a shared list stops sharing it. 409 "Lists are for this session or the next."; 404 for a level that isn't here |
 | `setBookListShared` | `PUT /v1/book-lists/{session}/{levelId}/shared` `{ shared }` → 204 | owner, admin | 409 "Add something to the list before sharing it." Sharing and stopping go in the change history (so do saves) |
 | parent home | `GET /v1/me/children` | parent | Each child gains `bookLists: [{ label, list }]`: "For next session: JSS 2, 2027/2028" (none in the final class), then "This session: JSS 1, 2026/2027", shared lists only |
+
+**25 October 2026, B4** (student details for parents, and corrections)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `requestCorrection` | `POST /v1/me/children/{studentId}/corrections` `{ changes: [{ field, value }], note }` → 201 `{ id }` | parent | Your `correctionRequestSchema`: 422 `#/changes/1/value` with the field's message, `#/changes/1/field` for a repeat, `#/changes` "That’s what the record already says." when nothing would change. Phones come back as +234…, emails lowercase. 404 "You can ask about your own children only." |
+| `getCorrections` | `GET /v1/corrections` → `CorrectionsPage` | owner, admin | `open` newest first, then the latest 20 `answered` |
+| `countOpenCorrections` | `GET /v1/corrections/count` → `{ open }` | owner, admin | |
+| `resolveCorrection` | `POST /v1/corrections/{id}/resolve` `{ approve, reason? }` → 204 | owner, admin | Declining needs `reason` 3 to 200 characters (422 `#/reason`). 409 "This request has already been answered." Approving changes the student (and, for phone and email, the guardian record the parent asked through) in one go; it goes in the change history with the student |
+| parent home | `GET /v1/me/children` | parent | Each child gains `details` (`ChildDetails`; `guardian` is the parent's own family record, `dateOfBirth` "" when unknown) and `corrections` (the latest five, newest first) |
