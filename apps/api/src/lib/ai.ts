@@ -181,7 +181,7 @@ export class GeminiAi implements Ai {
   readonly enabled = true;
 
   constructor(
-    private readonly opts: { apiKey: string; model: string; thinking?: AiThinking; baseUrl?: string; timeoutMs?: number },
+    private readonly opts: { apiKey: string; model: string; thinking?: AiThinking; baseUrl?: string; timeoutMs?: number; retryDelayMs?: number },
     private readonly logger: Logger,
     private readonly fetchImpl: FetchLike = fetch,
   ) {}
@@ -200,6 +200,10 @@ export class GeminiAi implements Ai {
     });
     let inputTokens = 0;
     let outputTokens = 0;
+    // One time budget for the whole generation (every attempt included), under Vercel's limit.
+    const deadline = Date.now() + (this.opts.timeoutMs ?? 55_000);
+    const model = this.opts.model;
+    let busyRetried = false;
     for (let attempt = 1; ; attempt++) {
       let res: Response;
       try {
@@ -207,15 +211,25 @@ export class GeminiAi implements Ai {
           method: "POST",
           headers: { "content-type": "application/json", "x-goog-api-key": this.opts.apiKey },
           body,
-          signal: AbortSignal.timeout(this.opts.timeoutMs ?? 60_000),
+          signal: AbortSignal.timeout(Math.max(1_000, deadline - Date.now())),
         });
       } catch (err) {
-        this.logger.error("ai unreachable", { provider: "gemini", reason: (err as Error).message });
+        this.logger.error("ai unreachable", { provider: "gemini", model, reason: (err as Error).message });
         throw new AiError("unavailable", "Generating didn’t finish. Try again.");
       }
       const reply = (await res.json().catch(() => ({}))) as GeminiReply;
       if (!res.ok) {
-        this.logger.error("ai failed", { provider: "gemini", status: res.status, reason: reply.error?.message });
+        // "High demand" (503) and "too many requests" (429) are usually brief: one more try after a pause, if time allows.
+        const busy = res.status === 429 || res.status === 503;
+        const pause = this.opts.retryDelayMs ?? 2_000;
+        if (busy && !busyRetried && deadline - Date.now() > pause + 10_000) {
+          busyRetried = true;
+          attempt--;
+          this.logger.warn("ai busy, retrying", { provider: "gemini", model, status: res.status });
+          await new Promise((r) => setTimeout(r, pause));
+          continue;
+        }
+        this.logger.error("ai failed", { provider: "gemini", model, status: res.status, reason: reply.error?.message });
         throw new AiError("unavailable", "Generating didn’t finish. Try again.");
       }
       inputTokens += reply.usageMetadata?.promptTokenCount ?? 0;
@@ -230,7 +244,7 @@ export class GeminiAi implements Ai {
         this.logger.info("ai generated", { provider: "gemini", model: this.opts.model, questions: checked.questions.length, inputTokens, outputTokens });
         return { questions: checked.questions, model: this.opts.model, inputTokens, outputTokens };
       }
-      this.logger.warn("ai reply didn't match", { provider: "gemini", attempt, reason: checked.reason });
+      this.logger.warn("ai reply didn't match", { provider: "gemini", model, attempt, reason: checked.reason });
       if (attempt >= 2) throw new AiError("invalid_output", "Generating didn’t finish. Try again.");
     }
   }

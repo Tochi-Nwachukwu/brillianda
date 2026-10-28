@@ -224,14 +224,22 @@ describe("the Gemini adapter", () => {
     expect(body.contents[0].parts[0].text).toContain("Subject: Mathematics");
   });
 
+  it("tries once more when Gemini is busy", async () => {
+    const busy = fake(answer(503, { error: { message: "This model is currently experiencing high demand." } }), ok(reply()));
+    const out = await new GeminiAi({ apiKey: "k", model: "m", retryDelayMs: 0 }, silentLogger, busy.fn).generate(req, ctx);
+    expect(out.questions).toHaveLength(2);
+    expect(busy.calls).toHaveLength(2);
+  });
+
   it("retries a bad reply once; maps refusals and outages", async () => {
     const twice = fake(ok("nope"), ok(reply()));
     expect((await new GeminiAi({ apiKey: "k", model: "m" }, silentLogger, twice.fn).generate(req, ctx)).inputTokens).toBe(240);
-    const kind = async (...r: (Response | Error)[]) => ((await new GeminiAi({ apiKey: "k", model: "m" }, silentLogger, fake(...r).fn).generate(req, ctx).catch((e: AiError) => e)) as AiError).kind;
+    const kind = async (...r: (Response | Error)[]) => ((await new GeminiAi({ apiKey: "k", model: "m", retryDelayMs: 0 }, silentLogger, fake(...r).fn).generate(req, ctx).catch((e: AiError) => e)) as AiError).kind;
     expect(await kind(ok("nope"), ok("still nope"))).toBe("invalid_output");
     expect(await kind(answer(200, { promptFeedback: { blockReason: "SAFETY" } }))).toBe("refused");
     expect(await kind(answer(200, { candidates: [{ finishReason: "SAFETY" }] }))).toBe("refused");
-    expect(await kind(answer(429, { error: { message: "Resource exhausted" } }))).toBe("unavailable");
+    expect(await kind(answer(429, { error: { message: "Resource exhausted" } }), answer(429, { error: { message: "Resource exhausted" } }))).toBe("unavailable");
+    expect(await kind(answer(400, { error: { message: "Invalid argument" } }))).toBe("unavailable");
     expect(await kind(new Error("ECONNRESET"))).toBe("unavailable");
   });
 });
