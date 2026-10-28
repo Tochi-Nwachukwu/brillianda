@@ -219,6 +219,7 @@ describe("the Gemini adapter", () => {
     expect(f.calls[0]!.url).not.toContain("test-key");
     const body = JSON.parse(f.calls[0]!.init.body as string);
     expect(body.generationConfig.responseFormat.text).toEqual({ mimeType: "APPLICATION_JSON", schema: JSON.parse(JSON.stringify(REPLY_SCHEMA)) });
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
     expect(body.systemInstruction.parts[0].text).toContain("JSS 1");
     expect(body.contents[0].parts[0].text).toContain("Subject: Mathematics");
   });

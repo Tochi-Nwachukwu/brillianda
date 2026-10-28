@@ -54,6 +54,8 @@ const EnvSchema = z.object({
   AI_PROVIDER: z.enum(["off", "gemini"]).default("off"),
   GEMINI_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
   AI_MODEL: z.string().min(1).default("gemini-3.8-flash"),
+  /** How much the model thinks before answering: low keeps a paper to seconds (Gemini's own default, high, took over a minute). */
+  AI_THINKING: z.enum(["minimal", "low", "medium", "high"]).default("low"),
   /** Generations per school per month. */
   AI_MONTHLY_LIMIT: z.coerce.number().int().min(0).default(300),
   /** Production only: set to true once Google (or the provider) has confirmed in writing that our use is allowed. */

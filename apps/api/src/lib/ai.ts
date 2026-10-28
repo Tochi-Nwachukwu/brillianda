@@ -165,6 +165,10 @@ export function checkReply(reply: unknown, req: GenerateRequest): { ok: true; qu
 
 // ——— Gemini ———
 
+/** How much the model reasons before answering: more is slower and costs more. */
+export const AI_THINKING = ["minimal", "low", "medium", "high"] as const;
+export type AiThinking = (typeof AI_THINKING)[number];
+
 type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
 /**
@@ -177,7 +181,7 @@ export class GeminiAi implements Ai {
   readonly enabled = true;
 
   constructor(
-    private readonly opts: { apiKey: string; model: string; baseUrl?: string; timeoutMs?: number },
+    private readonly opts: { apiKey: string; model: string; thinking?: AiThinking; baseUrl?: string; timeoutMs?: number },
     private readonly logger: Logger,
     private readonly fetchImpl: FetchLike = fetch,
   ) {}
@@ -187,7 +191,12 @@ export class GeminiAi implements Ai {
     const body = JSON.stringify({
       systemInstruction: { parts: [{ text: systemInstruction(ctx) }] },
       contents: [{ role: "user", parts: [{ text: userPrompt(req, ctx) }] }],
-      generationConfig: { responseFormat: { text: { mimeType: "APPLICATION_JSON", schema: REPLY_SCHEMA } } },
+      generationConfig: {
+        responseFormat: { text: { mimeType: "APPLICATION_JSON", schema: REPLY_SCHEMA } },
+        // Gemini 3 models think at "high" unless told otherwise, which took over a minute for six
+        // questions on staging (28 Oct 2026). Drafting questions doesn't need deep reasoning.
+        thinkingConfig: { thinkingLevel: this.opts.thinking ?? "low" },
+      },
     });
     let inputTokens = 0;
     let outputTokens = 0;

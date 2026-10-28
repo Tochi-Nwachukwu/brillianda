@@ -35,7 +35,7 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
     logger,
     mailer: env.MAIL_OUTBOX_KEY ? new OutboxMailer(db, provider, logger) : provider,
     sms,
-    ai: env.AI_PROVIDER === "gemini" ? new GeminiAi({ apiKey: env.GEMINI_API_KEY!, model: env.AI_MODEL }, logger) : new OffAi(),
+    ai: env.AI_PROVIDER === "gemini" ? new GeminiAi({ apiKey: env.GEMINI_API_KEY!, model: env.AI_MODEL, thinking: env.AI_THINKING }, logger) : new OffAi(),
     botCheck: env.TURNSTILE_SECRET_KEY ? new TurnstileBotCheck(env.TURNSTILE_SECRET_KEY) : new AllowAllBotCheck(),
     config: {
       appEnv: env.APP_ENV,
