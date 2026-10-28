@@ -83,7 +83,7 @@ export function userPrompt(req: GenerateRequest, ctx: AiContext): string {
     `Purpose: a ${req.purpose}`,
     `Topics: ${req.topics.join("; ")}`,
     `Difficulty: ${req.difficulty === "mixed" ? "a mix of easy, medium and hard" : req.difficulty}`,
-    `Questions wanted: ${counts.join(", ")}`,
+    `Questions wanted, exactly: ${counts.join(", ")} (${QUESTION_TYPES.filter((t) => req.counts[t] > 0).map((t) => `${req.counts[t]} with type "${t}"`).join(", ")})`,
     ...(req.notes ? [`The teacher's notes: ${req.notes}`] : []),
   ].join("\n");
 }
@@ -104,6 +104,7 @@ export const REPLY_SCHEMA = {
   properties: {
     questions: {
       type: "array",
+      description: "Exactly the number of each type asked for. Every item has every field: null for the fields its type doesn't use.",
       items: {
         type: "object",
         properties: {
@@ -112,31 +113,51 @@ export const REPLY_SCHEMA = {
           marks: { type: "number", minimum: 0.5, maximum: 50 },
           topic: { type: "string" },
           difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
-          options: { type: "array", items: { type: "string" }, description: "objective only: 2 to 5 options" },
-          answerIndex: { type: "integer", minimum: 0, description: "objective only: the right option, counting from 0" },
-          answerTrue: { type: "boolean", description: "trueFalse only: whether the statement is true" },
-          answers: { type: "array", items: { type: "string" }, description: "fillGap only: every accepted answer" },
-          guide: { type: "string", description: "theory only: what a full answer includes" },
+          options: { type: ["array", "null"], items: { type: "string" }, description: "objective: 4 options (2 to 5). Others: null" },
+          answerIndex: { type: ["integer", "null"], minimum: 0, description: "objective: the right option, counting from 0. Others: null" },
+          answerTrue: { type: ["boolean", "null"], description: "trueFalse: whether the statement is true. Others: null" },
+          answers: { type: ["array", "null"], items: { type: "string" }, description: "fillGap: every accepted answer (at least one). Others: null" },
+          guide: { type: ["string", "null"], description: "theory: what a full answer includes. Others: null" },
         },
-        required: ["type", "text", "marks", "topic", "difficulty"],
+        required: ["type", "text", "marks", "topic", "difficulty", "options", "answerIndex", "answerTrue", "answers", "guide"],
       },
     },
   },
   required: ["questions"],
 } as const;
 
-type Flat = { type?: string; text?: string; marks?: number; topic?: string; difficulty?: string; options?: string[]; answerIndex?: number; answerTrue?: boolean; answers?: string[]; guide?: string };
+type Flat = {
+  type?: string;
+  text?: string;
+  marks?: number | null;
+  topic?: string | null;
+  difficulty?: string | null;
+  options?: string[] | null;
+  answerIndex?: number | null;
+  answerTrue?: boolean | null;
+  answers?: string[] | null;
+  guide?: string | null;
+};
 
+const DEFAULT_MARKS: Record<string, number> = { objective: 1, trueFalse: 1, fillGap: 1, theory: 5 };
+const DIFFICULTY = new Set(["easy", "medium", "hard"]);
+
+/** Turns a flat item into a Question to check, filling the harmless gaps (marks, topic, difficulty) a model may leave. */
 function fromFlat(f: Flat): unknown {
-  const base = { type: f.type, text: f.text, marks: f.marks, topic: f.topic ?? "", difficulty: f.difficulty };
-  if (f.type === "objective") return { ...base, options: f.options, answer: f.answerIndex };
-  if (f.type === "trueFalse") return { ...base, answer: f.answerTrue };
-  if (f.type === "fillGap") return { ...base, answers: f.answers };
+  const marks = typeof f.marks === "number" && f.marks >= 0.5 && f.marks <= 50 ? f.marks : (DEFAULT_MARKS[f.type ?? ""] ?? 1);
+  const base = { type: f.type, text: f.text, marks, topic: (f.topic ?? "").slice(0, 80), difficulty: DIFFICULTY.has(f.difficulty ?? "") ? f.difficulty : "medium" };
+  if (f.type === "objective") return { ...base, options: f.options ?? undefined, answer: f.answerIndex ?? undefined };
+  if (f.type === "trueFalse") return { ...base, answer: f.answerTrue ?? undefined };
+  if (f.type === "fillGap") return { ...base, answers: f.answers ?? undefined };
   return { ...base, guide: f.guide ?? "" };
 }
 
-/** Checks a reply: valid questions, and the counts asked for (extras dropped). */
-export function checkReply(reply: unknown, req: GenerateRequest): { ok: true; questions: Question[] } | { ok: false; reason: string } {
+/**
+ * Checks a reply. Questions that don't pass are dropped (and counted), extras beyond what was asked
+ * are dropped too; the rest come back in the order asked for. Only a reply with nothing usable
+ * fails: the teacher reviews every draft anyway, and a short batch beats an error.
+ */
+export function checkReply(reply: unknown, req: GenerateRequest): { ok: true; questions: Question[]; dropped: string[] } | { ok: false; reason: string } {
   let body = reply;
   if (typeof body === "string") {
     try {
@@ -148,19 +169,25 @@ export function checkReply(reply: unknown, req: GenerateRequest): { ok: true; qu
   const items = (body as { questions?: unknown })?.questions;
   if (!Array.isArray(items)) return { ok: false, reason: "no questions" };
   const byType = new Map<string, Question[]>();
+  const dropped: string[] = [];
   for (const item of items) {
     const parsed = questionSchema.safeParse(fromFlat((item ?? {}) as Flat));
-    if (!parsed.success) return { ok: false, reason: `a question failed: ${parsed.error.issues[0]?.message}` };
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      dropped.push(`${(item as Flat)?.type ?? "unknown"}: ${issue?.path.join(".") || "question"} ${issue?.message ?? ""}`.trim());
+      continue;
+    }
     const q = parsed.data as Question;
     byType.set(q.type, [...(byType.get(q.type) ?? []), q]);
   }
   const out: Question[] = [];
   for (const t of QUESTION_TYPES) {
     const got = byType.get(t) ?? [];
-    if (got.length < req.counts[t]) return { ok: false, reason: `too few ${t}` };
+    if (got.length < req.counts[t]) dropped.push(`${t}: ${req.counts[t] - got.length} short`);
     out.push(...got.slice(0, req.counts[t]));
   }
-  return { ok: true, questions: out };
+  if (!out.length) return { ok: false, reason: dropped.slice(0, 5).join("; ") || "no usable questions" };
+  return { ok: true, questions: out, dropped };
 }
 
 // ——— Gemini ———
@@ -241,7 +268,7 @@ export class GeminiAi implements Ai {
       const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
       const checked = checkReply(text, req);
       if (checked.ok) {
-        this.logger.info("ai generated", { provider: "gemini", model: this.opts.model, questions: checked.questions.length, inputTokens, outputTokens });
+        this.logger.info("ai generated", { provider: "gemini", model, questions: checked.questions.length, dropped: checked.dropped.slice(0, 5), inputTokens, outputTokens });
         return { questions: checked.questions, model: this.opts.model, inputTokens, outputTokens };
       }
       this.logger.warn("ai reply didn't match", { provider: "gemini", model, attempt, reason: checked.reason });

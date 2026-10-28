@@ -51,7 +51,7 @@ type Page = {
 
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ["Date"], now: new Date(`${TODAY}T09:30:00Z`) });
-  h = await createHarness({ aiMonthlyLimit: 4 });
+  h = await createHarness({ aiMonthlyLimit: 5 });
   ({ school: owner } = await signUpAndLand(h, { schoolName: "Oak Grammar", subdomain: "oakgrammar", email: "owner@oakgrammar.test", password: "oakgrammar-owner-pw", fullName: "Funmi Oak" }));
   await json(
     owner.send("POST", "/v1/classes/setup", {
@@ -104,7 +104,7 @@ describe("the question bank", () => {
   it("offers a teacher the subjects and classes they teach; owners and admins all", async () => {
     const mine = await json<Page>(teacher.get("/v1/questions"));
     expect(mine.pairs.map((p) => `${p.levelName} ${p.subjectName}`)).toEqual(["JSS 1 Mathematics"]);
-    expect(mine).toMatchObject({ questions: [], canEditAll: false, aiEnabled: true, usage: { used: 0, limit: 4, resetsOn: "2026-11-01" } });
+    expect(mine).toMatchObject({ questions: [], canEditAll: false, aiEnabled: true, usage: { used: 0, limit: 5, resetsOn: "2026-11-01" } });
     expect((await json<Page>(owner.get("/v1/questions"))).pairs.map((p) => `${p.levelName} ${p.subjectName}`)).toEqual([
       "JSS 1 English Studies",
       "JSS 1 Mathematics",
@@ -166,6 +166,19 @@ describe("generating questions", () => {
     expect((await json<Page>(teacher.get("/v1/questions"))).usage.used).toBe(2);
   });
 
+  it("keeps the usable questions when some don't fit, filling marks and difficulty it left out", async () => {
+    h.ai.replies.push(
+      JSON.stringify({
+        questions: [
+          { type: "objective", text: "What is 1/2 + 1/4?", marks: null, topic: null, difficulty: "tricky", options: ["3/4", "1/6"], answerIndex: 0, answerTrue: null, answers: null, guide: null },
+          { type: "trueFalse", text: "No answer given.", marks: 1, topic: "", difficulty: "easy", options: null, answerIndex: null, answerTrue: null, answers: null, guide: null },
+        ],
+      }),
+    );
+    const res = await json<{ questions: { type: string; marks: number; difficulty: string }[] }>(teacher.post("/v1/questions/generate", ask));
+    expect(res.questions).toEqual([expect.objectContaining({ type: "objective", marks: 1, difficulty: "medium", topic: "" })]);
+  });
+
   it("is only for the subjects and classes the person teaches", async () => {
     expect((await problem(teacher.post("/v1/questions/generate", { ...ask, levelId: level["JSS 2"] }), 403)).detail).toBe("You can only write questions for the subjects and classes you teach.");
     expect((await problem(teacher.post("/v1/questions/generate", { ...ask, counts: { objective: 0, trueFalse: 0, fillGap: 0, theory: 0 } }), 422)).errors![0]!.pointer).toBe("#/counts");
@@ -176,7 +189,8 @@ describe("generating questions", () => {
     await json(owner.post("/v1/questions/generate", ask));
     await json(teacher.post("/v1/questions/generate", ask));
     const over = await problem(teacher.post("/v1/questions/generate", ask), 429);
-    expect(over).toMatchObject({ code: "ai_quota_exceeded", resetsOn: "2026-11-01", detail: "Your school has used this month’s 4 question generations. They reset on 2026-11-01." });
+    // (The allowance counts every successful generation, the short one above included.)
+    expect(over).toMatchObject({ code: "ai_quota_exceeded", resetsOn: "2026-11-01", detail: "Your school has used this month’s 5 question generations. They reset on 2026-11-01." });
   });
 
   it("answers ai_disabled while the provider is off", async () => {
