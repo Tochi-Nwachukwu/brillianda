@@ -3,6 +3,7 @@
  * generate its typed client from (e.g. `npx openapi-typescript ../brillianda/openapi.json`).
  * CI fails if the committed file is out of date.
  */
+import { OffAi } from "../src/lib/ai.js";
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { AuthSecret } from "@brillianda/auth";
@@ -20,6 +21,7 @@ const deps = {
   logger: silentLogger,
   mailer: { send: async () => {} },
   sms: { send: async () => ({ ref: null }) },
+    ai: new OffAi(),
   botCheck: { verify: async () => true },
   config: { rootDomain: "brillianda.com", protocol: "https", proxySecret: "x".repeat(16), allowSchoolQueryParam: false, secureCookies: true },
 } satisfies AppDeps;

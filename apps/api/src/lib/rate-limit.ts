@@ -42,6 +42,8 @@ export const RATE_RULES = {
   trialPerIp: { name: "trial:ip", limit: 5, windowSec: 3600 },
   profilePerUser: { name: "profile:user", limit: 30, windowSec: 600 },
   passwordChangePerUser: { name: "password-change:user", limit: 10, windowSec: 900 },
+  // Against accidental loops; the monthly allowance is the real limit.
+  aiGeneratePerUser: { name: "ai-generate:user", limit: 10, windowSec: 60 },
 } as const satisfies Record<string, RateRule>;
 
 /** Single-process fallback for local development and tests. Not shared across instances. */

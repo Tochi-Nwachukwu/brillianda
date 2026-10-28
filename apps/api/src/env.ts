@@ -47,6 +47,17 @@ const EnvSchema = z.object({
   TERMII_BASE_URL: z.string().url().optional().or(z.literal("").transform(() => undefined)),
   /** dnd reaches numbers on Do-Not-Disturb (must be activated on the account); generic doesn't. */
   TERMII_CHANNEL: z.enum(["dnd", "generic"]).default("dnd"),
+  /**
+   * Drafting questions with AI (B7). off until the under-18 terms question (the front end's
+   * docs/ai-integration.md, Step 0) is settled; gemini needs GEMINI_API_KEY (a paid-tier key).
+   */
+  AI_PROVIDER: z.enum(["off", "gemini"]).default("off"),
+  GEMINI_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
+  AI_MODEL: z.string().min(1).default("gemini-3.8-flash"),
+  /** Generations per school per month. */
+  AI_MONTHLY_LIMIT: z.coerce.number().int().min(0).default(300),
+  /** Production only: set to true once Google (or the provider) has confirmed in writing that our use is allowed. */
+  AI_TERMS_CLEARED: bool,
   /** Vercel Cron sends it as "Authorization: Bearer <CRON_SECRET>" to the daily jobs. Unset: no jobs run. */
   CRON_SECRET: z.string().min(16, "CRON_SECRET must be at least 16 characters").optional().or(z.literal("").transform(() => undefined)),
   /** Staging: every email is also kept in an outbox readable with this key (GET /v1/dev/outbox). */
@@ -76,7 +87,11 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   if (env.SMS_PROVIDER === "termii" && !(env.TERMII_API_KEY && env.TERMII_SENDER_ID && env.TERMII_BASE_URL)) {
     throw new Error("SMS_PROVIDER=termii needs TERMII_API_KEY, TERMII_SENDER_ID and TERMII_BASE_URL");
   }
+  if (env.AI_PROVIDER === "gemini" && !env.GEMINI_API_KEY) throw new Error("AI_PROVIDER=gemini needs GEMINI_API_KEY");
   if (env.APP_ENV === "production") {
+    if (env.AI_PROVIDER !== "off" && !env.AI_TERMS_CLEARED) {
+      throw new Error("AI_PROVIDER is on in production without AI_TERMS_CLEARED=true: confirm the provider allows a service used by under-18s first");
+    }
     if (env.MAIL_OUTBOX_KEY) throw new Error("MAIL_OUTBOX_KEY is for staging only: production must never keep a readable copy of emails");
     if (env.FRONTEND_URL) throw new Error("FRONTEND_URL is for staging only: production links use each school's own subdomain");
     if (/@resend\.dev>?\s*$/i.test(env.MAIL_FROM)) {

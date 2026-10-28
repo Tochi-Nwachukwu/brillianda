@@ -1215,3 +1215,64 @@ export const studentLinks = pgTable(
     backupRead(),
   ],
 ).enableRLS();
+
+// ——— The question bank and AI generation (B7) ———
+
+export const questionSource = pgEnum("question_source", ["teacher", "ai"]);
+
+/** One question in a school's bank, for a subject and class level, in the shape of the front end's questionSchema. */
+export const bankQuestions = pgTable(
+  "bank_questions",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    schoolSubjectId: uuid().notNull(),
+    classLevelId: uuid().notNull(),
+    /** The question itself (objective, trueFalse, fillGap or theory), checked by the API before saving. */
+    question: jsonb().$type<Record<string, unknown>>().notNull(),
+    source: questionSource().notNull(),
+    /** Who wrote (or saved) it: they can change it; owners and admins can change any. */
+    authorId: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("bank_questions_school_id_id_key").on(t.schoolId, t.id),
+    foreignKey({ name: "bank_questions_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
+    foreignKey({ name: "bank_questions_level_fk", columns: [t.schoolId, t.classLevelId], foreignColumns: [classLevels.schoolId, classLevels.id] }).onDelete("cascade"),
+    index("bank_questions_school_pair_idx").on(t.schoolId, t.schoolSubjectId, t.classLevelId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/**
+ * Each AI generation: who, when, which model and how many tokens. Counts towards the school's
+ * monthly allowance and drives the bills. Append-only. Never holds a prompt or a student's data.
+ */
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    userId: uuid().references(() => users.id, { onDelete: "set null" }),
+    provider: text().notNull(),
+    model: text().notNull(),
+    purpose: text().notNull(),
+    questions: integer().notNull(),
+    inputTokens: integer(),
+    outputTokens: integer(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("ai_usage_school_id_id_key").on(t.schoolId, t.id),
+    index("ai_usage_school_created_idx").on(t.schoolId, t.createdAt),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();

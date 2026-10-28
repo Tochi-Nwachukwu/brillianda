@@ -5,6 +5,7 @@ import type { Env } from "./env.js";
 import { AllowAllBotCheck, TurnstileBotCheck } from "./lib/bot-check.js";
 import { createLogger, type Logger } from "./lib/logger.js";
 import { ConsoleMailer, OutboxMailer, ResendMailer, type Mailer } from "./lib/mailer.js";
+import { GeminiAi, OffAi } from "./lib/ai.js";
 import { ConsoleSms, OutboxSms, TermiiSms, type Sms } from "./lib/sms.js";
 import { MemoryRateLimiter, UpstashRateLimiter } from "./lib/rate-limit.js";
 import { SchoolDirectory } from "./lib/school-directory.js";
@@ -34,6 +35,7 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
     logger,
     mailer: env.MAIL_OUTBOX_KEY ? new OutboxMailer(db, provider, logger) : provider,
     sms,
+    ai: env.AI_PROVIDER === "gemini" ? new GeminiAi({ apiKey: env.GEMINI_API_KEY!, model: env.AI_MODEL }, logger) : new OffAi(),
     botCheck: env.TURNSTILE_SECRET_KEY ? new TurnstileBotCheck(env.TURNSTILE_SECRET_KEY) : new AllowAllBotCheck(),
     config: {
       appEnv: env.APP_ENV,
@@ -56,6 +58,7 @@ export function buildDeps(env: Env, logger: Logger = createLogger(env.APP_ENV ==
         .filter(Boolean),
       ...(env.MAIL_OUTBOX_KEY ? { outboxKey: env.MAIL_OUTBOX_KEY } : {}),
       ...(env.CRON_SECRET ? { cronSecret: env.CRON_SECRET } : {}),
+      aiMonthlyLimit: env.AI_MONTHLY_LIMIT,
     },
   };
 }

@@ -46,6 +46,7 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | 16 Corrections (B4) | Parents see their child's details and ask for fixes; admins approve or decline | ✅ |
 | 17 Timetable (B5) | Bell schedule, lessons, clashes, uploads, the PDF, a teacher's day | ✅ |
 | 18 Student portal (B6) | Student role and invitations, student home, timetable, report card | ✅ |
+| 19 Question bank (B7) | Bank per subject and class, AI drafting (Gemini) with a monthly allowance | ✅ API (generating off until the terms are cleared, `docs/decisions.md` #11) |
 | 5 Hardening | Branding and logos ✅, trial requests ✅; speed, security review, production setup | in progress |
 
 ## Email

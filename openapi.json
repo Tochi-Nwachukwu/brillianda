@@ -89,7 +89,12 @@
               "unsupported_media_type",
               "rate_limited",
               "internal",
-              "service_unavailable"
+              "service_unavailable",
+              "ai_disabled",
+              "ai_quota_exceeded",
+              "ai_unavailable",
+              "ai_invalid_output",
+              "ai_refused"
             ],
             "description": "Stable machine-readable code. Switch on this."
           },
@@ -7086,6 +7091,475 @@
           "armLabel",
           "periods",
           "lessons"
+        ]
+      },
+      "QuestionBankPage": {
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subjectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "subjectName": {
+                  "type": "string"
+                },
+                "levelId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "levelName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "subjectId",
+                "subjectName",
+                "levelId",
+                "levelName"
+              ]
+            },
+            "description": "Subject and class level pairs this person may write questions for"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BankQuestion"
+            },
+            "description": "Newest first"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/AiUsage"
+          },
+          "canEditAll": {
+            "type": "boolean"
+          },
+          "aiEnabled": {
+            "type": "boolean",
+            "description": "Whether Generate is switched on here (false answers ai_disabled)"
+          }
+        },
+        "required": [
+          "pairs",
+          "questions",
+          "usage",
+          "canEditAll",
+          "aiEnabled"
+        ]
+      },
+      "BankQuestion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "question": {
+            "$ref": "#/components/schemas/Question"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "teacher"
+            ]
+          },
+          "by": {
+            "type": "string"
+          },
+          "byMe": {
+            "type": "boolean"
+          },
+          "at": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "subjectId",
+          "levelId",
+          "question",
+          "source",
+          "by",
+          "byMe",
+          "at"
+        ]
+      },
+      "Question": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "objective"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "marks": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 50
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 80,
+                "default": ""
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard"
+                ]
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "minItems": 2,
+                "maxItems": 5
+              },
+              "answer": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            },
+            "required": [
+              "type",
+              "text",
+              "marks",
+              "difficulty",
+              "options",
+              "answer"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "trueFalse"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "marks": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 50
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 80,
+                "default": ""
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard"
+                ]
+              },
+              "answer": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "type",
+              "text",
+              "marks",
+              "difficulty",
+              "answer"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "fillGap"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "marks": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 50
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 80,
+                "default": ""
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard"
+                ]
+              },
+              "answers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                },
+                "minItems": 1,
+                "maxItems": 5
+              }
+            },
+            "required": [
+              "type",
+              "text",
+              "marks",
+              "difficulty",
+              "answers"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "theory"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "marks": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 50
+              },
+              "topic": {
+                "type": "string",
+                "maxLength": 80,
+                "default": ""
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard"
+                ]
+              },
+              "guide": {
+                "type": "string",
+                "maxLength": 2000,
+                "default": ""
+              }
+            },
+            "required": [
+              "type",
+              "text",
+              "marks",
+              "difficulty"
+            ]
+          }
+        ],
+        "description": "objective (2 to 5 options and the right one, by position), trueFalse, fillGap (accepted answers) or theory (a marking guide)"
+      },
+      "AiUsage": {
+        "type": "object",
+        "properties": {
+          "used": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "resetsOn": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "used",
+          "limit",
+          "resetsOn"
+        ],
+        "description": "This month's AI generations, the school's allowance, and when it resets"
+      },
+      "GenerateRequest": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "test",
+              "assignment",
+              "exam"
+            ]
+          },
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "topics": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 80
+            },
+            "minItems": 1,
+            "maxItems": 10
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500,
+            "default": ""
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "objective": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 50
+              },
+              "trueFalse": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 20
+              },
+              "fillGap": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 20
+              },
+              "theory": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 10
+              }
+            },
+            "required": [
+              "objective",
+              "trueFalse",
+              "fillGap",
+              "theory"
+            ]
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard",
+              "mixed"
+            ]
+          }
+        },
+        "required": [
+          "purpose",
+          "subjectId",
+          "levelId",
+          "topics",
+          "counts",
+          "difficulty"
+        ]
+      },
+      "SaveQuestions": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "teacher"
+            ]
+          }
+        },
+        "required": [
+          "subjectId",
+          "levelId",
+          "questions",
+          "source"
+        ]
+      },
+      "UpdateQuestion": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "$ref": "#/components/schemas/Question"
+          }
+        },
+        "required": [
+          "question"
         ]
       },
       "ImportSetup": {
@@ -16307,6 +16781,373 @@
           },
           "404": {
             "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/questions": {
+      "get": {
+        "tags": [
+          "questions"
+        ],
+        "summary": "The question bank: what this person may write for, their questions, and this month's AI use",
+        "responses": {
+          "200": {
+            "description": "Bank",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionBankPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not this person's subject and class, or not their question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "questions"
+        ],
+        "summary": "Save checked questions to the bank for a subject and class level",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveQuestions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "saved": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "saved"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not this person's subject and class, or not their question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A question needs fixing, e.g. #/questions/2/answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/questions/generate": {
+      "post": {
+        "tags": [
+          "questions"
+        ],
+        "summary": "Draft questions with AI for a subject and class this person teaches. Nothing is saved: the teacher checks them, then saves",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Drafts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "questions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Question"
+                      }
+                    },
+                    "usage": {
+                      "$ref": "#/components/schemas/AiUsage"
+                    }
+                  },
+                  "required": [
+                    "questions",
+                    "usage"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not this person's subject and class, or not their question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A field needs fixing, or ai_refused: the provider's safety filter blocked it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "ai_quota_exceeded (resetsOn), or rate_limited",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "ai_invalid_output",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ai_disabled (not switched on here) or ai_unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/questions/{id}": {
+      "put": {
+        "tags": [
+          "questions"
+        ],
+        "summary": "Change a question: a teacher their own, owners and admins any",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateQuestion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not this person's subject and class, or not their question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The question needs fixing, e.g. #/question/answer",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "questions"
+        ],
+        "summary": "Delete a question: a teacher their own, owners and admins any",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not this person's subject and class, or not their question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such question",
             "content": {
               "application/problem+json": {
                 "schema": {

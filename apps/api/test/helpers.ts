@@ -7,6 +7,7 @@ import type { AppConfig, AppDeps } from "../src/context.js";
 import { createLogger, silentLogger } from "../src/lib/logger.js";
 import { AllowAllBotCheck, type BotCheck } from "../src/lib/bot-check.js";
 import { MemoryMailer } from "../src/lib/mailer.js";
+import { MemoryAi } from "../src/lib/ai.js";
 import { MemorySms } from "../src/lib/sms.js";
 import { MemoryRateLimiter } from "../src/lib/rate-limit.js";
 import { SchoolDirectory } from "../src/lib/school-directory.js";
@@ -19,6 +20,7 @@ export interface Harness {
   deps: AppDeps;
   mail: MemoryMailer;
   sms: MemorySms;
+  ai: MemoryAi;
   app: ReturnType<typeof createApp>;
 }
 
@@ -26,6 +28,7 @@ export async function createHarness(config: Partial<AppConfig> = {}, botCheck: B
   const t = await createTestDatabase();
   const mail = new MemoryMailer();
   const sms = new MemorySms();
+  const ai = new MemoryAi();
   const deps: AppDeps = {
     db: t.db,
     secret: AuthSecret.fromBase64(randomBytes(32).toString("base64")),
@@ -34,6 +37,7 @@ export async function createHarness(config: Partial<AppConfig> = {}, botCheck: B
     logger: process.env.TEST_LOG ? createLogger("error") : silentLogger,
     mailer: mail,
     sms,
+    ai,
     botCheck,
     config: {
       rootDomain: "brillianda.test",
@@ -44,7 +48,7 @@ export async function createHarness(config: Partial<AppConfig> = {}, botCheck: B
       ...config,
     },
   };
-  return { t, db: t.db, deps, mail, sms, app: createApp(deps) };
+  return { t, db: t.db, deps, mail, sms, ai, app: createApp(deps) };
 }
 
 export async function seedSchoolWithMember(

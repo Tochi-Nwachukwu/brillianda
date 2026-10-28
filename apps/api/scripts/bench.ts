@@ -3,6 +3,7 @@
  * Server-side latency of the request pipeline against real Postgres (no network in the way):
  * middleware + school lookup + RLS transaction + session check + JSON. Uses a throwaway database.
  */
+import { OffAi } from "../src/lib/ai.js";
 import { AuthSecret, createSession } from "@brillianda/auth";
 import { schoolMembers, schools, users, withSchool } from "@brillianda/db";
 import { createTestDatabase } from "@brillianda/db/testing";
@@ -30,6 +31,7 @@ try {
     logger: silentLogger,
     mailer: { send: async () => {} },
     sms: { send: async () => ({ ref: null }) },
+    ai: new OffAi(),
     botCheck: { verify: async () => true },
     config: { rootDomain: "brillianda.test", protocol: "https", proxySecret: "x".repeat(16), allowSchoolQueryParam: false, secureCookies: false },
   });

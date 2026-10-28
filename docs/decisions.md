@@ -139,3 +139,22 @@ The front end's B6 adds a `student` role. Students are often under 18, so:
   the record stays.
 - AI features (B7) are not offered to students, and need the provider decision in the front end's
   `docs/ai-integration.md` (Step 0) before they're built.
+
+## 11. AI drafting is built, and switched off until the terms are settled (28 October 2026)
+
+B7's generator calls Gemini over plain fetch behind a small interface (`apps/api/src/lib/ai.ts`), so
+the provider is a setting (`AI_PROVIDER=off|gemini`) and another provider is one more class. It is
+**off by default**: Google's Gemini API and Vertex AI terms restrict use in a service likely to be
+accessed by under-18s, and Brillianda has a student portal. We've asked Google in writing whether a
+teacher-only feature is allowed. Until a written yes (and a lawyer's read):
+
+- staging may turn it on for testing with test schools only;
+- production refuses to start with AI on unless `AI_TERMS_CLEARED=true`;
+- only owners, admins and teachers reach it, for the subjects and classes they teach;
+- only subject matter goes to the model (subject, class level, topics, the teacher's notes, the
+  counts); never a student's name, record, score or answer;
+- nothing it drafts is saved until a teacher checks it;
+- `ai_usage` keeps each generation (model, tokens, never the prompt), append-only, against the
+  school's monthly allowance (`AI_MONTHLY_LIMIT`, default 300).
+
+Use a paid-tier key: on the free tier Google may use prompts to improve its products.

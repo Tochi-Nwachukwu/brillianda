@@ -37,6 +37,11 @@ export const PROBLEMS = {
   rate_limited: { status: 429, title: "Too many requests" },
   internal: { status: 500, title: "Something went wrong on our side" },
   service_unavailable: { status: 503, title: "Temporarily unavailable" },
+  ai_disabled: { status: 503, title: "Generating questions isn't switched on" },
+  ai_quota_exceeded: { status: 429, title: "This month's question generations are used up" },
+  ai_unavailable: { status: 503, title: "Generating didn't finish" },
+  ai_invalid_output: { status: 502, title: "Generating didn't finish" },
+  ai_refused: { status: 422, title: "This topic couldn't be used" },
 } as const satisfies Record<string, { status: ContentfulStatusCode; title: string }>;
 
 export type ErrorCode = keyof typeof PROBLEMS;

@@ -102,6 +102,11 @@ Every error is `application/problem+json`:
 | `rate_limited` | 429 | Too many requests; `Retry-After` and `retryAfterSec` say how long | Disable the button and count down |
 | `internal` | 500 | Unexpected server error (details are logged, never returned) | "Something went wrong" + requestId; retry later |
 | `service_unavailable` | 503 | Database or dependency down; `/ready` reports it | Retry with backoff |
+| `ai_disabled` | 503 | Generating questions isn't switched on for this environment (`AI_PROVIDER=off`) | "Generating questions isn't available yet"; hide or disable Generate |
+| `ai_quota_exceeded` | 429 | The school used this month's AI generations; `resetsOn` says when they reset | "Your school has used this month's question generations. They reset on …" |
+| `ai_unavailable` | 503 | The AI provider is down or timed out | "Generating didn't finish. Try again." (keep the teacher's choices) |
+| `ai_invalid_output` | 502 | The provider's answer failed the question format twice | Same as `ai_unavailable` |
+| `ai_refused` | 422 | The provider's safety filter blocked the request | "This topic couldn't be used. Try different words." |
 
 Codes are permanent: a code is never renamed or reused. New situations get new codes.
 

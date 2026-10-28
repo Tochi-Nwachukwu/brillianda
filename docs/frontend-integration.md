@@ -476,3 +476,17 @@ from `PUT /v1/teachers/{id}/subject-classes`, so changing who teaches a class ch
 Accepting works as for staff: `GET /v1/invitations/lookup` gives `role: "student"` and the
 student's name, then `POST /v1/invitations/accept`. `membership.role` (on `/v1/me` and sign-in) can
 now be `"student"`: send them to `/learn`. Every other endpoint answers 403 to a student.
+
+**28 October 2026, B7** (the question bank, and AI-drafted questions)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getQuestionBank` | `GET /v1/questions` → `QuestionBankPage` | teacher, owner, admin | Your type, plus `aiEnabled` (false while generating is switched off here; hide or disable Generate). `usage.resetsOn` is the 1st of next month, Lagos time |
+| `generateQuestions` | `POST /v1/questions/generate` (your `generateRequestSchema`) → `{ questions, usage }` | same | Nothing is saved. 403 outside the person's subjects and classes. Problem codes: `ai_disabled` 503, `ai_quota_exceeded` 429 (with `resetsOn`), `ai_unavailable` 503, `ai_invalid_output` 502, `ai_refused` 422; `rate_limited` after 10 a minute per person. Allow up to 60 seconds |
+| `saveQuestions` | `POST /v1/questions` `{ subjectId, levelId, questions, source }` → `{ saved }` | same | Your `questionSchema` per question (422 `#/questions/2/answer` and so on), up to 100 at a time |
+| `updateQuestion` / `deleteQuestion` | `PUT /v1/questions/{id}` `{ question }` / `DELETE /v1/questions/{id}` → 204 | same | A teacher their own only (403 "You can change your own questions only. Ask an admin to change this one."); owners and admins any |
+
+**Generating is switched off on staging for now** (`AI_PROVIDER=off`, so Generate answers
+`ai_disabled`) while we wait for Google's written answer on the under-18 terms (your
+docs/ai-integration.md, Step 0). The bank works fully. Only the subject, class level, topics, notes
+and counts go to the model, never anything about a student.
