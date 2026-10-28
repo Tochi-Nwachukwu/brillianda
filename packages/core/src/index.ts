@@ -17,3 +17,4 @@ export * from "./booklists.js";
 export * from "./corrections.js";
 export * from "./timetable.js";
 export * from "./questions.js";
+export * from "./cbt.js";

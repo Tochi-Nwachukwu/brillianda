@@ -1276,3 +1276,111 @@ export const aiUsage = pgTable(
     backupRead(),
   ],
 ).enableRLS();
+
+// ——— CBT: tests taken on Brillianda (B8) ———
+
+export const testWhere = pgEnum("test_where", ["anywhere", "school"]);
+export const testStatus = pgEnum("test_status", ["draft", "published"]);
+
+/**
+ * A test for a subject and class level, from the question bank. `questions` is a copy taken when
+ * it's saved, so changing the bank later doesn't change a test students have taken. Only drafts
+ * change; a published test is visible to its classes' students in its window.
+ */
+export const cbtTests = pgTable(
+  "cbt_tests",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    schoolSubjectId: uuid().notNull(),
+    classLevelId: uuid().notNull(),
+    title: text().notNull(),
+    instructions: text().notNull().default(""),
+    questions: jsonb().$type<Record<string, unknown>[]>().notNull(),
+    /** The bank questions it was built from, for editing the draft. */
+    questionIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
+    durationMinutes: integer().notNull(),
+    opensAt: timestamp({ withTimezone: true }).notNull(),
+    closesAt: timestamp({ withTimezone: true }).notNull(),
+    where: testWhere().notNull(),
+    accessCode: text().notNull(),
+    shuffle: boolean().notNull(),
+    showScore: boolean().notNull(),
+    /** The score-sheet part the scores go into (results_settings.components). */
+    componentId: text().notNull(),
+    status: testStatus().notNull().default("draft"),
+    authorId: uuid().references(() => users.id, { onDelete: "set null" }),
+    scoresSentAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("cbt_tests_school_id_id_key").on(t.schoolId, t.id),
+    foreignKey({ name: "cbt_tests_subject_fk", columns: [t.schoolId, t.schoolSubjectId], foreignColumns: [schoolSubjects.schoolId, schoolSubjects.id] }).onDelete("cascade"),
+    foreignKey({ name: "cbt_tests_level_fk", columns: [t.schoolId, t.classLevelId], foreignColumns: [classLevels.schoolId, classLevels.id] }).onDelete("cascade"),
+    index("cbt_tests_school_opens_idx").on(t.schoolId, t.opensAt),
+    check("cbt_tests_duration", sql`${t.durationMinutes} BETWEEN 5 AND 240`),
+    check("cbt_tests_window", sql`${t.closesAt} > ${t.opensAt}`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/** The classes a test is for. */
+export const cbtTestClasses = pgTable(
+  "cbt_test_classes",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    testId: uuid().notNull(),
+    classArmId: uuid().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("cbt_test_classes_school_id_id_key").on(t.schoolId, t.id),
+    unique("cbt_test_classes_pair_key").on(t.schoolId, t.testId, t.classArmId),
+    foreignKey({ name: "cbt_test_classes_test_fk", columns: [t.schoolId, t.testId], foreignColumns: [cbtTests.schoolId, cbtTests.id] }).onDelete("cascade"),
+    foreignKey({ name: "cbt_test_classes_arm_fk", columns: [t.schoolId, t.classArmId], foreignColumns: [classArms.schoolId, classArms.id] }).onDelete("cascade"),
+    index("cbt_test_classes_arm_idx").on(t.schoolId, t.classArmId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
+/**
+ * One student's attempt at a test. The server keeps the clock: the deadline is startedAt plus the
+ * length, or the close, whichever is first; answers count up to 30 seconds after it. Responses and
+ * theory marks are keyed by the question's position in the test.
+ */
+export const cbtAttempts = pgTable(
+  "cbt_attempts",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    testId: uuid().notNull(),
+    studentId: uuid().notNull(),
+    startedAt: timestamp({ withTimezone: true }).notNull(),
+    submittedAt: timestamp({ withTimezone: true }),
+    responses: jsonb().$type<Record<string, unknown>>().notNull().default(sql`'{}'::jsonb`),
+    theoryMarks: jsonb().$type<Record<string, number>>().notNull().default(sql`'{}'::jsonb`),
+    leftPage: integer().notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("cbt_attempts_school_id_id_key").on(t.schoolId, t.id),
+    unique("cbt_attempts_once_key").on(t.schoolId, t.testId, t.studentId),
+    foreignKey({ name: "cbt_attempts_test_fk", columns: [t.schoolId, t.testId], foreignColumns: [cbtTests.schoolId, cbtTests.id] }).onDelete("cascade"),
+    foreignKey({ name: "cbt_attempts_student_fk", columns: [t.schoolId, t.studentId], foreignColumns: [students.schoolId, students.id] }).onDelete("cascade"),
+    index("cbt_attempts_student_idx").on(t.schoolId, t.studentId),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();

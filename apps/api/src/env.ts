@@ -53,7 +53,7 @@ const EnvSchema = z.object({
    */
   AI_PROVIDER: z.enum(["off", "gemini"]).default("off"),
   GEMINI_API_KEY: z.string().optional().or(z.literal("").transform(() => undefined)),
-  AI_MODEL: z.string().min(1).default("gemini-3.8-flash"),
+  AI_MODEL: z.string().min(1).default("gemini-3.1-flash-lite"),
   /** How much the model thinks before answering: low keeps a paper to seconds (Gemini's own default, high, took over a minute). */
   AI_THINKING: z.enum(["minimal", "low", "medium", "high"]).default("low"),
   /** Generations per school per month. */

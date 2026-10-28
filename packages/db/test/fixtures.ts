@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, reportRemarks, reportRatings, publishedResults, promotionDecisions, birthdaySettings, birthdayTexts, bookLists, correctionRequests, timetables, timetableLessons, studentLinks, bankQuestions, aiUsage, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
+import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, reportRemarks, reportRatings, publishedResults, promotionDecisions, birthdaySettings, birthdayTexts, bookLists, correctionRequests, timetables, timetableLessons, studentLinks, bankQuestions, aiUsage, cbtTests, cbtTestClasses, cbtAttempts, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -84,6 +84,12 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
     await tx.insert(studentLinks).values({ schoolId, studentId: student!.id, userId: ownerId });
     await tx.insert(bankQuestions).values({ schoolId, schoolSubjectId: subject!.id, classLevelId: level!.id, question: { type: "trueFalse", text: "The sun is a star.", answer: true, marks: 1, topic: "", difficulty: "easy" }, source: "teacher", authorId: ownerId });
     await tx.insert(aiUsage).values({ schoolId, userId: ownerId, provider: "gemini", model: "test", purpose: "test", questions: 10 });
+    const [cbt] = await tx
+      .insert(cbtTests)
+      .values({ schoolId, schoolSubjectId: subject!.id, classLevelId: level!.id, title: "Fixture test", questions: [{ type: "trueFalse", text: "The sun is a star.", answer: true, marks: 1, topic: "", difficulty: "easy" }], durationMinutes: 30, opensAt: new Date("2026-10-16T08:00:00Z"), closesAt: new Date("2026-10-16T09:00:00Z"), where: "anywhere", accessCode: "ABCDEF", shuffle: false, showScore: false, componentId: "ca1", status: "published" })
+      .returning({ id: cbtTests.id });
+    await tx.insert(cbtTestClasses).values({ schoolId, testId: cbt!.id, classArmId: classArm!.id });
+    await tx.insert(cbtAttempts).values({ schoolId, testId: cbt!.id, studentId: student!.id, startedAt: new Date("2026-10-16T08:01:00Z") });
   });
 
   return { schoolId, ownerId, sessionId };

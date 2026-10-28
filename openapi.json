@@ -7562,6 +7562,829 @@
           "question"
         ]
       },
+      "TestRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "levelName": {
+            "type": "string"
+          },
+          "armLabels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "questions": {
+            "type": "integer"
+          },
+          "marks": {
+            "type": "number"
+          },
+          "durationMinutes": {
+            "type": "integer"
+          },
+          "opensAt": {
+            "type": "string"
+          },
+          "closesAt": {
+            "type": "string"
+          },
+          "where": {
+            "type": "string",
+            "enum": [
+              "anywhere",
+              "school"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          },
+          "window": {
+            "type": "string",
+            "enum": [
+              "before",
+              "open",
+              "closed"
+            ]
+          },
+          "submitted": {
+            "type": "integer"
+          },
+          "students": {
+            "type": "integer"
+          },
+          "toMark": {
+            "type": "integer",
+            "description": "Theory answers still to mark"
+          },
+          "sentAt": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "by": {
+            "type": "string"
+          },
+          "byMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "subjectName",
+          "levelName",
+          "armLabels",
+          "questions",
+          "marks",
+          "durationMinutes",
+          "opensAt",
+          "closesAt",
+          "where",
+          "status",
+          "window",
+          "submitted",
+          "students",
+          "toMark",
+          "sentAt",
+          "by",
+          "byMe"
+        ]
+      },
+      "TestEditorData": {
+        "type": "object",
+        "properties": {
+          "pairs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "subjectId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "subjectName": {
+                  "type": "string"
+                },
+                "levelId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "levelName": {
+                  "type": "string"
+                },
+                "arms": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "label": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "label"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "subjectId",
+                "subjectName",
+                "levelId",
+                "levelName",
+                "arms"
+              ]
+            }
+          },
+          "bank": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BankQuestion"
+            }
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "maxScore": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "maxScore"
+              ]
+            }
+          },
+          "test": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "subjectId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "levelId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "title": {
+                "type": "string"
+              },
+              "instructions": {
+                "type": "string"
+              },
+              "armIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "questionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Only the ones still in the bank"
+              },
+              "durationMinutes": {
+                "type": "integer"
+              },
+              "opensAt": {
+                "type": "string"
+              },
+              "closesAt": {
+                "type": "string"
+              },
+              "where": {
+                "type": "string",
+                "enum": [
+                  "anywhere",
+                  "school"
+                ]
+              },
+              "shuffle": {
+                "type": "boolean"
+              },
+              "showScore": {
+                "type": "boolean"
+              },
+              "componentId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "subjectId",
+              "levelId",
+              "title",
+              "instructions",
+              "armIds",
+              "questionIds",
+              "durationMinutes",
+              "opensAt",
+              "closesAt",
+              "where",
+              "shuffle",
+              "showScore",
+              "componentId"
+            ]
+          }
+        },
+        "required": [
+          "pairs",
+          "bank",
+          "components",
+          "test"
+        ]
+      },
+      "SaveTest": {
+        "type": "object",
+        "properties": {
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "levelId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publish": {
+            "type": "boolean",
+            "default": false
+          },
+          "settings": {
+            "$ref": "#/components/schemas/TestSettings"
+          }
+        },
+        "required": [
+          "subjectId",
+          "levelId",
+          "settings"
+        ],
+        "description": "publish: true sets the test (students see it in its window); false keeps it a draft"
+      },
+      "TestSettings": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 500,
+            "default": ""
+          },
+          "armIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1
+          },
+          "questionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 240
+          },
+          "opensAt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "closesAt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "where": {
+            "type": "string",
+            "enum": [
+              "anywhere",
+              "school"
+            ]
+          },
+          "shuffle": {
+            "type": "boolean"
+          },
+          "showScore": {
+            "type": "boolean"
+          },
+          "componentId": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "title",
+          "armIds",
+          "questionIds",
+          "durationMinutes",
+          "opensAt",
+          "closesAt",
+          "where",
+          "shuffle",
+          "showScore",
+          "componentId"
+        ]
+      },
+      "TestResults": {
+        "type": "object",
+        "properties": {
+          "test": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TestRow"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "accessCode": {
+                    "type": "string"
+                  },
+                  "showScore": {
+                    "type": "boolean"
+                  },
+                  "component": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "maxScore": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "maxScore"
+                    ]
+                  },
+                  "questionList": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Question"
+                    }
+                  }
+                },
+                "required": [
+                  "accessCode",
+                  "showScore",
+                  "component",
+                  "questionList"
+                ]
+              }
+            ]
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "studentId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "fullName": {
+                  "type": "string"
+                },
+                "armLabel": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "not started",
+                    "in progress",
+                    "submitted"
+                  ]
+                },
+                "attemptId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "score": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "auto": {
+                      "type": "number"
+                    },
+                    "theory": {
+                      "type": "number"
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "max": {
+                      "type": "number"
+                    },
+                    "toMark": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "auto",
+                    "theory",
+                    "total",
+                    "max",
+                    "toMark"
+                  ]
+                },
+                "leftPage": {
+                  "type": "integer"
+                },
+                "responses": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/TestResponse"
+                  }
+                },
+                "theoryMarks": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "studentId",
+                "fullName",
+                "armLabel",
+                "state",
+                "attemptId",
+                "score",
+                "leftPage",
+                "responses",
+                "theoryMarks"
+              ]
+            }
+          },
+          "stats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "answered": {
+                  "type": "integer"
+                },
+                "right": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "answered",
+                "right"
+              ]
+            },
+            "description": "Per question: how many answered, and how many got it right (theory: null)"
+          }
+        },
+        "required": [
+          "test",
+          "rows",
+          "stats"
+        ]
+      },
+      "TestResponse": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "option": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4
+              }
+            },
+            "required": [
+              "option"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "value": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "maxLength": 5000
+              }
+            },
+            "required": [
+              "text"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "TheoryMark": {
+        "type": "object",
+        "properties": {
+          "marks": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "marks"
+        ]
+      },
+      "StudentTestRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "integer"
+          },
+          "questions": {
+            "type": "integer"
+          },
+          "opensAt": {
+            "type": "string"
+          },
+          "closesAt": {
+            "type": "string"
+          },
+          "where": {
+            "type": "string",
+            "enum": [
+              "anywhere",
+              "school"
+            ]
+          },
+          "window": {
+            "type": "string",
+            "enum": [
+              "before",
+              "open",
+              "closed"
+            ]
+          },
+          "attempt": {
+            "type": "string",
+            "enum": [
+              "none",
+              "in progress",
+              "submitted"
+            ]
+          },
+          "score": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "complete": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "total",
+              "max",
+              "complete"
+            ],
+            "description": "Once submitted, when the teacher allows it"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "subjectName",
+          "durationMinutes",
+          "questions",
+          "opensAt",
+          "closesAt",
+          "where",
+          "window",
+          "attempt",
+          "score"
+        ]
+      },
+      "TakingTest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "subjectName": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "integer"
+          },
+          "where": {
+            "type": "string",
+            "enum": [
+              "anywhere",
+              "school"
+            ]
+          },
+          "deadline": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Milliseconds since 1970, on the server's clock; null until started"
+          },
+          "now": {
+            "type": "integer",
+            "description": "The server's time, so the countdown doesn't trust the device's clock"
+          },
+          "submitted": {
+            "type": "boolean"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "index": {
+                  "type": "integer"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "objective",
+                    "trueFalse",
+                    "fillGap",
+                    "theory"
+                  ]
+                },
+                "text": {
+                  "type": "string"
+                },
+                "marks": {
+                  "type": "number"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "index": {
+                        "type": "integer"
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "index",
+                      "text"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "index",
+                "type",
+                "text",
+                "marks",
+                "options"
+              ]
+            },
+            "description": "In this student's order, options shuffled, no answers. Empty until started"
+          },
+          "responses": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TestResponse"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "instructions",
+          "subjectName",
+          "durationMinutes",
+          "where",
+          "deadline",
+          "now",
+          "submitted",
+          "questions",
+          "responses"
+        ]
+      },
+      "StartTest": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 20,
+            "default": ""
+          }
+        }
+      },
+      "SaveAnswer": {
+        "type": "object",
+        "properties": {
+          "response": {
+            "$ref": "#/components/schemas/TestResponse"
+          }
+        },
+        "required": [
+          "response"
+        ]
+      },
       "ImportSetup": {
         "type": "object",
         "properties": {
@@ -17148,6 +17971,1071 @@
           },
           "404": {
             "description": "No such question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tests": {
+      "get": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "The person's tests (every test for owners and admins), newest window first",
+        "responses": {
+          "200": {
+            "description": "Tests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TestRow"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Save a new test from the bank: a draft, or set (publish) it",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A question left the bank",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A setting needs fixing, e.g. #/settings/closesAt",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tests/editor": {
+      "get": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "What can go in a test: subject and class pairs with their classes, the bank, the score-sheet parts, and the draft (?test=)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "test",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Editor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestEditorData"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tests/{id}": {
+      "put": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Change a draft, or set (publish) it. Set tests don't change",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveTest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not a draft, or a question left the bank",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A setting needs fixing",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Delete a test before any student starts it",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Students have started it",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tests/{id}/results": {
+      "get": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "A test's results: each student's state, answers and score, and how each question went",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestResults"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tests/{id}/attempts/{attemptId}/marks/{index}": {
+      "put": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Mark one theory answer: 0 to the question's marks, in halves",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "attemptId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "index",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TheoryMark"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not submitted yet, or not a theory question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Out of range (#/marks)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tests/{id}/send-scores": {
+      "post": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Put every submitted, fully marked attempt's score into this term's sheet, scaled to the part's marks. Sheets marked complete are skipped",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sent": {
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    },
+                    "lockedClasses": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "sent",
+                    "skipped",
+                    "lockedClasses"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No term open, or the part left the results settings",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/tests": {
+      "get": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "The student's tests: their class's set tests, in window order",
+        "responses": {
+          "200": {
+            "description": "Tests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StudentTestRow"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/tests/{id}": {
+      "get": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "One test, for its start page or while taking it. Never includes the answers",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TakingTest"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/tests/{id}/start": {
+      "post": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Start the test, inside its window. School-only tests need the code shown in the room",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Started (or already started)"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not open yet, or closed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Wrong code (#/code)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/tests/{id}/answers/{index}": {
+      "put": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Save one answer as the student goes (null clears it). Refused after the deadline plus 30 seconds",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "required": false,
+            "name": "index",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAnswer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not started, submitted, or time is up",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Doesn't fit the question",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/tests/{id}/left": {
+      "post": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "The test page was hidden (another tab or app): the teacher sees how often",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Noted"
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/tests/{id}/submit": {
+      "post": {
+        "tags": [
+          "cbt"
+        ],
+        "summary": "Submit the test. Returns the score when the test shows it",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Submitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "score": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "max": {
+                          "type": "number"
+                        },
+                        "complete": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "max",
+                        "complete"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "score"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in to this school",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed for this role",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active school here, or no such test",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not started",
             "content": {
               "application/problem+json": {
                 "schema": {

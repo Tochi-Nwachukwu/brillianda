@@ -37,10 +37,10 @@ const errors = {
 } as const;
 const NOT_YOURS = "You can only write questions for the subjects and classes you teach.";
 
-type Pair = { subjectId: string; subjectName: string; levelId: string; levelName: string };
+export type Pair = { subjectId: string; subjectName: string; levelId: string; levelName: string };
 
 /** The subject and class level pairs a person may write for: what they teach, or everything for owners and admins. */
-async function pairsFor(tx: Tx, userId: string, admin: boolean): Promise<Pair[]> {
+export async function pairsFor(tx: Tx, userId: string, admin: boolean): Promise<Pair[]> {
   const levels = await tx.select({ id: classLevels.id, name: classLevels.name, position: classLevels.position }).from(classLevels).where(isNull(classLevels.archivedAt));
   const subjects = new Map((await tx.select({ id: schoolSubjects.id, name: schoolSubjects.name }).from(schoolSubjects)).map((s) => [s.id, s.name]));
   const levelById = new Map(levels.map((l) => [l.id, l]));
@@ -77,7 +77,7 @@ async function usageOf(tx: Tx, limit: number) {
 
 const UsageSchema = z.object({ used: z.number().int(), limit: z.number().int(), resetsOn: z.string() }).openapi("AiUsage");
 const PairSchema = z.object({ subjectId: z.string().uuid(), subjectName: z.string(), levelId: z.string().uuid(), levelName: z.string() });
-const BankQuestionSchema = z
+export const BankQuestionSchema = z
   .object({ id: z.string().uuid(), subjectId: z.string().uuid(), levelId: z.string().uuid(), question: questionSchema, source: z.enum(["ai", "teacher"]), by: z.string(), byMe: z.boolean(), at: z.number().int() })
   .openapi("BankQuestion");
 const QuestionBankPageSchema = z

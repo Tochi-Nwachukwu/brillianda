@@ -490,3 +490,24 @@ now be `"student"`: send them to `/learn`. Every other endpoint answers 403 to a
 `ai_disabled`) while we wait for Google's written answer on the under-18 terms (your
 docs/ai-integration.md, Step 0). The bank works fully. Only the subject, class level, topics, notes
 and counts go to the model, never anything about a student.
+
+**28 October 2026, B8** (CBT: tests taken on Brillianda)
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getTests` | `GET /v1/tests` → `TestRow[]` | teacher (theirs), owner, admin (all) | Newest window first. `sentAt` in ms |
+| `getTestEditor` | `GET /v1/tests/editor?test=` → `TestEditorData` | same | Pairs with the classes the person teaches that subject in (all for admins). 409 for a test that isn't a draft |
+| `saveTest` | `POST /v1/tests` · `PUT /v1/tests/{id}` `{ subjectId, levelId, publish, settings }` → `{ id }` | same | `settings` is your `testSettingsSchema` (422 `#/settings/closesAt` and so on). The questions are copied in when saved. 403 for a class they don't teach that subject in; 409 if a question left the bank, or the test isn't a draft |
+| `deleteTest` | `DELETE /v1/tests/{id}` → 204 | same | 409 "Students have started this test, so it stays. …" |
+| `getTestResults` | `GET /v1/tests/{id}/results` → `TestResults` | same | Includes `accessCode` for the room |
+| `markTheory` | `PUT /v1/tests/{id}/attempts/{attemptId}/marks/{index}` `{ marks }` → 204 | same | 0 to the question's marks, rounded to halves (422 `#/marks`); submitted attempts and theory questions only (409) |
+| `sendScores` | `POST /v1/tests/{id}/send-scores` → `{ sent, skipped, lockedClasses }` | same | Into this term's sheet, the test's part, scaled (two decimals). Skipped: not submitted, theory unmarked, or excluded from the subject. Completed sheets are left alone and listed |
+| `getMyTests` | `GET /v1/me/tests` → `StudentTestRow[]` | student | Set tests for their class |
+| `getTakingTest` | `GET /v1/me/tests/{id}` → `TakingTest` | student | Plus `now`, the server's time, so the countdown can run on the server's clock. `questions` is empty until started; never any answer, accepted answers or marking guide. An option's `index` is its position in the question, which is what `{ option }` sends |
+| `startTest` | `POST /v1/me/tests/{id}/start` `{ code }` → 204 | student | Any case. 409 before it opens or after it closes; 422 `#/code` for a wrong code |
+| `saveAnswer` | `PUT /v1/me/tests/{id}/answers/{index}` `{ response }` → 204 | student | `index` is the question's `index`. `{ option }`, `{ value }` or `{ text }` to fit the question (422 `#/response`); null clears. 409 "Time is up. Your answers were submitted." past the deadline plus 30 seconds |
+| `noteLeftPage` | `POST /v1/me/tests/{id}/left` → 204 | student | |
+| `submitTest` | `POST /v1/me/tests/{id}/submit` → `{ score }` | student | `score` is null unless the test shows it |
+
+No AI is involved in CBT: tests are built from saved bank questions, and marking follows your
+`markAnswer` and `scoreAttempt`.

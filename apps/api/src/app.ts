@@ -33,6 +33,7 @@ import { correctionRoutes } from "./routes/corrections.js";
 import { timetableRoutes } from "./routes/timetable.js";
 import { studentPortalRoutes } from "./routes/student-portal.js";
 import { questionRoutes } from "./routes/questions.js";
+import { cbtRoutes } from "./routes/cbt.js";
 import { promotionRoutes } from "./routes/promotion.js";
 import { termRoutes } from "./routes/terms.js";
 import { devRoutes } from "./routes/dev.js";
@@ -172,6 +173,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", timetableRoutes);
   app.route("/", studentPortalRoutes);
   app.route("/", questionRoutes);
+  app.route("/", cbtRoutes);
   app.route("/", importRoutes);
   app.route("/", brandingRoutes);
   app.route("/", trialRoutes);

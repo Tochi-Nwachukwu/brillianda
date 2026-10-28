@@ -157,4 +157,6 @@ teacher-only feature is allowed. Until a written yes (and a lawyer's read):
 - `ai_usage` keeps each generation (model, tokens, never the prompt), append-only, against the
   school's monthly allowance (`AI_MONTHLY_LIMIT`, default 300).
 
-Use a paid-tier key: on the free tier Google may use prompts to improve its products.
+Use a paid-tier key: on the free tier Google may use prompts to improve its products. The default
+model is `gemini-3.1-flash-lite` (28 October: `gemini-3.8-flash` was overloaded and timed out on
+staging; Flash-Lite drafted six correct questions in about 20 seconds). `AI_MODEL` changes it.
