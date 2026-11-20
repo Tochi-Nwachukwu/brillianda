@@ -195,6 +195,8 @@ export interface ArmOption {
   levelId: string;
   levelName: string;
   levelPosition: number;
+  /** The level's section: preschool, primary, junior or senior. */
+  section: "preschool" | "primary" | "junior" | "senior";
 }
 
 /**
@@ -220,6 +222,7 @@ export async function armOptions(tx: Tx, opts: { all?: boolean } = {}): Promise<
       levelId: r.level.id,
       levelName: r.level.name,
       levelPosition: r.level.position,
+      section: r.level.section,
     };
   });
 }

@@ -4,6 +4,7 @@
  *
  *   GET    /v1/questions             the pairs this person may write for, their questions, this month's AI use
  *   POST   /v1/questions/generate    drafts from the AI; nothing is saved
+ *   POST   /v1/questions/notes       photos and PDFs of lesson notes → their text; nothing is kept
  *   POST   /v1/questions             { subjectId, levelId, questions, source } → { saved }
  *   PUT    /v1/questions/{id}        { question }
  *   DELETE /v1/questions/{id}
@@ -19,10 +20,10 @@ import { MONTHLY_GENERATIONS, type Question } from "@brillianda/core";
 import { aiUsage, and, asc, bankQuestions, classArms, classLevels, classLevelSubjects, desc, eq, gte, isNull, schoolSubjects, subjectTeachers, users, withSchool, type Tx } from "@brillianda/db";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import type { AppEnv } from "../context.js";
-import { AiError } from "../lib/ai.js";
+import { AiError, NO_TEXT, type NoteFile } from "../lib/ai.js";
 import { lagosToday } from "../lib/attendance.js";
 import { ApiError, problemContent } from "../lib/errors.js";
-import { asQuestion, generateRequestSchema, questionSchema } from "../lib/questions.js";
+import { asQuestion, generateRequestSchema, NOTE_PDF_MAX_BYTES, NOTES_MAX, questionSchema, readNotesSchema } from "../lib/questions.js";
 import { RATE_RULES } from "../lib/rate-limit.js";
 import { schoolRoute, type Role } from "../school-route.js";
 
@@ -59,6 +60,7 @@ export async function pairsFor(tx: Tx, userId: string, admin: boolean): Promise<
     .map(({ position: _, ...p }) => p);
 }
 
+const aiCode = (err: AiError) => ({ disabled: "ai_disabled", unavailable: "ai_unavailable", invalid_output: "ai_invalid_output", refused: "ai_refused" } as const)[err.kind];
 const isAdmin = (role: Role) => role === "owner" || role === "admin";
 const pairOf = (pairs: Pair[], subjectId: string, levelId: string) => pairs.find((p) => p.subjectId === subjectId && p.levelId === levelId);
 
@@ -162,8 +164,7 @@ questionRoutes.openapi(
       result = await ai.generate(req, { subjectName: ready.pair.subjectName, levelName: ready.pair.levelName });
     } catch (err) {
       if (!(err instanceof AiError)) throw err;
-      const code = ({ disabled: "ai_disabled", unavailable: "ai_unavailable", invalid_output: "ai_invalid_output", refused: "ai_refused" } as const)[err.kind];
-      throw new ApiError(code, err.message);
+      throw new ApiError(aiCode(err), err.message);
     }
     // 3. Record the generation (it counts once it succeeded).
     const usage = await withSchool(db, ready.schoolId, async (tx) => {
@@ -182,6 +183,67 @@ questionRoutes.openapi(
       return usageOf(tx, limit);
     });
     return c.json({ questions: result.questions, usage }, 200);
+  },
+);
+
+/** The file's first bytes, so a PDF labelled as a photo (or the other way round) is refused. */
+function looksLike(mimeType: NoteFile["mimeType"], bytes: Buffer): boolean {
+  const head = bytes.subarray(0, 12);
+  if (mimeType === "application/pdf") return head.subarray(0, 5).toString("latin1") === "%PDF-";
+  if (mimeType === "image/jpeg") return head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
+  if (mimeType === "image/png") return head.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  return head.subarray(0, 4).toString("latin1") === "RIFF" && head.subarray(8, 12).toString("latin1") === "WEBP";
+}
+
+const noteFileError = (i: number, detail: string) => new ApiError("validation_failed", detail, { extensions: { errors: [{ pointer: `#/files/${i}/dataUrl`, detail, code: "invalid_file" }] } });
+
+questionRoutes.openapi(
+  createRoute({
+    method: "post",
+    path: "/v1/questions/notes",
+    tags: ["questions"],
+    summary:
+      "Read photos (JPEG, PNG, WebP) or PDFs (up to 2 MB each) of lesson notes: 1 to 5 files as data URLs, 3.8 million characters in all → a plain transcription, for the teacher to correct before generating. Nothing is kept or logged, and it doesn't use up a monthly generation",
+    request: { body: { content: { "application/json": { schema: readNotesSchema } }, required: true } },
+    responses: {
+      200: ok("The text, cut at 20,000 characters (truncated says whether it was)", z.object({ text: z.string(), truncated: z.boolean() })),
+      413: problemContent("Over 4.4 MB in all"),
+      422: problemContent("A file needs fixing (e.g. #/files/1/dataUrl), no writing found, or ai_refused"),
+      429: problemContent("rate_limited (10 a minute per person)"),
+      502: problemContent("ai_invalid_output"),
+      503: problemContent("ai_disabled (not switched on here) or ai_unavailable"),
+      ...errors,
+    },
+  }),
+  async (c) => {
+    const { files: input } = c.req.valid("json");
+    const { ai } = c.get("deps");
+    // Teachers, owners and admins; a short rate limit. No transaction is held while the model reads.
+    await schoolRoute(c, { roles: STAFF, userRateLimit: RATE_RULES.aiNotesPerUser }, async () => {
+      if (!ai.enabled) throw new ApiError("ai_disabled", "Reading photos and PDFs isn’t switched on yet. Type or paste your notes instead.");
+    });
+    const files: NoteFile[] = input.map((f, i) => {
+      const comma = f.dataUrl.indexOf(",");
+      const mimeType = f.dataUrl.slice(5, f.dataUrl.indexOf(";")) as NoteFile["mimeType"];
+      const data = f.dataUrl.slice(comma + 1);
+      const bytes = Buffer.from(data, "base64");
+      if (!bytes.length || !looksLike(mimeType, bytes)) throw noteFileError(i, mimeType === "application/pdf" ? "This isn’t a PDF that can be read. Save it again and retry." : "This photo can’t be read. Take it again, or add a JPG or PNG.");
+      if (mimeType === "application/pdf" && bytes.length > NOTE_PDF_MAX_BYTES) throw noteFileError(i, "This PDF is over 2 MB. Add fewer pages, or photograph them instead.");
+      return { mimeType, data };
+    });
+    let text: string;
+    try {
+      text = (await ai.readNotes(files)).text.trim();
+    } catch (err) {
+      if (!(err instanceof AiError)) throw err;
+      throw new ApiError(aiCode(err), err.message);
+    }
+    if (!text || text === NO_TEXT) {
+      const detail = "We couldn’t find any writing in these files. Try a clearer photo, or type the notes.";
+      throw new ApiError("validation_failed", detail, { extensions: { errors: [{ pointer: "#/files", detail, code: "no_text" }] } });
+    }
+    const truncated = text.length > NOTES_MAX;
+    return c.json({ text: truncated ? text.slice(0, NOTES_MAX).trimEnd() : text, truncated }, 200);
   },
 );
 

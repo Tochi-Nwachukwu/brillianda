@@ -1,9 +1,12 @@
-// Copied from the front end's packages/core/src/timetable.ts (25 Oct 2026), without its Zod schemas
-// (periodsSchema, lessonInputSchema, timetableImportSchema), which live in apps/api/src/routes/timetable.ts
-// with the same rules.
-// The school timetable (user request, 15 Oct 2026): one bell schedule for the whole school, Monday
-// to Friday, and each class's subject in each lesson period. Teachers see it with their own lessons
-// highlighted, because a lesson's teacher is the class's teacher for that subject.
+// Copied from the front end's packages/core/src/timetable.ts (6 Nov 2026), without its Zod schemas
+// (periodsSchema, groupsSchema, lessonInputSchema, timetableImportSchema), which live in
+// apps/api/src/routes/timetable.ts with the same rules.
+// The school timetable (user request, 15 Oct 2026): a bell schedule, Monday to Friday, and each
+// class's subject in each lesson period. Teachers see it with their own lessons highlighted, because
+// a lesson's teacher is the class's teacher for that subject. A school can split its timetable into
+// groups of class sections (user request, 30 Oct 2026): Primary on its own, JSS and SSS together, or
+// JSS and SSS apart. Each group has its own bell schedule and document.
+import type { Section } from "./subjects.js";
 
 export const DAYS = [1, 2, 3, 4, 5] as const;
 export type Day = (typeof DAYS)[number];
@@ -30,7 +33,6 @@ export const DEFAULT_PERIODS: Period[] = [
 /** "HH:MM", 24-hour. */
 export const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-
 /** "8:00" from "08:00". */
 export function shortTime(time: string): string {
   return time.replace(/^0(\d)/, "$1");
@@ -38,10 +40,69 @@ export function shortTime(time: string): string {
 
 export type Lesson = { armId: string; day: Day; periodId: string; subjectId: string };
 
+// ——— Splitting the timetable by class group ———
+
+export const SECTIONS: readonly Section[] = ["preschool", "primary", "junior", "senior"];
+/** How schools say them in a timetable's name: Primary, JSS, SSS. */
+export const SECTION_SHORT: Record<Section, string> = { preschool: "Nursery", primary: "Primary", junior: "JSS", senior: "SSS" };
+
+/** One timetable: the class sections it covers, and its own bell schedule. */
+export type GroupDraft = { id?: string; name: string; sections: Section[] };
+
+/** "Primary", "JSS and SSS", or "Whole school" when every section is in. */
+export function groupName(sections: readonly Section[], available: readonly Section[] = SECTIONS): string {
+  const picked = SECTIONS.filter((s) => sections.includes(s));
+  if (picked.length > 1 && available.every((s) => picked.includes(s))) return "Whole school";
+  return picked.map((s) => SECTION_SHORT[s]).join(" and ") || "Timetable";
+}
+
+/** The group a class section belongs to: its own, else the first (a class whose section is unknown). */
+export function groupFor<G extends { sections: readonly Section[] }>(groups: G[], section: Section | null | undefined): G {
+  return (section && groups.find((g) => g.sections.includes(section))) || groups[0]!;
+}
+
+const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+
 /** Two lessons for one teacher at the same time, in different classes. */
 export type Clash = { teacherId: string; day: Day; periodId: string; armIds: string[] };
 
-export function clashes(lessons: Lesson[], teacherOf: (armId: string, subjectId: string) => string | null): Clash[] {
+/**
+ * Teachers in two classes at once. Without `timeOf`, the same period id is the same time (one bell
+ * schedule). With it, lessons clash when their times overlap, which is what two groups with
+ * different bell schedules need.
+ */
+export function clashes(lessons: Lesson[], teacherOf: (armId: string, subjectId: string) => string | null, timeOf?: (armId: string, periodId: string) => { start: string; end: string } | null): Clash[] {
+  if (timeOf) {
+    const byTeacherDay = new Map<string, { armId: string; periodId: string; start: number; end: number }[]>();
+    for (const l of lessons) {
+      const teacherId = teacherOf(l.armId, l.subjectId);
+      const time = teacherId ? timeOf(l.armId, l.periodId) : null;
+      if (!teacherId || !time) continue;
+      const key = `${teacherId}|${l.day}`;
+      (byTeacherDay.get(key) ?? byTeacherDay.set(key, []).get(key)!).push({ armId: l.armId, periodId: l.periodId, start: minutes(time.start), end: minutes(time.end) });
+    }
+    const found: Clash[] = [];
+    for (const [key, list] of byTeacherDay) {
+      const [teacherId, day] = key.split("|") as [string, string];
+      list.sort((a, b) => a.start - b.start);
+      let cluster: typeof list = [];
+      let until = -1;
+      const flush = () => {
+        const arms = [...new Set(cluster.map((x) => x.armId))];
+        if (arms.length > 1) found.push({ teacherId, day: Number(day) as Day, periodId: cluster[0]!.periodId, armIds: arms });
+      };
+      for (const item of list) {
+        if (cluster.length && item.start >= until) {
+          flush();
+          cluster = [];
+        }
+        cluster.push(item);
+        until = Math.max(cluster.length === 1 ? 0 : until, item.end);
+      }
+      if (cluster.length) flush();
+    }
+    return found;
+  }
   const at = new Map<string, Clash>();
   for (const l of lessons) {
     const teacherId = teacherOf(l.armId, l.subjectId);
@@ -165,4 +226,69 @@ function lessonsFrom(cells: { day: Day; period: Period; text: string }[], subjec
     else problems.push({ day, periodId: period.id, text, message: `“${text}” isn’t one of the school’s subjects` });
   }
   return { ok: true, lessons, problems };
+}
+
+// ——— Reading a whole-school timetable (one sheet, laid out like a printed timetable) ———
+
+const DAY_WORDS: Record<string, Day> = { mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2, wed: 3, wednesday: 3, thu: 4, thur: 4, thurs: 4, thursday: 4, fri: 5, friday: 5 };
+
+/** The start of a heading like "8:40–9:20am", "11:55am–12:30pm" or "Period 1 (8:00–8:40)", as "HH:MM"; a lesson day never starts before 7. */
+function headingStart(heading: string): string | null {
+  const text = (heading.match(/\(([^)]*)\)/)?.[1] ?? heading).replace(/\s/g, "");
+  const m = text.match(/^(\d{1,2}):(\d{2})(am|pm)?[–—-]/i);
+  if (!m) return null;
+  let hour = Number(m[1]);
+  if (m[3]?.toLowerCase() === "pm" && hour < 12) hour += 12;
+  else if (!m[3] && hour < 7) hour += 12;
+  return `${String(hour).padStart(2, "0")}:${m[2]}`;
+}
+
+export type MasterRead = {
+  arms: { armId: string; label: string; lessons: Omit<Lesson, "armId">[]; problems: GridProblem[] }[];
+  /** Class names in the sheet that aren't in this timetable. */
+  skipped: string[];
+};
+
+/**
+ * A sheet with "DAYS | Time/Class | 8:00–8:40am | …" across the top, then for each day a row per
+ * class (the day written once, or on every row). Columns are matched to the bell schedule by start
+ * time, so break columns are ignored. Null when the sheet isn't laid out like this.
+ */
+export function readMasterGrid(rows: string[][], periods: Period[], subjects: { id: string; name: string; code: string }[], arms: { id: string; label: string }[]): MasterRead | null {
+  const clean = rows.map((r) => r.map((c) => String(c ?? "").trim()));
+  const head = clean.findIndex((r) => r.some((c) => norm(c) === "timeclass"));
+  if (head < 0) return null;
+  const classCol = clean[head]!.findIndex((c) => norm(c) === "timeclass");
+  const columns = new Map<number, Period>();
+  clean[head]!.forEach((text, i) => {
+    if (i <= classCol) return;
+    const start = headingStart(text);
+    const period = start ? periods.find((p) => p.kind === "lesson" && p.start === start) : undefined;
+    if (period) columns.set(i, period);
+  });
+  if (!columns.size) return null;
+  const byKey = new Map(arms.map((a) => [norm(a.label), a]));
+  const found = new Map<string, MasterRead["arms"][number]>();
+  const skipped = new Set<string>();
+  let day: Day | null = null;
+  for (const row of clean.slice(head + 1)) {
+    const named = DAY_WORDS[norm(row[0] ?? "")];
+    if (named) day = named;
+    const label = row[classCol] ?? "";
+    if (!label || !day) continue;
+    const arm = byKey.get(norm(label));
+    if (!arm) {
+      skipped.add(label);
+      continue;
+    }
+    const entry = found.get(arm.id) ?? found.set(arm.id, { armId: arm.id, label: arm.label, lessons: [], problems: [] }).get(arm.id)!;
+    for (const [col, period] of columns) {
+      const text = row[col] ?? "";
+      if (!text) continue;
+      const subjectId = matchSubject(text, subjects);
+      if (subjectId) entry.lessons.push({ day, periodId: period.id, subjectId });
+      else entry.problems.push({ day, periodId: period.id, text, message: `${text} isn’t one of your subjects` });
+    }
+  }
+  return { arms: [...found.values()].filter((a) => a.lessons.length || a.problems.length), skipped: [...skipped] };
 }

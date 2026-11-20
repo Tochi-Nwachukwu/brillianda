@@ -337,6 +337,20 @@
       "when": 1793183118850,
       "tag": "0047_force_rls_cbt",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1795175024843,
+      "tag": "0048_timetable_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1795175028161,
+      "tag": "0049_force_rls_timetable_groups",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { uuidv7 } from "uuidv7";
 import type { Database } from "../src/client.js";
-import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, reportRemarks, reportRatings, publishedResults, promotionDecisions, birthdaySettings, birthdayTexts, bookLists, correctionRequests, timetables, timetableLessons, studentLinks, bankQuestions, aiUsage, cbtTests, cbtTestClasses, cbtAttempts, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
+import { academicSessions, armFormTeachers, arms, auditLog, classArms, classLevels, classLevelSubjects, counters, enrolments, parentLinks, registerMarks, resultsSettings, termClosures, scores, scoreExclusions, sheetCompletions, unlockRequests, reportRemarks, reportRatings, publishedResults, promotionDecisions, birthdaySettings, birthdayTexts, bookLists, correctionRequests, timetables, timetableGroups, timetableLessons, studentLinks, bankQuestions, aiUsage, cbtTests, cbtTestClasses, cbtAttempts, registers, subjectTeachers, guardians, importBatches, schoolLogos, schoolSubjects, studentGuardians, students, invitations, schoolMembers, schools, sessions, terms, users } from "../src/schema/index.js";
 import { withSchool } from "../src/with-school.js";
 
 export interface SeededSchool {
@@ -80,6 +80,7 @@ export async function seedSchool(db: Database, subdomain: string): Promise<Seede
     await tx.insert(bookLists).values({ schoolId, classLevelId: level!.id, startYear: 2026, items: [{ id: "i1", category: "textbook", name: "Basic Science", detail: "", quantity: 1, price: 2500 }], shared: true });
     await tx.insert(correctionRequests).values({ schoolId, studentId: student!.id, guardianId: guardian!.id, changes: [{ field: "firstName", from: "Ada", to: "Adaeze" }] });
     await tx.insert(timetables).values({ schoolId, periods: [{ id: "p1", label: "Period 1", start: "08:00", end: "08:40", kind: "lesson" }] });
+    await tx.insert(timetableGroups).values({ schoolId, name: "Whole school", sections: ["primary", "junior"], periods: [{ id: "p1", label: "Period 1", start: "08:00", end: "08:40", kind: "lesson" }] });
     await tx.insert(timetableLessons).values({ schoolId, classArmId: classArm!.id, day: 1, periodId: "p1", schoolSubjectId: subject!.id });
     await tx.insert(studentLinks).values({ schoolId, studentId: student!.id, userId: ownerId });
     await tx.insert(bankQuestions).values({ schoolId, schoolSubjectId: subject!.id, classLevelId: level!.id, question: { type: "trueFalse", text: "The sun is a star.", answer: true, marks: 1, topic: "", difficulty: "easy" }, source: "teacher", authorId: ownerId });

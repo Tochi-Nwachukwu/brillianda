@@ -5,6 +5,7 @@
  *   set -a; source .env.vercel; set +a
  *   pnpm --filter @brillianda/api team:add -- ada@brillianda.com "Ada Okoro"
  *   pnpm --filter @brillianda/api team:add -- --disable ada@brillianda.com
+ *   pnpm --filter @brillianda/api team:add -- --rename support@brillianda.com "Brillianda Support"
  *
  * Prints the password once. Send it privately; it is not stored anywhere else.
  */
@@ -12,7 +13,7 @@ import { closeDatabase } from "@brillianda/db";
 import { buildDeps } from "../src/deps.js";
 import { loadEnv } from "../src/env.js";
 import { createLogger } from "../src/lib/logger.js";
-import { addTeamMember, disableTeamMember } from "../src/team-admin.js";
+import { addTeamMember, disableTeamMember, renameTeamMember } from "../src/team-admin.js";
 
 const args = process.argv.slice(2).filter((a) => a !== "--");
 const env = loadEnv({ ROOT_DOMAIN: "seed.invalid", ...process.env, MAIL_OUTBOX_KEY: "" });
@@ -21,6 +22,10 @@ try {
   if (args[0] === "--disable") {
     const done = await disableTeamMember(deps.db, args[1] ?? "");
     console.log(done ? `\nDisabled ${args[1]} and signed them out.\n` : `\nNo team account for ${args[1]}.\n`);
+  } else if (args[0] === "--rename") {
+    const [, email = "", ...name] = args;
+    const done = await renameTeamMember(deps.db, email, name.join(" "));
+    console.log(done ? `\nRenamed ${email}. Change history shows "${name.join(" ").trim()} (Brillianda)" from now on.\n` : `\nNo team account for ${email}.\n`);
   } else {
     const [email = "", ...name] = args;
     const r = await addTeamMember(deps.db, { email, fullName: name.join(" ") });

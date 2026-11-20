@@ -37,13 +37,37 @@ export const questionSchema = z
 /** What the parsed schema gives is exactly core's Question. */
 export const asQuestion = (q: z.infer<typeof questionSchema>): Question => q as Question;
 
+/** Lesson notes a teacher gives the generator (the front end's NOTES_MAX). */
+export const NOTES_MAX = 20_000;
+/** Photos or PDFs read in one go, and their total size as data URLs (a Vercel request stays under 4.5 MB). */
+export const NOTE_FILES_MAX = 5;
+export const NOTE_FILES_CHARS = 3_800_000;
+export const NOTE_PDF_MAX_BYTES = 2 * 1024 * 1024;
+export const NOTE_DATA_URL = /^data:(image\/(jpeg|png|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/;
+
+/** The front end's readNotesSchema. */
+export const readNotesSchema = z
+  .object({
+    files: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1, "Name the file").max(200, "Use at most 200 characters"),
+          dataUrl: z.string().max(NOTE_FILES_CHARS, "This file is too big. Add a smaller one").regex(NOTE_DATA_URL, "That file can’t be read. Use a photo (JPG or PNG) or a PDF"),
+        }),
+      )
+      .min(1, "Add a photo or a PDF")
+      .max(NOTE_FILES_MAX, `Add up to ${NOTE_FILES_MAX} files at a time`),
+  })
+  .refine((r) => r.files.reduce((n, f) => n + f.dataUrl.length, 0) <= NOTE_FILES_CHARS, { path: ["files"], message: "Those files are too big together. Add fewer, or smaller ones" })
+  .openapi("ReadNotes");
+
 export const generateRequestSchema = z
   .object({
     purpose: z.enum(PURPOSES, { message: "Choose test, assignment or exam" }),
     subjectId: z.string({ message: "Choose a subject" }).uuid("Choose a subject"),
     levelId: z.string({ message: "Choose a class" }).uuid("Choose a class"),
     topics: z.array(z.string().trim().min(2, "At least 2 characters").max(80, "Use at most 80 characters")).min(1, "Add at least one topic").max(10, "Use at most 10 topics"),
-    notes: z.string().trim().max(500, "Use at most 500 characters").default(""),
+    notes: z.string().trim().max(NOTES_MAX, "Use at most 20,000 characters").default(""),
     counts: z.object({
       objective: z.coerce.number().int().min(0).max(50),
       trueFalse: z.coerce.number().int().min(0).max(20),

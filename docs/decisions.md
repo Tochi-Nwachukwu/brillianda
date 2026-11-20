@@ -160,3 +160,17 @@ teacher-only feature is allowed. Until a written yes (and a lawyer's read):
 Use a paid-tier key: on the free tier Google may use prompts to improve its products. The default
 model is `gemini-3.1-flash-lite` (28 October: `gemini-3.8-flash` was overloaded and timed out on
 staging; Flash-Lite drafted six correct questions in about 20 seconds). `AI_MODEL` changes it.
+
+## 12. Timetable groups are a new table; the old one stays until the contract step (20 November 2026)
+
+A4 lets a school split its timetable by class section. Rather than change `timetables` (one row per
+school, unique on `school_id`, which the running code upserts on), groups live in a new table,
+`timetable_groups` (name, sections, position, its own periods and PDF), per `docs/safety.md`'s
+expand → migrate → contract. A school's first group is made on first use from its old `timetables`
+row, inside the request (the migration can't do it: the owner role can't read FORCE RLS tables), with
+an advisory lock so two first requests make one. Nothing writes to `timetables` any more. To contract:
+after a release, run a script that opens every school's timetable once (so each has its group), then
+drop `timetables` with a `-- safety: allow drop-table because …` line.
+
+`PUT /v1/timetable/periods` and `/v1/timetable/document` stay as the first group's, so the front end
+can switch in its own time.

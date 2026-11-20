@@ -151,9 +151,16 @@ describe("generating questions", () => {
     const sent = h.ai.asked.at(-1)!;
     expect(sent.ctx).toEqual({ subjectName: "Mathematics", levelName: "JSS 1" });
     expect(sent.prompt).toContain("Topics: Fractions");
-    expect(sent.prompt).toContain("The teacher's notes: Keep the numbers small");
+    expect(sent.prompt).toContain("Every question must be answerable from the teacher's lesson notes below, and only from them.\n<lesson_notes>\nKeep the numbers small\n</lesson_notes>");
     expect(sent.prompt).not.toMatch(/Ada|Obi/);
     expect((await json<Page>(teacher.get("/v1/questions"))).questions).toHaveLength(2);
+  });
+
+  it("takes notes up to 20,000 characters for generating", async () => {
+    h.ai.replies.push(reply());
+    await json(teacher.post("/v1/questions/generate", { ...ask, notes: "Fractions are parts of a whole. ".repeat(160) }));
+    const long = await problem(teacher.post("/v1/questions/generate", { ...ask, notes: "x".repeat(20_001) }), 422);
+    expect(long.errors![0]).toMatchObject({ pointer: "#/notes", detail: "Use at most 20,000 characters" });
   });
 
   it("retries once when the reply doesn't fit the format, then gives up without counting it", async () => {
@@ -163,7 +170,7 @@ describe("generating questions", () => {
     expect((await problem(teacher.post("/v1/questions/generate", ask), 502)).code).toBe("ai_invalid_output");
     h.ai.replies.push(new AiError("refused", "This topic couldn’t be used. Try different words."));
     expect(await problem(teacher.post("/v1/questions/generate", ask), 422)).toMatchObject({ code: "ai_refused", detail: "This topic couldn’t be used. Try different words." });
-    expect((await json<Page>(teacher.get("/v1/questions"))).usage.used).toBe(2);
+    expect((await json<Page>(teacher.get("/v1/questions"))).usage.used).toBe(3);
   });
 
   it("keeps the usable questions when some don't fit, filling marks and difficulty it left out", async () => {
@@ -185,9 +192,8 @@ describe("generating questions", () => {
   });
 
   it("stops at the school's monthly allowance", async () => {
-    h.ai.replies.push(reply(), reply());
+    h.ai.replies.push(reply());
     await json(owner.post("/v1/questions/generate", ask));
-    await json(teacher.post("/v1/questions/generate", ask));
     const over = await problem(teacher.post("/v1/questions/generate", ask), 429);
     // (The allowance counts every successful generation, the short one above included.)
     expect(over).toMatchObject({ code: "ai_quota_exceeded", resetsOn: "2026-11-01", detail: "Your school has used this month’s 5 question generations. They reset on 2026-11-01." });
@@ -200,6 +206,54 @@ describe("generating questions", () => {
     const page = await off.request("/v1/questions", { headers: { host, cookie } });
     expect(((await page.json()) as Page).aiEnabled).toBe(false);
     const res = await off.request("/v1/questions/generate", { method: "POST", headers: { host, cookie, origin: `https://${host}`, "content-type": "application/json" }, body: JSON.stringify(ask) });
+    expect(res.status).toBe(503);
+    expect(((await res.json()) as { code: string }).code).toBe("ai_disabled");
+  });
+});
+
+describe("reading lesson notes", () => {
+  const png = `data:image/png;base64,${Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]).toString("base64")}`;
+  const pdf = `data:application/pdf;base64,${Buffer.from("%PDF-1.7 notes").toString("base64")}`;
+
+  it("turns photos and PDFs into text, keeps nothing and uses no generation", async () => {
+    const before = (await json<Page>(teacher.get("/v1/questions"))).usage.used;
+    h.ai.notes.push("Week 3: Fractions\nA fraction is part of a whole.\n");
+    const res = await json<{ text: string; truncated: boolean }>(teacher.post("/v1/questions/notes", { files: [{ name: "page1.png", dataUrl: png }, { name: "notes.pdf", dataUrl: pdf }] }));
+    expect(res).toEqual({ text: "Week 3: Fractions\nA fraction is part of a whole.", truncated: false });
+    expect(h.ai.read.at(-1)).toEqual([
+      { mimeType: "image/png", bytes: 12 },
+      { mimeType: "application/pdf", bytes: 14 },
+    ]);
+    expect((await json<Page>(teacher.get("/v1/questions"))).usage.used).toBe(before);
+    h.ai.notes.push("y".repeat(20_050));
+    expect(await json(owner.post("/v1/questions/notes", { files: [{ name: "a.png", dataUrl: png }] }))).toEqual({ text: "y".repeat(20_000), truncated: true });
+  });
+
+  it("checks the files: type, contents, count and size", async () => {
+    const bad = async (files: unknown) => (await problem(teacher.post("/v1/questions/notes", { files }), 422)).errors![0];
+    expect(await bad([])).toMatchObject({ pointer: "#/files", detail: "Add a photo or a PDF" });
+    expect(await bad([{ name: "a.gif", dataUrl: "data:image/gif;base64,R0lGOD" }])).toMatchObject({ pointer: "#/files/0/dataUrl" });
+    expect(await bad(Array.from({ length: 6 }, () => ({ name: "a.png", dataUrl: png })))).toMatchObject({ pointer: "#/files" });
+    expect(await bad([{ name: "a.png", dataUrl: png }, { name: "fake.pdf", dataUrl: `data:application/pdf;base64,${Buffer.from("hello").toString("base64")}` }])).toMatchObject({ pointer: "#/files/1/dataUrl" });
+    const big = `data:application/pdf;base64,${Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(2 * 1024 * 1024)]).toString("base64")}`;
+    expect(await bad([{ name: "big.pdf", dataUrl: big }])).toMatchObject({ detail: "This PDF is over 2 MB. Add fewer pages, or photograph them instead." });
+  });
+
+  it("says when there's no writing, maps the model's errors, and is staff only", async () => {
+    h.ai.notes.push("NO_TEXT");
+    expect((await problem(teacher.post("/v1/questions/notes", { files: [{ name: "a.png", dataUrl: png }] }), 422)).errors![0]).toMatchObject({ pointer: "#/files", code: "no_text" });
+    h.ai.notes.push(new AiError("refused", "These files couldn’t be read. Type or paste the notes instead."));
+    expect((await problem(teacher.post("/v1/questions/notes", { files: [{ name: "a.png", dataUrl: png }] }), 422)).code).toBe("ai_refused");
+    h.ai.notes.push(new AiError("unavailable", "Generating didn’t finish. Try again."));
+    expect((await problem(teacher.post("/v1/questions/notes", { files: [{ name: "a.png", dataUrl: png }] }), 503)).code).toBe("ai_unavailable");
+    expect((await student.post("/v1/questions/notes", { files: [{ name: "a.png", dataUrl: png }] })).status).toBe(403);
+  });
+
+  it("answers ai_disabled while the provider is off", async () => {
+    const off = createApp({ ...h.deps, ai: new OffAi() });
+    const cookie = [...teacher.cookies].map(([k, v]) => `${k}=${v}`).join("; ");
+    const host = schoolHost("oakgrammar");
+    const res = await off.request("/v1/questions/notes", { method: "POST", headers: { host, cookie, origin: `https://${host}`, "content-type": "application/json" }, body: JSON.stringify({ files: [{ name: "a.png", dataUrl: png }] }) });
     expect(res.status).toBe(503);
     expect(((await res.json()) as { code: string }).code).toBe("ai_disabled");
   });
@@ -255,6 +309,26 @@ describe("the Gemini adapter", () => {
     expect(await kind(answer(429, { error: { message: "Resource exhausted" } }), answer(429, { error: { message: "Resource exhausted" } }))).toBe("unavailable");
     expect(await kind(answer(400, { error: { message: "Invalid argument" } }))).toBe("unavailable");
     expect(await kind(new Error("ECONNRESET"))).toBe("unavailable");
+  });
+});
+
+describe("the Gemini adapter reading notes", () => {
+  const answer = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+  const files = [{ mimeType: "image/jpeg" as const, data: "/9j/AAAA" }];
+  it("sends the files inline, asks for a word-for-word transcription, and maps refusals", async () => {
+    const calls: RequestInit[] = [];
+    const fn = async (_url: string, init: RequestInit) => {
+      calls.push(init);
+      return answer(200, { candidates: [{ content: { parts: [{ text: "Fractions" }] }, finishReason: "STOP" }], usageMetadata: { promptTokenCount: 900, candidatesTokenCount: 5 } });
+    };
+    expect(await new GeminiAi({ apiKey: "k", model: "m" }, silentLogger, fn).readNotes(files)).toMatchObject({ text: "Fractions", inputTokens: 900 });
+    const body = JSON.parse(calls[0]!.body as string);
+    expect(body.contents[0].parts[1]).toEqual({ inlineData: { mimeType: "image/jpeg", data: "/9j/AAAA" } });
+    expect(body.systemInstruction.parts[0].text).toMatch(/Do not summarise/);
+    const kind = async (r: Response) => ((await new GeminiAi({ apiKey: "k", model: "m" }, silentLogger, async () => r).readNotes(files).catch((e: AiError) => e)) as AiError).kind;
+    expect(await kind(answer(200, { candidates: [{ finishReason: "RECITATION" }] }))).toBe("refused");
+    expect(await kind(answer(200, { candidates: [{ content: { parts: [] }, finishReason: "STOP" }] }))).toBe("invalid_output");
+    expect(await kind(answer(500, {}))).toBe("unavailable");
   });
 });
 

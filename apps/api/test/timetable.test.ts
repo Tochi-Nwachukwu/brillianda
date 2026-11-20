@@ -25,18 +25,21 @@ const problem = async (res: Response | Promise<Response>, status: number) => {
 };
 const lesson = (who: Client, armId: string, day: number, periodId: string, subjectId: string | null) => who.send("PUT", `/v1/timetable/${armId}/${day}/${periodId}`, { subjectId });
 
-async function upload(who: Client, bytes: Uint8Array, name = "timetable.pdf") {
+async function upload(who: Client, bytes: Uint8Array, name = "timetable.pdf", path = "/v1/timetable/document") {
   const form = new FormData();
   form.set("file", new File([bytes], name, { type: "application/pdf" }));
   const host = schoolHost("acacia");
   const headers: Record<string, string> = { host, origin: `https://${host}` };
   if (who.cookies.size) headers.cookie = [...who.cookies].map(([k, v]) => `${k}=${v}`).join("; ");
-  return h.app.request("/v1/timetable/document", { method: "PUT", headers, body: form });
+  return h.app.request(path, { method: "PUT", headers, body: form });
 }
 
+type Group = { id: string; name: string; sections: string[]; periods: { id: string; start: string; end: string; kind: string }[]; file: { name: string; url: string } | null };
 type Page = {
+  groups: Group[];
+  canSplit: boolean;
   periods: { id: string; label: string; kind: string }[];
-  arms: { id: string; label: string; levelId: string }[];
+  arms: { id: string; label: string; levelId: string; section: string }[];
   subjects: { id: string; name: string; levelIds: string[] }[];
   lessons: { armId: string; day: number; periodId: string; subjectId: string; teacherId: string | null; teacherName: string | null }[];
   clashes: { teacherName: string; day: number; periodId: string; armLabels: string[] }[];
@@ -102,7 +105,7 @@ describe("the timetable", () => {
     expect((await lesson(owner, arm["JSS 1 Blue"]!, 1, "p1", subject.Mathematics!)).status).toBe(204);
     expect((await lesson(owner, arm["JSS 1 Gold"]!, 3, "p2", subject["English Studies"]!)).status).toBe(204);
     expect((await problem(lesson(owner, arm["JSS 1 Gold"]!, 1, "b1", subject.Mathematics!), 409)).detail).toBe("No lessons in a break.");
-    expect((await problem(lesson(owner, arm["JSS 1 Gold"]!, 1, "p99", subject.Mathematics!), 404)).detail).toBe("That period isn’t in the bell schedule any more.");
+    expect((await problem(lesson(owner, arm["JSS 1 Gold"]!, 1, "p99", subject.Mathematics!), 404)).detail).toBe("That period isn’t in this class’s bell schedule any more.");
     expect((await lesson(owner, arm["JSS 1 Gold"]!, 6, "p1", subject.Mathematics!)).status).toBe(422);
     expect((await lesson(owner, arm["JSS 1 Gold"]!, 1, "p1", crypto.randomUUID())).status).toBe(404);
 
@@ -167,4 +170,130 @@ describe("the timetable", () => {
     await other.send("PUT", "/v1/timetable/periods", { periods: DEFAULT_PERIODS });
     expect((await problem(lesson(other, arm["JSS 1 Gold"]!, 1, "p2", subject.Mathematics!), 404)).detail).toBe("That class isn’t here any more.");
   });
+});
+
+describe("timetable groups (A4)", () => {
+  const changes = async () => (await json<{ entries: { what: string }[] }>(owner.get("/v1/changes"))).entries[0]!.what;
+  const save = (who: Client, groups: unknown) => who.send("PUT", "/v1/timetable/groups", { groups });
+  let first: string;
+  let primary: string;
+
+  it("starts as one timetable for the whole school, with each class's section", async () => {
+    await json(owner.send("PUT", "/v1/timetable/periods", { periods: DEFAULT_PERIODS }));
+    const levelP1 = (await json<{ id: string }>(owner.post("/v1/class-levels", { name: "Primary 1", short: "PRY1", section: "primary" }), 201)).id;
+    const page = await json<Page>(owner.get("/v1/timetable"));
+    expect(page.canSplit).toBe(true);
+    expect(page.groups).toEqual([expect.objectContaining({ name: "Whole school", sections: ["preschool", "primary", "junior", "senior"], file: null })]);
+    expect(page.periods).toEqual(page.groups[0]!.periods);
+    first = page.groups[0]!.id;
+    const p1 = page.arms.find((a) => a.levelId === levelP1)!;
+    expect(p1.section).toBe("primary");
+    arm["Primary 1"] = p1.id;
+    expect(page.arms.find((a) => a.id === arm["JSS 1 Gold"])!.section).toBe("junior");
+    const tunde = page.lessons.length ? null : (await json<{ teachers: { id: string; fullName: string }[] }>(owner.get("/v1/teachers"))).teachers.find((t) => t.fullName === "Tunde Teach")!;
+    expect(
+      (
+        await owner.send("PUT", `/v1/teachers/${tunde!.id}/subject-classes`, [
+          { armId: arm["JSS 1 Gold"], subjectId: subject.Mathematics },
+          { armId: arm["JSS 1 Blue"], subjectId: subject.Mathematics },
+          { armId: arm["Primary 1"], subjectId: subject.Mathematics },
+        ])
+      ).status,
+    ).toBe(204);
+  });
+
+  it("checks the split: each section in one, names unique, one to four, every section the school has", async () => {
+    const at = async (groups: unknown) => (await problem(save(owner, groups), 422)).errors![0];
+    expect(await at([{ id: first, name: "JSS", sections: ["junior"] }, { name: "Also JSS", sections: ["junior", "primary"] }])).toMatchObject({ pointer: "#/groups/1/sections", detail: "JSS is in two timetables. Each class belongs to one" });
+    expect(await at([{ id: first, name: "A", sections: ["junior"] }, { name: "a", sections: ["primary"] }])).toMatchObject({ pointer: "#/groups/1/name" });
+    expect(await at([{ id: first, name: "JSS", sections: ["junior"] }])).toMatchObject({ pointer: "#/groups", detail: "Primary isn’t in any timetable. Each class belongs to one." });
+    expect(await at([{ id: crypto.randomUUID(), name: "All", sections: ["primary", "junior"] }])).toMatchObject({ pointer: "#/groups/0/id" });
+    expect(await at(["preschool", "primary", "junior", "senior", "junior"].map((s, i) => ({ name: `T${i}`, sections: [s] })))).toMatchObject({ pointer: "#/groups" });
+    expect((await save(teacher, [{ id: first, name: "All", sections: ["primary", "junior"] }])).status).toBe(403);
+  });
+
+  it("splits Primary off with a copy of the bell schedule, then gives it its own", async () => {
+    expect((await lesson(owner, arm["JSS 1 Gold"]!, 1, "p3", subject.Mathematics!)).status).toBe(204);
+    expect((await lesson(owner, arm["Primary 1"]!, 1, "p3", subject.Mathematics!)).status).toBe(204);
+    expect((await lesson(owner, arm["Primary 1"]!, 1, "p5", subject.Mathematics!)).status).toBe(204);
+    expect((await json<Page>(owner.get("/v1/timetable"))).clashes).toEqual([{ teacherName: "Tunde Teach", day: 1, periodId: "p3", armLabels: expect.arrayContaining(["Primary 1", "JSS 1 Gold"]) }]);
+
+    expect(await json(save(owner, [{ name: "Primary", sections: ["preschool", "primary"] }, { id: first, name: "JSS and SSS", sections: ["junior", "senior"] }]))).toEqual({ removed: 0 });
+    expect(await changes()).toBe("Split the timetable: Primary and JSS and SSS");
+    let page = await json<Page>(owner.get("/v1/timetable"));
+    expect(page.groups.map((g) => [g.name, g.sections])).toEqual([
+      ["Primary", ["preschool", "primary"]],
+      ["JSS and SSS", ["junior", "senior"]],
+    ]);
+    primary = page.groups[0]!.id;
+    expect(page.groups[0]!.periods).toEqual(page.groups[1]!.periods);
+
+    // Primary's own day: three short lessons; its p3 ends as JSS's p3 starts.
+    const periods = [
+      { id: "p1", label: "Period 1", start: "08:00", end: "08:30", kind: "lesson" },
+      { id: "p2", label: "Period 2", start: "08:30", end: "09:00", kind: "lesson" },
+      { id: "p3", label: "Period 3", start: "09:00", end: "09:20", kind: "lesson" },
+    ];
+    expect(await json(owner.send("PUT", `/v1/timetable/groups/${primary}/periods`, { periods }))).toEqual({ removed: 1 });
+    expect(await changes()).toBe("Changed the Primary bell schedule");
+    page = await json<Page>(owner.get("/v1/timetable"));
+    expect(page.lessons.filter((l) => l.day === 1).map((l) => l.periodId).sort()).toEqual(["p3", "p3"]);
+    expect(page.clashes).toEqual([]);
+    expect((await problem(lesson(owner, arm["Primary 1"]!, 2, "p4", subject.Mathematics!), 404)).detail).toBe("That period isn’t in this class’s bell schedule any more.");
+    expect((await lesson(owner, arm["JSS 1 Gold"]!, 2, "p4", subject.Mathematics!)).status).toBe(204);
+    expect((await problem(owner.send("PUT", "/v1/timetable/classes", { fileName: "", classes: [{ armId: arm["Primary 1"], lessons: [{ day: 4, periodId: "p6", subjectId: subject.Mathematics }] }] }), 422)).errors![0]!.pointer).toBe("#/classes/0/lessons/0/periodId");
+
+    // Overlapping times clash even with different period ids.
+    expect((await lesson(owner, arm["Primary 1"]!, 2, "p2", subject.Mathematics!)).status).toBe(204);
+    expect((await lesson(owner, arm["JSS 1 Blue"]!, 2, "p2", subject.Mathematics!)).status).toBe(204);
+    expect((await json<Page>(owner.get("/v1/timetable"))).clashes).toEqual([{ teacherName: "Tunde Teach", day: 2, periodId: "p2", armLabels: expect.arrayContaining(["Primary 1", "JSS 1 Blue"]) }]);
+  });
+
+  it("gives a teacher in both their day in time order", async () => {
+    const monday = await json<{ period: { id: string; start: string }; armLabel: string }[]>(teacher.get("/v1/me/lessons?day=1"));
+    expect(monday.map((l) => [l.armLabel, l.period.start])).toEqual([
+      ["Primary 1", "09:00"],
+      ["JSS 1 Gold", "09:20"],
+    ]);
+  });
+
+  it("keeps a document per timetable", async () => {
+    const pdf = new TextEncoder().encode("%PDF-1.7\n% primary\n%%EOF\n");
+    expect((await upload(owner, pdf, "Primary.pdf", `/v1/timetable/groups/${primary}/document`)).status).toBe(204);
+    expect(await changes()).toBe("Uploaded the timetable document Primary.pdf for Primary");
+    const page = await json<Page>(owner.get("/v1/timetable"));
+    expect(page.groups[0]!.file!.url).toMatch(new RegExp(`^/api/v1/timetable/groups/${primary}/document\\?v=[0-9a-f]{16}$`));
+    expect(page.groups[1]!.file).toBeNull();
+    expect(new Uint8Array(await (await teacher.get(`/v1/timetable/groups/${primary}/document`)).arrayBuffer())).toEqual(pdf);
+    expect((await teacher.get(`/v1/timetable/groups/${first}/document`)).status).toBe(404);
+    expect((await other.get(`/v1/timetable/groups/${primary}/document`)).status).toBe(404);
+    expect((await other.send("PUT", `/v1/timetable/groups/${primary}/periods`, { periods: DEFAULT_PERIODS })).status).toBe(404);
+  });
+
+  it("joins them again: the removed one's document goes, lessons outside the schedule are counted", async () => {
+    // Primary 1's p1 lesson stays (JSS has p1); nothing of Primary's is in a JSS break.
+    expect(await json(save(owner, [{ id: first, name: "Whole school", sections: ["primary", "junior"] }]))).toEqual({ removed: 0 });
+    expect(await changes()).toBe("Made one timetable for the school: Whole school");
+    const page = await json<Page>(owner.get("/v1/timetable"));
+    expect(page.groups).toHaveLength(1);
+    expect((await teacher.get(`/v1/timetable/groups/${primary}/document`)).status).toBe(404);
+  });
+});
+
+describe("the student's timetable follows their class's group", () => {
+  it("uses the class's own bell schedule", async () => {
+    const page = await json<Page>(owner.get("/v1/timetable"));
+    const periods = [{ id: "q1", label: "Lesson 1", start: "07:45", end: "08:30", kind: "lesson" }];
+    expect(await json(save2(page.groups[0]!.id))).toMatchObject({ removed: expect.any(Number) });
+    const after = await json<Page>(owner.get("/v1/timetable"));
+    const pri = after.groups.find((g) => g.name === "Primary")!;
+    await json(owner.send("PUT", `/v1/timetable/groups/${pri.id}/periods`, { periods }));
+    const ada = (await json<{ id: string }>(owner.send("POST", "/v1/students", { firstName: "Ada", lastName: "Obi", gender: "female", armId: arm["Primary 1"] }), 201)).id;
+    await json(owner.post(`/v1/students/${ada}/invite`, { email: "ada@pupils.test" }), 201);
+    const student = browser(h, schoolHost("acacia"));
+    await json(student.post("/v1/invitations/accept", { token: tokenFrom((await waitForMail(h, "ada@pupils.test", "invitation")).text)!, password: "student-password" }));
+    const week = await json<{ periods: { id: string }[] }>(student.get("/v1/me/timetable"));
+    expect(week.periods.map((p) => p.id)).toEqual(["q1"]);
+  });
+  const save2 = (firstId: string) => owner.send("PUT", "/v1/timetable/groups", { groups: [{ name: "Primary", sections: ["primary"] }, { id: firstId, name: "Secondary", sections: ["junior"] }] });
 });

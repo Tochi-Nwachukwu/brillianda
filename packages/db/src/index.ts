@@ -56,6 +56,7 @@ export {
   correctionStatus,
   type CorrectionChange,
   timetables,
+  timetableGroups,
   timetableLessons,
   type TimetablePeriod,
   studentLinks,

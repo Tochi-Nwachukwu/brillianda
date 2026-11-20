@@ -37,7 +37,6 @@ import {
   students,
   subjectTeachers,
   timetableLessons,
-  timetables,
   users,
   type Tx,
 } from "@brillianda/db";
@@ -53,6 +52,7 @@ import { schoolRoute, type Role } from "../school-route.js";
 import { birthdayFor, birthdaySettingsOf } from "./birthdays.js";
 import { BookListSchema, bookListsFor } from "./booklists.js";
 import { armOptions } from "./classes.js";
+import { periodsForArm } from "./timetable.js";
 import { AttendanceSchema, childResults, ChildResultsSchema } from "./parents.js";
 import { buildReportCard, ReportCardSchema, reportTermsOf } from "./reports.js";
 import { resultsTermOf } from "./results.js";
@@ -291,13 +291,13 @@ studentPortalRoutes.openapi(
       const weekday = lagosWeekday(today);
       let lessonsToday: z.infer<typeof StudentHomeSchema>["lessonsToday"] = [];
       if (weekday) {
-        const [t] = await tx.select({ periods: timetables.periods }).from(timetables).limit(1);
+        const periods = await periodsForArm(tx, school.id, s.classArmId);
         const lessons = await tx
           .select({ periodId: timetableLessons.periodId, subjectName: schoolSubjects.name })
           .from(timetableLessons)
           .innerJoin(schoolSubjects, and(eq(schoolSubjects.schoolId, timetableLessons.schoolId), eq(schoolSubjects.id, timetableLessons.schoolSubjectId)))
           .where(and(eq(timetableLessons.classArmId, s.classArmId), eq(timetableLessons.day, weekday)));
-        lessonsToday = (t?.periods ?? [])
+        lessonsToday = periods
           .filter((p) => p.kind === "lesson")
           .flatMap((p) => {
             const l = lessons.find((x) => x.periodId === p.id);
@@ -334,9 +334,9 @@ const ClassTimetableSchema = z
 studentPortalRoutes.openapi(
   createRoute({ method: "get", path: "/v1/me/timetable", tags: ["student portal"], summary: "The student's class week: periods and lessons with their teachers' names", responses: { 200: ok("Timetable", ClassTimetableSchema), ...errors } }),
   async (c) => {
-    const data = await schoolRoute(c, { roles: STUDENT }, async ({ tx, auth }) => {
+    const data = await schoolRoute(c, { roles: STUDENT }, async ({ tx, school, auth }) => {
       const s = await myRecord(tx, auth.user.id);
-      const [t] = await tx.select({ periods: timetables.periods }).from(timetables).limit(1);
+      const periods = await periodsForArm(tx, school.id, s.classArmId);
       const lessons = await tx
         .select({ day: timetableLessons.day, periodId: timetableLessons.periodId, subjectId: timetableLessons.schoolSubjectId, subjectName: schoolSubjects.name })
         .from(timetableLessons)
@@ -354,7 +354,7 @@ studentPortalRoutes.openapi(
       const arm = (await armOptions(tx, { all: true })).find((a) => a.id === s.classArmId);
       return {
         armLabel: arm?.label ?? "",
-        periods: t?.periods ?? [],
+        periods,
         lessons: lessons.map((l) => ({ day: l.day, periodId: l.periodId, subjectName: l.subjectName, teacherName: teachers.get(l.subjectId) ?? null })),
       };
     });

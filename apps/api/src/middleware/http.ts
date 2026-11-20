@@ -26,6 +26,8 @@ const BODY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  */
 /** The only route that takes a file: the school's logo, as multipart/form-data. */
 const MULTIPART_PATHS = new Set(["/v1/school/logo", "/v1/timetable/document"]);
+/** A timetable's PDF: the first one's, or one timetable's by id. */
+export const isTimetableDocument = (path: string) => path === "/v1/timetable/document" || /^\/v1\/timetable\/groups\/[^/]+\/document$/.test(path);
 
 export const requireJsonBody = () =>
   createMiddleware<AppEnv>(async (c, next) => {
@@ -38,7 +40,7 @@ export const requireJsonBody = () =>
         contentType !== undefined || (length !== undefined && length !== "0") || c.req.header("transfer-encoding") !== undefined;
       if (hasBody) {
         const type = (contentType ?? "").split(";")[0]!.trim().toLowerCase();
-        const multipartOk = type === "multipart/form-data" && MULTIPART_PATHS.has(c.req.path);
+        const multipartOk = type === "multipart/form-data" && (MULTIPART_PATHS.has(c.req.path) || isTimetableDocument(c.req.path));
         if (type !== "application/json" && !multipartOk) {
           throw new ApiError("unsupported_media_type", "Send the body as JSON with Content-Type: application/json.", {
             headers: { "Accept-Post": "application/json", "Accept-Patch": "application/json" },

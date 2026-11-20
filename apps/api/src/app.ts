@@ -7,7 +7,7 @@ import type { AppDeps, AppEnv } from "./context.js";
 import { MailDeliveryError } from "./lib/mailer.js";
 import { ApiError, type ErrorCode, type FieldError, problemResponse, toPointer } from "./lib/errors.js";
 import { csrf } from "./middleware/csrf.js";
-import { buildAllowLookup, requireJsonBody, serverTiming } from "./middleware/http.js";
+import { buildAllowLookup, isTimetableDocument, requireJsonBody, serverTiming } from "./middleware/http.js";
 import { requestContext } from "./middleware/request-context.js";
 import { authRoutes } from "./routes/auth.js";
 import { invitationRoutes } from "./routes/invitations.js";
@@ -137,9 +137,17 @@ export function createApp(deps: AppDeps) {
       throw new ApiError("payload_too_large", "This PDF is over 2 MB. Save a smaller copy and try again.");
     },
   });
+  // Photos and PDFs of lesson notes: 3.8 million characters of data URLs, plus the JSON around them.
+  const notesBody = bodyLimit({
+    maxSize: 4_400_000,
+    onError: () => {
+      throw new ApiError("payload_too_large", "Those files are too big together. Add fewer, or smaller ones.");
+    },
+  });
   app.use("/v1/*", (c, next) => {
     if (c.req.path === "/v1/imports" || c.req.path === "/v1/imports/check") return bigBody(c, next);
-    if (c.req.path === "/v1/timetable/document") return documentBody(c, next);
+    if (c.req.path === "/v1/questions/notes") return notesBody(c, next);
+    if (isTimetableDocument(c.req.path)) return documentBody(c, next);
     if (c.req.path === "/v1/school/logo") return logoBody(c, next);
     return smallBody(c, next);
   });

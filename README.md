@@ -44,9 +44,9 @@ curl -H "Host: surebloom.localhost:4000" http://localhost:4000/v1/school
 | 14 Birthday messages (B2) | Settings, upcoming birthdays, daily texts (Termii, `SMS_PROVIDER=termii`), parent card | ✅ API (texts: console until Termii is set up) |
 | 15 Book lists (B3) | A list per class level and session, sharing, parents see theirs | ✅ |
 | 16 Corrections (B4) | Parents see their child's details and ask for fixes; admins approve or decline | ✅ |
-| 17 Timetable (B5) | Bell schedule, lessons, clashes, uploads, the PDF, a teacher's day | ✅ |
+| 17 Timetable (B5) | Bell schedule, lessons, clashes, uploads, the PDF, a teacher's day; split by class section (A4) | ✅ |
 | 18 Student portal (B6) | Student role and invitations, student home, timetable, report card | ✅ |
-| 19 Question bank (B7) | Bank per subject and class, AI drafting (Gemini) with a monthly allowance | ✅ API (generating off until the terms are cleared, `docs/decisions.md` #11) |
+| 19 Question bank (B7) | Bank per subject and class, AI drafting (Gemini) with a monthly allowance; lesson notes up to 20,000 characters, read from photos and PDFs (A3) | ✅ API (generating off until the terms are cleared, `docs/decisions.md` #11) |
 | 20 CBT (B8) | Tests from the bank, the server's clock, self-marking, theory marking, scores into sheets | ✅ |
 | 5 Hardening | Branding and logos ✅, trial requests ✅; speed, security review, production setup | in progress |
 

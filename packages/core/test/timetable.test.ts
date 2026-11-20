@@ -1,6 +1,6 @@
 // Copied from the front end's packages/core/src/timetable.test.ts (25 Oct 2026); its bell-schedule test is in apps/api/test/timetable.test.ts.
 import { describe, expect, it } from "vitest";
-import { clashes, DEFAULT_PERIODS, matchSubject, readTimetableGrid } from "../src/timetable.js";
+import { clashes, DEFAULT_PERIODS, groupFor, groupName, matchSubject, readTimetableGrid } from "../src/timetable.js";
 
 const SUBJECTS = [
   { id: "m", name: "Mathematics", code: "MTH" },
@@ -80,4 +80,35 @@ describe("timetable", () => {
     ).toEqual([{ teacherId: "bisi", day: 1, periodId: "p1", armIds: ["a", "b"] }]);
   });
 
+});
+
+describe("timetable groups (30 Oct 2026)", () => {
+  it("names a group by its sections, and finds a class's group", () => {
+    expect(groupName(["junior", "senior"])).toBe("JSS and SSS");
+    expect(groupName(["primary", "junior", "senior"], ["primary", "junior", "senior"])).toBe("Whole school");
+    const groups = [{ id: "a", sections: ["primary" as const] }, { id: "b", sections: ["junior" as const, "senior" as const] }];
+    expect(groupFor(groups, "senior").id).toBe("b");
+    expect(groupFor(groups, null).id).toBe("a");
+    expect(groupFor(groups, "preschool").id).toBe("a");
+  });
+
+  it("finds clashes by overlapping times when bell schedules differ", () => {
+    const teacherOf = () => "t1";
+    const times: Record<string, Record<string, { start: string; end: string }>> = {
+      pri: { p1: { start: "08:00", end: "08:35" }, p2: { start: "08:35", end: "09:10" } },
+      jss: { p1: { start: "08:00", end: "08:40" }, p2: { start: "08:40", end: "09:20" } },
+    };
+    const timeOf = (armId: string, periodId: string) => times[armId]?.[periodId] ?? null;
+    // Primary's p2 (8:35) overlaps JSS's p1 (to 8:40); same ids at different times don't clash by id.
+    const found = clashes(
+      [
+        { armId: "pri", day: 1, periodId: "p2", subjectId: "m" },
+        { armId: "jss", day: 1, periodId: "p1", subjectId: "m" },
+      ],
+      teacherOf,
+      timeOf,
+    );
+    expect(found).toEqual([{ teacherId: "t1", day: 1, periodId: "p1", armIds: ["jss", "pri"] }]);
+    expect(clashes([{ armId: "pri", day: 1, periodId: "p1", subjectId: "m" }, { armId: "jss", day: 1, periodId: "p2", subjectId: "m" }], teacherOf, timeOf)).toEqual([]);
+  });
 });

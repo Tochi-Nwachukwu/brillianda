@@ -338,7 +338,7 @@ session can't open a school.
 | `setTrialStatus` | `PATCH /v1/team/trial-requests/{id}` `{ status, note }` → 204 | Note up to 500 characters; empty clears it |
 
 Team accounts are made with `pnpm --filter @brillianda/api team:add -- email "Full Name"` (the
-password is printed once); `-- --disable email` turns one off and signs it out.
+password is printed once); `-- --disable email` turns one off and signs it out; `-- --rename email "Brillianda Support"` renames one (new change-history lines use the new name; old lines keep theirs).
 
 **21 October 2026, C2** (results: settings and score entry)
 
@@ -511,3 +511,32 @@ and counts go to the model, never anything about a student.
 
 No AI is involved in CBT: tests are built from saved bank questions, and marking follows your
 `markAnswer` and `scoreAttempt`.
+
+**20 November 2026** (your 30 October list, A1 to A4)
+
+- **A1, the team account's name.** `team:add -- --rename <email> "Brillianda Support"` renames a
+  team account. New change-history lines use the new name; lines already written keep the name they
+  were written with, because the history is append-only.
+- **A2, AI on staging.** Nothing changes in the API: `aiEnabled` is true wherever `AI_PROVIDER=gemini`
+  is set with a key. If staging answers false, the deployment the frontend calls is missing those
+  settings or wasn't redeployed after they were added.
+- **A3, lesson notes.**
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `generateQuestions` | `POST /v1/questions/generate` | teacher, owner, admin | `notes` up to 20,000 characters (422 `#/notes`). With notes, the prompt says every question must be answerable from them alone |
+| `readNotes` | `POST /v1/questions/notes` `{ files: [{ name, dataUrl }] }` → `{ text, truncated }` | teacher, owner, admin | Your `readNotesSchema`: 1 to 5 JPEG, PNG or WebP photos or PDFs, 3.8 million characters in all (413 past 4.4 MB). Each file's first bytes must match its type and a PDF must be 2 MB or less (422 `#/files/1/dataUrl`). A plain transcription, cut at 20,000 characters (`truncated` says so). No writing found: 422 `#/files` with code `no_text`. Doesn't use a monthly generation; 10 a minute per person (429 `rate_limited`). The same `ai_*` codes as generating. Nothing is stored; logs carry only counts and sizes |
+
+- **A4, timetable groups.**
+
+| Your function | Endpoint | Who | Notes |
+|---|---|---|---|
+| `getTimetable` | `GET /v1/timetable` → `TimetablePage` | owner, admin, teacher | Now `groups: [{ id, name, sections, periods, file }]` (at least one; a school that never split has "Whole school" with every section), `canSplit: true`, and each `arms[]` entry has its `section`. `clashes` are by overlapping times. `periods` and `file` stay at the top as the first timetable's, until you've switched |
+| `saveTimetableGroups` | `PUT /v1/timetable/groups` `{ groups: [{ id?, name, sections }] }` → `{ removed }` | owner, admin | Your `groupsSchema` (422 `#/groups/1/sections`, `#/groups/1/name`). Every section the school has classes in must be in one (422 `#/groups`); an unknown `id` is 422 `#/groups/0/id`. A new one copies the first one's bell schedule; a removed one's document is deleted; lessons not in a lesson period of their class's new timetable are removed and counted. Change history: "Split the timetable: Primary and JSS and SSS" (names joined as given), or "Made one timetable for the school: Whole school" |
+| `saveBellSchedule` | `PUT /v1/timetable/groups/{id}/periods` `{ periods }` → `{ removed }` | owner, admin | Only that timetable's classes lose lessons. `PUT /v1/timetable/periods` still works for the first one |
+| `setTimetableFile`, `removeTimetableFile` | `PUT` / `DELETE /v1/timetable/groups/{id}/document` | owner, admin | Multipart `file`, a PDF up to 2 MB, as before. The group's `file.url` is `/api/v1/timetable/groups/{id}/document?v=…` |
+| | `GET /v1/timetable/groups/{id}/document` | owner, admin, teacher | The PDF |
+| `setLesson`, `importTimetable` | as before | owner, admin | The period must be in the class's own timetable: 404 "That period isn’t in this class’s bell schedule any more." (import: 422 `#/classes/0/lessons/3/periodId`) |
+| `getMyLessonsToday`, `getStudentTimetable`, student home | as before | | Each class's own timetable's periods; a teacher's day is in time order across timetables |
+
+A class follows the timetable its level's section is in, else the first (your `groupFor`).

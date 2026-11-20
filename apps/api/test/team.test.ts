@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { addTeamMember, disableTeamMember } from "../src/team-admin.js";
+import { addTeamMember, disableTeamMember, renameTeamMember } from "../src/team-admin.js";
 import { APEX, browser, schoolHost, signUpAndLand, type Client } from "./flows.js";
+import { eq, teamMembers } from "@brillianda/db";
 import { createHarness, type Harness } from "./helpers.js";
 
 let h: Harness;
@@ -129,6 +130,14 @@ describe("signing out and disabled accounts", () => {
     expect(await disableTeamMember(h.db, "ada@brillianda.test")).toBe(true);
     expect((await other.get("/v1/team/me")).status).toBe(401);
     expect((await browser(h, APEX).post("/v1/team/login", { email: "ada@brillianda.test", password })).status).toBe(401);
+  });
+
+  it("renames an account; new history lines carry the new name", async () => {
+    await expect(renameTeamMember(h.db, "ada@brillianda.test", " ")).rejects.toThrow(/full name/);
+    expect(await renameTeamMember(h.db, "nobody@brillianda.test", "Brillianda Support")).toBe(false);
+    expect(await renameTeamMember(h.db, "ADA@brillianda.test", "  Brillianda   Support ")).toBe(true);
+    const [row] = await h.db.select({ fullName: teamMembers.fullName }).from(teamMembers).where(eq(teamMembers.email, "ada@brillianda.test"));
+    expect(row?.fullName).toBe("Brillianda Support");
   });
 
   it("refuses a second account with the same email", async () => {

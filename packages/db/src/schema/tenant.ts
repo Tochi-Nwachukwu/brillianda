@@ -1160,6 +1160,42 @@ export const timetables = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * One timetable for some class sections, with its own bell schedule and document (A4, 30 Oct 2026):
+ * Primary on its own, JSS and SSS together, and so on. Every school has at least one; a class
+ * follows the group its level's section is in, else the first. Replaces `timetables` (kept until
+ * the contract step: nothing reads it once this ships).
+ */
+export const timetableGroups = pgTable(
+  "timetable_groups",
+  {
+    id: id(),
+    schoolId: schoolId(),
+    name: text().notNull(),
+    sections: classSection().array().notNull(),
+    position: smallint().notNull().default(0),
+    periods: jsonb().$type<TimetablePeriod[]>().notNull().default(sql`'[]'::jsonb`),
+    /** The uploaded timetable document (a PDF up to 2 MB); null when there is none. */
+    fileName: text(),
+    fileBytes: bytea(),
+    fileSha256: text(),
+    fileBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    fileAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    createdBy: uuid(),
+    updatedBy: uuid(),
+  },
+  (t) => [
+    unique("timetable_groups_school_id_id_key").on(t.schoolId, t.id),
+    index("timetable_groups_school_position_idx").on(t.schoolId, t.position),
+    check("timetable_groups_name", sql`char_length(${t.name}) BETWEEN 1 AND 40`),
+    check("timetable_groups_file_size", sql`${t.fileBytes} IS NULL OR octet_length(${t.fileBytes}) <= 2097152`),
+    schoolIsolation(t.schoolId),
+    backupRead(),
+  ],
+).enableRLS();
+
 /** A class's subject in one lesson period on one day (1 Monday to 5 Friday). Its teacher is the class's teacher for that subject. */
 export const timetableLessons = pgTable(
   "timetable_lessons",
